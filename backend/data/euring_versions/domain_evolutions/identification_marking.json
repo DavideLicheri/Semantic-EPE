@@ -1,0 +1,716 @@
+{
+  "domain": "identification_marking",
+  "evolution_entries": [
+    {
+      "version": "euring_1966",
+      "year": 1966,
+      "changes": [
+        {
+          "change_type": "added",
+          "field_name": "ring_number",
+          "semantic_impact": "New field added to identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        }
+      ],
+      "fields_added": [
+        "ring_number"
+      ],
+      "fields_removed": [],
+      "fields_modified": [],
+      "semantic_notes": [],
+      "format_changes": [
+        "Field separator:  ",
+        "Total length: 55"
+      ],
+      "field_mappings": []
+    },
+    {
+      "version": "euring_1979",
+      "year": 1979,
+      "changes": [
+        {
+          "change_type": "added",
+          "field_name": "scheme_country",
+          "semantic_impact": "New field added to identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "modified",
+          "field_name": "ring_number",
+          "semantic_impact": "Field modified in identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": "previous_format",
+          "new_value": "new_format"
+        }
+      ],
+      "fields_added": [
+        "scheme_country"
+      ],
+      "fields_removed": [],
+      "fields_modified": [
+        "ring_number"
+      ],
+      "semantic_notes": [
+        "Fixed-length format standardization",
+        "Encoded coordinate system",
+        "Additional measurement fields"
+      ],
+      "format_changes": [
+        "Fixed-length format",
+        "Total length: 78"
+      ],
+      "field_mappings": []
+    },
+    {
+      "version": "euring_2000",
+      "year": 2000,
+      "changes": [
+        {
+          "change_type": "added",
+          "field_name": "ring_prefix",
+          "semantic_impact": "New field added to identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "added",
+          "field_name": "ring_suffix",
+          "semantic_impact": "New field added to identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "added",
+          "field_name": "scheme_code",
+          "semantic_impact": "New field added to identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "removed",
+          "field_name": "scheme_country",
+          "semantic_impact": "Field removed from identification_marking domain",
+          "compatibility_impact": "lossy",
+          "previous_value": "field_existed",
+          "new_value": null
+        },
+        {
+          "change_type": "modified",
+          "field_name": "ring_number",
+          "semantic_impact": "Field modified in identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": "previous_format",
+          "new_value": "new_format"
+        }
+      ],
+      "fields_added": [
+        "ring_prefix",
+        "ring_suffix",
+        "scheme_code"
+      ],
+      "fields_removed": [
+        "scheme_country"
+      ],
+      "fields_modified": [
+        "ring_number"
+      ],
+      "semantic_notes": [
+        "Complex alphanumeric encoding",
+        "Enhanced location accuracy"
+      ],
+      "format_changes": [
+        "Fixed-length format",
+        "Total length: 96"
+      ],
+      "field_mappings": []
+    },
+    {
+      "version": "euring_2020",
+      "year": 2020,
+      "changes": [
+        {
+          "change_type": "added",
+          "field_name": "metal_ring_info",
+          "semantic_impact": "New field added to identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "added",
+          "field_name": "verification_code",
+          "semantic_impact": "New field added to identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "added",
+          "field_name": "other_marks_info",
+          "semantic_impact": "New field added to identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "removed",
+          "field_name": "ring_prefix",
+          "semantic_impact": "Field removed from identification_marking domain",
+          "compatibility_impact": "lossy",
+          "previous_value": "field_existed",
+          "new_value": null
+        },
+        {
+          "change_type": "removed",
+          "field_name": "ring_suffix",
+          "semantic_impact": "Field removed from identification_marking domain",
+          "compatibility_impact": "lossy",
+          "previous_value": "field_existed",
+          "new_value": null
+        },
+        {
+          "change_type": "removed",
+          "field_name": "scheme_code",
+          "semantic_impact": "Field removed from identification_marking domain",
+          "compatibility_impact": "lossy",
+          "previous_value": "field_existed",
+          "new_value": null
+        },
+        {
+          "change_type": "modified",
+          "field_name": "ring_number",
+          "semantic_impact": "Field modified in identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": "previous_format",
+          "new_value": "new_format"
+        }
+      ],
+      "fields_added": [
+        "metal_ring_info",
+        "verification_code",
+        "other_marks_info"
+      ],
+      "fields_removed": [
+        "ring_prefix",
+        "ring_suffix",
+        "scheme_code"
+      ],
+      "fields_modified": [
+        "ring_number"
+      ],
+      "semantic_notes": [
+        "Decimal coordinate format",
+        "Pipe-delimited structure",
+        "Enhanced biometric measurements"
+      ],
+      "format_changes": [
+        "Field separator: |",
+        "Total length: 102"
+      ],
+      "field_mappings": []
+    },
+    {
+      "version": "euring_2020_official",
+      "year": 2020,
+      "changes": [
+        {
+          "change_type": "added",
+          "field_name": "other_marks_information",
+          "semantic_impact": "New field added to identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "added",
+          "field_name": "identification_number",
+          "semantic_impact": "New field added to identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "added",
+          "field_name": "verification_of_the_metal_ring",
+          "semantic_impact": "New field added to identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "added",
+          "field_name": "metal_ring_information",
+          "semantic_impact": "New field added to identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "added",
+          "field_name": "primary_identification_method",
+          "semantic_impact": "New field added to identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "added",
+          "field_name": "ringing_scheme",
+          "semantic_impact": "New field added to identification_marking domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "removed",
+          "field_name": "metal_ring_info",
+          "semantic_impact": "Field removed from identification_marking domain",
+          "compatibility_impact": "lossy",
+          "previous_value": "field_existed",
+          "new_value": null
+        },
+        {
+          "change_type": "removed",
+          "field_name": "verification_code",
+          "semantic_impact": "Field removed from identification_marking domain",
+          "compatibility_impact": "lossy",
+          "previous_value": "field_existed",
+          "new_value": null
+        },
+        {
+          "change_type": "removed",
+          "field_name": "ring_number",
+          "semantic_impact": "Field removed from identification_marking domain",
+          "compatibility_impact": "lossy",
+          "previous_value": "field_existed",
+          "new_value": null
+        },
+        {
+          "change_type": "removed",
+          "field_name": "other_marks_info",
+          "semantic_impact": "Field removed from identification_marking domain",
+          "compatibility_impact": "lossy",
+          "previous_value": "field_existed",
+          "new_value": null
+        }
+      ],
+      "fields_added": [
+        "other_marks_information",
+        "identification_number",
+        "verification_of_the_metal_ring",
+        "metal_ring_information",
+        "primary_identification_method",
+        "ringing_scheme"
+      ],
+      "fields_removed": [
+        "metal_ring_info",
+        "verification_code",
+        "ring_number",
+        "other_marks_info"
+      ],
+      "fields_modified": [],
+      "semantic_notes": [
+        "Official SKOS thesaurus integration",
+        "Precise field definitions with editorial notes",
+        "Priority-based manipulation codes"
+      ],
+      "format_changes": [
+        "Field separator: |",
+        "Total length: 150"
+      ],
+      "field_mappings": []
+    }
+  ],
+  "compatibility_matrix": {
+    "domain": "identification_marking",
+    "compatibility_map": {
+      "euring_1966->euring_1979": "partial",
+      "euring_1966->euring_2000": "lossy",
+      "euring_1966->euring_2020": "lossy",
+      "euring_1966->euring_2020_official": "incompatible",
+      "euring_1979->euring_1966": "lossy",
+      "euring_1979->euring_2000": "partial",
+      "euring_1979->euring_2020": "lossy",
+      "euring_1979->euring_2020_official": "incompatible",
+      "euring_2000->euring_1966": "lossy",
+      "euring_2000->euring_1979": "lossy",
+      "euring_2000->euring_2020": "partial",
+      "euring_2000->euring_2020_official": "lossy",
+      "euring_2020->euring_1966": "incompatible",
+      "euring_2020->euring_1979": "incompatible",
+      "euring_2020->euring_2000": "lossy",
+      "euring_2020->euring_2020_official": "partial",
+      "euring_2020_official->euring_1966": "incompatible",
+      "euring_2020_official->euring_1979": "incompatible",
+      "euring_2020_official->euring_2000": "incompatible",
+      "euring_2020_official->euring_2020": "partial"
+    }
+  },
+  "field_evolution_map": {
+    "verification_code": {
+      "field_name": "verification_code",
+      "semantic_domain": "identification_marking",
+      "versions_present": [
+        "euring_2020"
+      ],
+      "format_changes": {
+        "euring_2020": "Length: 1, Type: numeric, Pattern: ^[0-9]$"
+      },
+      "semantic_changes": {
+        "euring_2020": "Data verification status"
+      },
+      "data_type_changes": {
+        "euring_2020": "numeric"
+      },
+      "length_changes": {
+        "euring_2020": 1
+      },
+      "validation_changes": {
+        "euring_2020": []
+      }
+    },
+    "other_marks_information": {
+      "field_name": "other_marks_information",
+      "semantic_domain": "identification_marking",
+      "versions_present": [
+        "euring_2020_official"
+      ],
+      "format_changes": {
+        "euring_2020_official": "Length: 2, Type: alphanumeric, Pattern: ^[A-Z\\-]{2}$"
+      },
+      "semantic_changes": {
+        "euring_2020_official": "Additional marking information"
+      },
+      "data_type_changes": {
+        "euring_2020_official": "alphanumeric"
+      },
+      "length_changes": {
+        "euring_2020_official": 2
+      },
+      "validation_changes": {
+        "euring_2020_official": [
+          "format: len(value) == 2 and all(c.isalpha() or c == '-' for c in value)"
+        ]
+      }
+    },
+    "scheme_code": {
+      "field_name": "scheme_code",
+      "semantic_domain": "identification_marking",
+      "versions_present": [
+        "euring_2000"
+      ],
+      "format_changes": {
+        "euring_2000": "Length: 4, Type: alphanumeric, Pattern: ^[A-Z0-9]{4}$"
+      },
+      "semantic_changes": {
+        "euring_2000": "Ringing scheme identifier"
+      },
+      "data_type_changes": {
+        "euring_2000": "alphanumeric"
+      },
+      "length_changes": {
+        "euring_2000": 4
+      },
+      "validation_changes": {
+        "euring_2000": [
+          "format: len(value) == 4 and value.isalnum() and value.isupper()"
+        ]
+      }
+    },
+    "identification_number": {
+      "field_name": "identification_number",
+      "semantic_domain": "identification_marking",
+      "versions_present": [
+        "euring_2020_official"
+      ],
+      "format_changes": {
+        "euring_2020_official": "Length: 10, Type: alphanumeric, Pattern: ^[A-Z0-9\\.\\-]{10}$"
+      },
+      "semantic_changes": {
+        "euring_2020_official": "Unique ring identifier for the bird throughout its life"
+      },
+      "data_type_changes": {
+        "euring_2020_official": "alphanumeric"
+      },
+      "length_changes": {
+        "euring_2020_official": 10
+      },
+      "validation_changes": {
+        "euring_2020_official": [
+          "format: len(value) == 10 and all(c.isalnum() or c in '.-' for c in value)"
+        ]
+      }
+    },
+    "ring_suffix": {
+      "field_name": "ring_suffix",
+      "semantic_domain": "identification_marking",
+      "versions_present": [
+        "euring_2000"
+      ],
+      "format_changes": {
+        "euring_2000": "Length: 2, Type: alphanumeric, Pattern: ^[A-Z]{2}$"
+      },
+      "semantic_changes": {
+        "euring_2000": "Ring series suffix"
+      },
+      "data_type_changes": {
+        "euring_2000": "alphanumeric"
+      },
+      "length_changes": {
+        "euring_2000": 2
+      },
+      "validation_changes": {
+        "euring_2000": [
+          "format: len(value) == 2 and value.isalpha() and value.isupper()"
+        ]
+      }
+    },
+    "metal_ring_information": {
+      "field_name": "metal_ring_information",
+      "semantic_domain": "identification_marking",
+      "versions_present": [
+        "euring_2020_official"
+      ],
+      "format_changes": {
+        "euring_2020_official": "Length: 1, Type: numeric, Pattern: ^[0-7]$"
+      },
+      "semantic_changes": {
+        "euring_2020_official": "Status of metal ring on the bird"
+      },
+      "data_type_changes": {
+        "euring_2020_official": "numeric"
+      },
+      "length_changes": {
+        "euring_2020_official": 1
+      },
+      "validation_changes": {
+        "euring_2020_official": [
+          "values: value in ['0', '1', '2', '3', '4', '5', '6', '7']"
+        ]
+      }
+    },
+    "scheme_country": {
+      "field_name": "scheme_country",
+      "semantic_domain": "identification_marking",
+      "versions_present": [
+        "euring_1979"
+      ],
+      "format_changes": {
+        "euring_1979": "Length: 2, Type: alphanumeric, Pattern: ^[A-Z]{2}$"
+      },
+      "semantic_changes": {
+        "euring_1979": "Country code for ringing scheme"
+      },
+      "data_type_changes": {
+        "euring_1979": "alphanumeric"
+      },
+      "length_changes": {
+        "euring_1979": 2
+      },
+      "validation_changes": {
+        "euring_1979": [
+          "format: value.isalpha() and len(value) == 2 and value.isupper()"
+        ]
+      }
+    },
+    "other_marks_info": {
+      "field_name": "other_marks_info",
+      "semantic_domain": "identification_marking",
+      "versions_present": [
+        "euring_2020"
+      ],
+      "format_changes": {
+        "euring_2020": "Length: 5, Type: numeric, Pattern: ^[0-9]{5}$"
+      },
+      "semantic_changes": {
+        "euring_2020": "Additional marking information"
+      },
+      "data_type_changes": {
+        "euring_2020": "numeric"
+      },
+      "length_changes": {
+        "euring_2020": 5
+      },
+      "validation_changes": {
+        "euring_2020": [
+          "format: len(value) == 5 and value.isdigit()"
+        ]
+      }
+    },
+    "ringing_scheme": {
+      "field_name": "ringing_scheme",
+      "semantic_domain": "identification_marking",
+      "versions_present": [
+        "euring_2020_official"
+      ],
+      "format_changes": {
+        "euring_2020_official": "Length: 3, Type: alphanumeric, Pattern: ^[A-Z]{3}$"
+      },
+      "semantic_changes": {
+        "euring_2020_official": "Identification of ringing scheme or country"
+      },
+      "data_type_changes": {
+        "euring_2020_official": "alphanumeric"
+      },
+      "length_changes": {
+        "euring_2020_official": 3
+      },
+      "validation_changes": {
+        "euring_2020_official": [
+          "values: value in ['IAB', 'DEH']"
+        ]
+      }
+    },
+    "verification_of_the_metal_ring": {
+      "field_name": "verification_of_the_metal_ring",
+      "semantic_domain": "identification_marking",
+      "versions_present": [
+        "euring_2020_official"
+      ],
+      "format_changes": {
+        "euring_2020_official": "Length: 1, Type: numeric, Pattern: ^[0-9]$"
+      },
+      "semantic_changes": {
+        "euring_2020_official": "Whether ring was verified by scheme"
+      },
+      "data_type_changes": {
+        "euring_2020_official": "numeric"
+      },
+      "length_changes": {
+        "euring_2020_official": 1
+      },
+      "validation_changes": {
+        "euring_2020_official": [
+          "values: value in ['0', '1', '9']"
+        ]
+      }
+    },
+    "ring_prefix": {
+      "field_name": "ring_prefix",
+      "semantic_domain": "identification_marking",
+      "versions_present": [
+        "euring_2000"
+      ],
+      "format_changes": {
+        "euring_2000": "Length: 3, Type: alphanumeric, Pattern: ^[A-Z0-9]{3}$"
+      },
+      "semantic_changes": {
+        "euring_2000": "Ring series identifier"
+      },
+      "data_type_changes": {
+        "euring_2000": "alphanumeric"
+      },
+      "length_changes": {
+        "euring_2000": 3
+      },
+      "validation_changes": {
+        "euring_2000": [
+          "format: len(value) == 3 and value.isalnum() and value.isupper()"
+        ]
+      }
+    },
+    "metal_ring_info": {
+      "field_name": "metal_ring_info",
+      "semantic_domain": "identification_marking",
+      "versions_present": [
+        "euring_2020"
+      ],
+      "format_changes": {
+        "euring_2020": "Length: 1, Type: numeric, Pattern: ^[0-9]$"
+      },
+      "semantic_changes": {
+        "euring_2020": "Metal ring status or type"
+      },
+      "data_type_changes": {
+        "euring_2020": "numeric"
+      },
+      "length_changes": {
+        "euring_2020": 1
+      },
+      "validation_changes": {
+        "euring_2020": [
+          "range: value.isdigit() and len(value) == 1"
+        ]
+      }
+    },
+    "ring_number": {
+      "field_name": "ring_number",
+      "semantic_domain": "identification_marking",
+      "versions_present": [
+        "euring_1966",
+        "euring_1979",
+        "euring_2000",
+        "euring_2020"
+      ],
+      "format_changes": {
+        "euring_1966": "Length: 7, Type: alphanumeric, Pattern: ^[A-Z]{2}[0-9]{5}$",
+        "euring_1979": "Length: 7, Type: alphanumeric, Pattern: ^[A-Z][0-9]{6}$",
+        "euring_2000": "Length: 7, Type: numeric, Pattern: ^[0-9]{7}$",
+        "euring_2020": "Length: 8, Type: alphanumeric, Pattern: ^[A-Z]{3}[0-9]{5}$"
+      },
+      "semantic_changes": {
+        "euring_1966": "Unique ring identifier",
+        "euring_1979": "Unique ring identifier",
+        "euring_2000": "Unique ring identifier",
+        "euring_2020": "Unique ring identifier"
+      },
+      "data_type_changes": {
+        "euring_1966": "alphanumeric",
+        "euring_1979": "alphanumeric",
+        "euring_2000": "numeric",
+        "euring_2020": "alphanumeric"
+      },
+      "length_changes": {
+        "euring_1966": 7,
+        "euring_1979": 7,
+        "euring_2000": 7,
+        "euring_2020": 8
+      },
+      "validation_changes": {
+        "euring_1966": [
+          "format: len(value) == 7 and value[:2].isalpha() and value[2:].isdigit()"
+        ],
+        "euring_1979": [
+          "format: len(value) == 7 and value[0].isalpha() and value[1:7].isdigit()"
+        ],
+        "euring_2000": [
+          "format: len(value) == 7 and value.isdigit()"
+        ],
+        "euring_2020": [
+          "format: len(value) == 8 and value[:3].isalpha() and value[3:].isdigit() and value[:3].isupper()"
+        ]
+      }
+    },
+    "primary_identification_method": {
+      "field_name": "primary_identification_method",
+      "semantic_domain": "identification_marking",
+      "versions_present": [
+        "euring_2020_official"
+      ],
+      "format_changes": {
+        "euring_2020_official": "Length: 2, Type: alphanumeric, Pattern: ^[A-Z][0-9]$"
+      },
+      "semantic_changes": {
+        "euring_2020_official": "Primary identification marker type"
+      },
+      "data_type_changes": {
+        "euring_2020_official": "alphanumeric"
+      },
+      "length_changes": {
+        "euring_2020_official": 2
+      },
+      "validation_changes": {
+        "euring_2020_official": [
+          "format: len(value) == 2 and value[0].isalpha() and value[1].isdigit()"
+        ]
+      }
+    }
+  }
+}

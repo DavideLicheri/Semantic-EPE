@@ -1,0 +1,242 @@
+/* App Layout - EURING Classic Style */
+* {
+  font-family: Arial, Verdana, sans-serif;
+  font-size: 11pt;
+}
+
+body {
+  text-align: center;
+  margin: 0px;
+  border: 0px;
+  height: 100%;
+  width: 100%;
+  background-color: #FFFAF0;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #FFFAF0;
+}
+
+/* Header - EURING Style with EPE Logo */
+.app-header {
+  background-color: #663333;
+  color: #FFFFFF;
+  border-bottom: solid 1px #000000;
+  padding: 1.5rem 0;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.epe-logo {
+  height: 60px;
+  width: auto;
+  max-width: 120px;
+  object-fit: contain;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  /* If logo is dark on light background, use this filter to make it visible on dark header */
+  /* filter: brightness(0) invert(1); */
+  /* If logo has transparency or light colors, remove the filter */
+}
+
+/* Keep text logo as fallback */
+.epe-logo-text {
+  font-size: 36pt;
+  font-weight: bold;
+  color: #FFFFFF;
+  font-family: Arial, Verdana, sans-serif;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  border: 3px solid #FFFFFF;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  min-width: 80px;
+  text-align: center;
+}
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.header-content h1 {
+  font-size: 24pt;
+  font-weight: bold;
+  color: #FFFFFF;
+  margin-bottom: 0.5rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  font-family: Arial, Verdana, sans-serif;
+}
+
+.subtitle {
+  font-size: 14pt;
+  color: #FFFFFF;
+  font-weight: normal;
+  opacity: 0.9;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+/* Navigation - EURING Style */
+.tab-navigation {
+  display: flex;
+  justify-content: center;
+  background-color: #FFFFFF;
+  border-bottom: solid 1px #000000;
+  padding: 0;
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  padding: 12px 24px;
+  font-size: 12pt;
+  font-weight: normal;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+  color: #663333;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+.tab-button:hover {
+  background-color: #f5f5f5;
+  color: #441111;
+}
+
+.tab-button.active {
+  color: #FFFFFF;
+  background-color: #663333;
+  border-bottom-color: #441111;
+  font-weight: bold;
+}
+
+/* Main Content - EURING Style */
+.app-main {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  background-color: #FFFAF0;
+}
+
+/* Footer - EURING Style */
+.app-footer {
+  background-color: #663333;
+  color: #FFFFFF;
+  border-top: solid 1px #000000;
+  padding: 1rem;
+  text-align: center;
+  font-size: 10pt;
+}
+
+.app-footer a {
+  color: #FFFFFF;
+  text-decoration: none;
+}
+
+.app-footer a:hover {
+  text-decoration: underline;
+  color: #CCCCCC;
+}
+
+/* Common EURING Elements */
+.title {
+  color: #663333;
+  font-size: 16pt;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.error {
+  color: red;
+  font-size: 14pt;
+  font-weight: bold;
+}
+
+.success {
+  color: #006600;
+  font-size: 14pt;
+  font-weight: bold;
+}
+
+.table-center {
+  margin-left: auto;
+  margin-right: auto;
+  border-collapse: collapse;
+  border: solid 1px #000000;
+}
+
+.banner-row {
+  background-color: #663333;
+  color: #FFFFFF;
+  height: 25pt;
+  font-size: 14pt;
+  font-weight: bold;
+}
+
+.data-cell {
+  margin: 2px;
+  padding: 8px;
+  border: solid 1px #000000;
+  text-align: left;
+  background-color: #FFFFFF;
+}
+
+.header-cell {
+  background-color: #663333;
+  color: #FFFFFF;
+  padding: 8px;
+  border: solid 1px #000000;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .header-content h1 {
+    font-size: 20pt;
+  }
+  
+  .epe-logo {
+    height: 50px;
+    max-width: 100px;
+    padding: 3px;
+  }
+  
+  .epe-logo-text {
+    font-size: 28pt;
+    padding: 6px 12px;
+  }
+  
+  .app-main {
+    padding: 1rem;
+  }
+  
+  .tab-button {
+    padding: 10px 16px;
+    font-size: 11pt;
+  }
+}

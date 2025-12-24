@@ -1,0 +1,2873 @@
+{
+  "analysis_metadata": {
+    "generated_date": "2024-12-22",
+    "versions_analyzed": [
+      "euring_1966",
+      "euring_1979",
+      "euring_2000",
+      "euring_2020",
+      "euring_2020_official"
+    ],
+    "total_fields": 67,
+    "semantic_domains": [
+      "identification_marking",
+      "species",
+      "demographics",
+      "temporal",
+      "spatial",
+      "biometrics",
+      "methodology"
+    ]
+  },
+  "domain_evolutions": {
+    "identification_marking": {
+      "description": "Ring numbers, schemes, metal rings, other marks, and verification systems for unique bird identification throughout its life",
+      "evolution_entries": [
+        {
+          "version": "euring_1966",
+          "year": 1966,
+          "fields_added": [
+            "ring_number"
+          ],
+          "fields_removed": [],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator:  ",
+            "Total length: 55"
+          ],
+          "semantic_improvements": [],
+          "compatibility_notes": []
+        },
+        {
+          "version": "euring_1979",
+          "year": 1979,
+          "fields_added": [
+            "scheme_country"
+          ],
+          "fields_removed": [],
+          "fields_modified": [
+            "ring_number"
+          ],
+          "format_changes": [
+            "Fixed-length format",
+            "Total length: 78"
+          ],
+          "semantic_improvements": [
+            "Fixed-length format standardization",
+            "Encoded coordinate system",
+            "Additional measurement fields"
+          ],
+          "compatibility_notes": [
+            "Fields added: scheme_country",
+            "Fields modified: ring_number"
+          ]
+        },
+        {
+          "version": "euring_2000",
+          "year": 2000,
+          "fields_added": [
+            "ring_prefix",
+            "ring_suffix",
+            "scheme_code"
+          ],
+          "fields_removed": [
+            "scheme_country"
+          ],
+          "fields_modified": [
+            "ring_number"
+          ],
+          "format_changes": [
+            "Fixed-length format",
+            "Total length: 96"
+          ],
+          "semantic_improvements": [
+            "Complex alphanumeric encoding",
+            "Enhanced location accuracy"
+          ],
+          "compatibility_notes": [
+            "Fields removed: scheme_country",
+            "Fields added: ring_prefix, ring_suffix, scheme_code",
+            "Fields modified: ring_number"
+          ]
+        },
+        {
+          "version": "euring_2020",
+          "year": 2020,
+          "fields_added": [
+            "metal_ring_info",
+            "verification_code",
+            "other_marks_info"
+          ],
+          "fields_removed": [
+            "ring_prefix",
+            "ring_suffix",
+            "scheme_code"
+          ],
+          "fields_modified": [
+            "ring_number"
+          ],
+          "format_changes": [
+            "Field separator: |",
+            "Total length: 102"
+          ],
+          "semantic_improvements": [
+            "Decimal coordinate format",
+            "Pipe-delimited structure",
+            "Enhanced biometric measurements"
+          ],
+          "compatibility_notes": [
+            "Fields removed: ring_prefix, ring_suffix, scheme_code",
+            "Fields added: metal_ring_info, verification_code, other_marks_info",
+            "Fields modified: ring_number"
+          ]
+        },
+        {
+          "version": "euring_2020_official",
+          "year": 2020,
+          "fields_added": [
+            "other_marks_information",
+            "identification_number",
+            "verification_of_the_metal_ring",
+            "metal_ring_information",
+            "primary_identification_method",
+            "ringing_scheme"
+          ],
+          "fields_removed": [
+            "metal_ring_info",
+            "verification_code",
+            "ring_number",
+            "other_marks_info"
+          ],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator: |",
+            "Total length: 150"
+          ],
+          "semantic_improvements": [
+            "Official SKOS thesaurus integration",
+            "Precise field definitions with editorial notes",
+            "Priority-based manipulation codes"
+          ],
+          "compatibility_notes": [
+            "Fields removed: metal_ring_info, verification_code, ring_number, other_marks_info",
+            "Fields added: other_marks_information, identification_number, verification_of_the_metal_ring, metal_ring_information, primary_identification_method, ringing_scheme"
+          ]
+        }
+      ],
+      "field_evolution_map": {
+        "verification_code": {
+          "field_name": "verification_code",
+          "semantic_domain": "identification_marking",
+          "versions_present": [
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_2020": "Length: 1, Type: numeric, Pattern: ^[0-9]$"
+          },
+          "semantic_changes": {
+            "euring_2020": "Data verification status"
+          },
+          "data_type_changes": {
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_2020": 1
+          },
+          "validation_changes": {
+            "euring_2020": []
+          }
+        },
+        "other_marks_information": {
+          "field_name": "other_marks_information",
+          "semantic_domain": "identification_marking",
+          "versions_present": [
+            "euring_2020_official"
+          ],
+          "format_changes": {
+            "euring_2020_official": "Length: 2, Type: alphanumeric, Pattern: ^[A-Z\\-]{2}$"
+          },
+          "semantic_changes": {
+            "euring_2020_official": "Additional marking information"
+          },
+          "data_type_changes": {
+            "euring_2020_official": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_2020_official": 2
+          },
+          "validation_changes": {
+            "euring_2020_official": [
+              "format: len(value) == 2 and all(c.isalpha() or c == '-' for c in value)"
+            ]
+          }
+        },
+        "scheme_code": {
+          "field_name": "scheme_code",
+          "semantic_domain": "identification_marking",
+          "versions_present": [
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_2000": "Length: 4, Type: alphanumeric, Pattern: ^[A-Z0-9]{4}$"
+          },
+          "semantic_changes": {
+            "euring_2000": "Ringing scheme identifier"
+          },
+          "data_type_changes": {
+            "euring_2000": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_2000": 4
+          },
+          "validation_changes": {
+            "euring_2000": [
+              "format: len(value) == 4 and value.isalnum() and value.isupper()"
+            ]
+          }
+        },
+        "identification_number": {
+          "field_name": "identification_number",
+          "semantic_domain": "identification_marking",
+          "versions_present": [
+            "euring_2020_official"
+          ],
+          "format_changes": {
+            "euring_2020_official": "Length: 10, Type: alphanumeric, Pattern: ^[A-Z0-9\\.\\-]{10}$"
+          },
+          "semantic_changes": {
+            "euring_2020_official": "Unique ring identifier for the bird throughout its life"
+          },
+          "data_type_changes": {
+            "euring_2020_official": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_2020_official": 10
+          },
+          "validation_changes": {
+            "euring_2020_official": [
+              "format: len(value) == 10 and all(c.isalnum() or c in '.-' for c in value)"
+            ]
+          }
+        },
+        "ring_suffix": {
+          "field_name": "ring_suffix",
+          "semantic_domain": "identification_marking",
+          "versions_present": [
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_2000": "Length: 2, Type: alphanumeric, Pattern: ^[A-Z]{2}$"
+          },
+          "semantic_changes": {
+            "euring_2000": "Ring series suffix"
+          },
+          "data_type_changes": {
+            "euring_2000": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_2000": 2
+          },
+          "validation_changes": {
+            "euring_2000": [
+              "format: len(value) == 2 and value.isalpha() and value.isupper()"
+            ]
+          }
+        },
+        "metal_ring_information": {
+          "field_name": "metal_ring_information",
+          "semantic_domain": "identification_marking",
+          "versions_present": [
+            "euring_2020_official"
+          ],
+          "format_changes": {
+            "euring_2020_official": "Length: 1, Type: numeric, Pattern: ^[0-7]$"
+          },
+          "semantic_changes": {
+            "euring_2020_official": "Status of metal ring on the bird"
+          },
+          "data_type_changes": {
+            "euring_2020_official": "numeric"
+          },
+          "length_changes": {
+            "euring_2020_official": 1
+          },
+          "validation_changes": {
+            "euring_2020_official": [
+              "values: value in ['0', '1', '2', '3', '4', '5', '6', '7']"
+            ]
+          }
+        },
+        "scheme_country": {
+          "field_name": "scheme_country",
+          "semantic_domain": "identification_marking",
+          "versions_present": [
+            "euring_1979"
+          ],
+          "format_changes": {
+            "euring_1979": "Length: 2, Type: alphanumeric, Pattern: ^[A-Z]{2}$"
+          },
+          "semantic_changes": {
+            "euring_1979": "Country code for ringing scheme"
+          },
+          "data_type_changes": {
+            "euring_1979": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_1979": 2
+          },
+          "validation_changes": {
+            "euring_1979": [
+              "format: value.isalpha() and len(value) == 2 and value.isupper()"
+            ]
+          }
+        },
+        "other_marks_info": {
+          "field_name": "other_marks_info",
+          "semantic_domain": "identification_marking",
+          "versions_present": [
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_2020": "Length: 5, Type: numeric, Pattern: ^[0-9]{5}$"
+          },
+          "semantic_changes": {
+            "euring_2020": "Additional marking information"
+          },
+          "data_type_changes": {
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_2020": 5
+          },
+          "validation_changes": {
+            "euring_2020": [
+              "format: len(value) == 5 and value.isdigit()"
+            ]
+          }
+        },
+        "ringing_scheme": {
+          "field_name": "ringing_scheme",
+          "semantic_domain": "identification_marking",
+          "versions_present": [
+            "euring_2020_official"
+          ],
+          "format_changes": {
+            "euring_2020_official": "Length: 3, Type: alphanumeric, Pattern: ^[A-Z]{3}$"
+          },
+          "semantic_changes": {
+            "euring_2020_official": "Identification of ringing scheme or country"
+          },
+          "data_type_changes": {
+            "euring_2020_official": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_2020_official": 3
+          },
+          "validation_changes": {
+            "euring_2020_official": [
+              "values: value in ['IAB', 'DEH']"
+            ]
+          }
+        },
+        "verification_of_the_metal_ring": {
+          "field_name": "verification_of_the_metal_ring",
+          "semantic_domain": "identification_marking",
+          "versions_present": [
+            "euring_2020_official"
+          ],
+          "format_changes": {
+            "euring_2020_official": "Length: 1, Type: numeric, Pattern: ^[0-9]$"
+          },
+          "semantic_changes": {
+            "euring_2020_official": "Whether ring was verified by scheme"
+          },
+          "data_type_changes": {
+            "euring_2020_official": "numeric"
+          },
+          "length_changes": {
+            "euring_2020_official": 1
+          },
+          "validation_changes": {
+            "euring_2020_official": [
+              "values: value in ['0', '1', '9']"
+            ]
+          }
+        },
+        "ring_prefix": {
+          "field_name": "ring_prefix",
+          "semantic_domain": "identification_marking",
+          "versions_present": [
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_2000": "Length: 3, Type: alphanumeric, Pattern: ^[A-Z0-9]{3}$"
+          },
+          "semantic_changes": {
+            "euring_2000": "Ring series identifier"
+          },
+          "data_type_changes": {
+            "euring_2000": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_2000": 3
+          },
+          "validation_changes": {
+            "euring_2000": [
+              "format: len(value) == 3 and value.isalnum() and value.isupper()"
+            ]
+          }
+        },
+        "metal_ring_info": {
+          "field_name": "metal_ring_info",
+          "semantic_domain": "identification_marking",
+          "versions_present": [
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_2020": "Length: 1, Type: numeric, Pattern: ^[0-9]$"
+          },
+          "semantic_changes": {
+            "euring_2020": "Metal ring status or type"
+          },
+          "data_type_changes": {
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_2020": 1
+          },
+          "validation_changes": {
+            "euring_2020": [
+              "range: value.isdigit() and len(value) == 1"
+            ]
+          }
+        },
+        "ring_number": {
+          "field_name": "ring_number",
+          "semantic_domain": "identification_marking",
+          "versions_present": [
+            "euring_1966",
+            "euring_1979",
+            "euring_2000",
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_1966": "Length: 7, Type: alphanumeric, Pattern: ^[A-Z]{2}[0-9]{5}$",
+            "euring_1979": "Length: 7, Type: alphanumeric, Pattern: ^[A-Z][0-9]{6}$",
+            "euring_2000": "Length: 7, Type: numeric, Pattern: ^[0-9]{7}$",
+            "euring_2020": "Length: 8, Type: alphanumeric, Pattern: ^[A-Z]{3}[0-9]{5}$"
+          },
+          "semantic_changes": {
+            "euring_1966": "Unique ring identifier",
+            "euring_1979": "Unique ring identifier",
+            "euring_2000": "Unique ring identifier",
+            "euring_2020": "Unique ring identifier"
+          },
+          "data_type_changes": {
+            "euring_1966": "alphanumeric",
+            "euring_1979": "alphanumeric",
+            "euring_2000": "numeric",
+            "euring_2020": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_1966": 7,
+            "euring_1979": 7,
+            "euring_2000": 7,
+            "euring_2020": 8
+          },
+          "validation_changes": {
+            "euring_1966": [
+              "format: len(value) == 7 and value[:2].isalpha() and value[2:].isdigit()"
+            ],
+            "euring_1979": [
+              "format: len(value) == 7 and value[0].isalpha() and value[1:7].isdigit()"
+            ],
+            "euring_2000": [
+              "format: len(value) == 7 and value.isdigit()"
+            ],
+            "euring_2020": [
+              "format: len(value) == 8 and value[:3].isalpha() and value[3:].isdigit() and value[:3].isupper()"
+            ]
+          }
+        },
+        "primary_identification_method": {
+          "field_name": "primary_identification_method",
+          "semantic_domain": "identification_marking",
+          "versions_present": [
+            "euring_2020_official"
+          ],
+          "format_changes": {
+            "euring_2020_official": "Length: 2, Type: alphanumeric, Pattern: ^[A-Z][0-9]$"
+          },
+          "semantic_changes": {
+            "euring_2020_official": "Primary identification marker type"
+          },
+          "data_type_changes": {
+            "euring_2020_official": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_2020_official": 2
+          },
+          "validation_changes": {
+            "euring_2020_official": [
+              "format: len(value) == 2 and value[0].isalpha() and value[1].isdigit()"
+            ]
+          }
+        }
+      },
+      "compatibility_matrix": {
+        "euring_1966_euring_1979": "LOSSY",
+        "euring_1966_euring_2000": "INCOMPATIBLE",
+        "euring_1966_euring_2020": "INCOMPATIBLE",
+        "euring_1966_euring_2020_official": "INCOMPATIBLE",
+        "euring_1979_euring_1966": "LOSSY",
+        "euring_1979_euring_2000": "INCOMPATIBLE",
+        "euring_1979_euring_2020": "INCOMPATIBLE",
+        "euring_1979_euring_2020_official": "INCOMPATIBLE",
+        "euring_2000_euring_1966": "INCOMPATIBLE",
+        "euring_2000_euring_1979": "INCOMPATIBLE",
+        "euring_2000_euring_2020": "INCOMPATIBLE",
+        "euring_2000_euring_2020_official": "INCOMPATIBLE",
+        "euring_2020_euring_1966": "INCOMPATIBLE",
+        "euring_2020_euring_1979": "INCOMPATIBLE",
+        "euring_2020_euring_2000": "INCOMPATIBLE",
+        "euring_2020_euring_2020_official": "INCOMPATIBLE",
+        "euring_2020_official_euring_1966": "INCOMPATIBLE",
+        "euring_2020_official_euring_1979": "INCOMPATIBLE",
+        "euring_2020_official_euring_2000": "INCOMPATIBLE",
+        "euring_2020_official_euring_2020": "INCOMPATIBLE"
+      }
+    },
+    "species": {
+      "description": "Species codes, taxonomy systems, and identification verification by both finders and ringing schemes",
+      "evolution_entries": [
+        {
+          "version": "euring_1966",
+          "year": 1966,
+          "fields_added": [
+            "species_code"
+          ],
+          "fields_removed": [],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator:  ",
+            "Total length: 55"
+          ],
+          "semantic_improvements": [],
+          "compatibility_notes": []
+        },
+        {
+          "version": "euring_1979",
+          "year": 1979,
+          "fields_added": [
+            "additional_code_1"
+          ],
+          "fields_removed": [],
+          "fields_modified": [
+            "species_code"
+          ],
+          "format_changes": [
+            "Fixed-length format",
+            "Total length: 78"
+          ],
+          "semantic_improvements": [
+            "Fixed-length format standardization",
+            "Encoded coordinate system",
+            "Additional measurement fields"
+          ],
+          "compatibility_notes": [
+            "Fields added: additional_code_1",
+            "Fields modified: species_code"
+          ]
+        },
+        {
+          "version": "euring_2000",
+          "year": 2000,
+          "fields_added": [
+            "additional_codes"
+          ],
+          "fields_removed": [
+            "additional_code_1",
+            "species_code"
+          ],
+          "fields_modified": [],
+          "format_changes": [
+            "Fixed-length format",
+            "Total length: 96"
+          ],
+          "semantic_improvements": [
+            "Complex alphanumeric encoding",
+            "Enhanced location accuracy"
+          ],
+          "compatibility_notes": [
+            "Fields removed: additional_code_1, species_code",
+            "Fields added: additional_codes"
+          ]
+        },
+        {
+          "version": "euring_2020",
+          "year": 2020,
+          "fields_added": [
+            "species_code"
+          ],
+          "fields_removed": [
+            "additional_codes"
+          ],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator: |",
+            "Total length: 102"
+          ],
+          "semantic_improvements": [
+            "Decimal coordinate format",
+            "Pipe-delimited structure",
+            "Enhanced biometric measurements"
+          ],
+          "compatibility_notes": [
+            "Fields removed: additional_codes",
+            "Fields added: species_code"
+          ]
+        },
+        {
+          "version": "euring_2020_official",
+          "year": 2020,
+          "fields_added": [
+            "species_as_mentioned_by_finder",
+            "species_as_mentioned_by_scheme"
+          ],
+          "fields_removed": [
+            "species_code"
+          ],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator: |",
+            "Total length: 150"
+          ],
+          "semantic_improvements": [
+            "Official SKOS thesaurus integration",
+            "Precise field definitions with editorial notes",
+            "Priority-based manipulation codes"
+          ],
+          "compatibility_notes": [
+            "Fields removed: species_code",
+            "Fields added: species_as_mentioned_by_finder, species_as_mentioned_by_scheme"
+          ]
+        }
+      ],
+      "field_evolution_map": {
+        "species_code": {
+          "field_name": "species_code",
+          "semantic_domain": "species",
+          "versions_present": [
+            "euring_1966",
+            "euring_1979",
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_1966": "Length: 4, Type: numeric",
+            "euring_1979": "Length: 5, Type: numeric, Pattern: ^[0-9]{5}$",
+            "euring_2020": "Length: 5, Type: numeric, Pattern: ^[0-9]{5}$"
+          },
+          "semantic_changes": {
+            "euring_1966": "EURING species code",
+            "euring_1979": "EURING species code",
+            "euring_2020": "EURING species code"
+          },
+          "data_type_changes": {
+            "euring_1966": "numeric",
+            "euring_1979": "numeric",
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_1966": 4,
+            "euring_1979": 5,
+            "euring_2020": 5
+          },
+          "validation_changes": {
+            "euring_1966": [
+              "format: value.isdigit() and len(value) == 4"
+            ],
+            "euring_1979": [
+              "format: value.isdigit() and len(value) == 5"
+            ],
+            "euring_2020": [
+              "format: value.isdigit() and len(value) == 5"
+            ]
+          }
+        },
+        "species_as_mentioned_by_scheme": {
+          "field_name": "species_as_mentioned_by_scheme",
+          "semantic_domain": "species",
+          "versions_present": [
+            "euring_2020_official"
+          ],
+          "format_changes": {
+            "euring_2020_official": "Length: 5, Type: numeric, Pattern: ^[0-9]{5}$"
+          },
+          "semantic_changes": {
+            "euring_2020_official": "Verified species identification by scheme"
+          },
+          "data_type_changes": {
+            "euring_2020_official": "numeric"
+          },
+          "length_changes": {
+            "euring_2020_official": 5
+          },
+          "validation_changes": {
+            "euring_2020_official": [
+              "format: len(value) == 5 and value.isdigit()"
+            ]
+          }
+        },
+        "species_as_mentioned_by_finder": {
+          "field_name": "species_as_mentioned_by_finder",
+          "semantic_domain": "species",
+          "versions_present": [
+            "euring_2020_official"
+          ],
+          "format_changes": {
+            "euring_2020_official": "Length: 5, Type: numeric, Pattern: ^[0-9]{5}$"
+          },
+          "semantic_changes": {
+            "euring_2020_official": "Species identification by person who found/handled bird"
+          },
+          "data_type_changes": {
+            "euring_2020_official": "numeric"
+          },
+          "length_changes": {
+            "euring_2020_official": 5
+          },
+          "validation_changes": {
+            "euring_2020_official": [
+              "format: len(value) == 5 and value.isdigit()"
+            ]
+          }
+        },
+        "additional_codes": {
+          "field_name": "additional_codes",
+          "semantic_domain": "species",
+          "versions_present": [
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_2000": "Length: 12, Type: numeric, Pattern: ^[0-9]{12}$"
+          },
+          "semantic_changes": {
+            "euring_2000": "Additional species or measurement codes"
+          },
+          "data_type_changes": {
+            "euring_2000": "numeric"
+          },
+          "length_changes": {
+            "euring_2000": 12
+          },
+          "validation_changes": {
+            "euring_2000": []
+          }
+        },
+        "additional_code_1": {
+          "field_name": "additional_code_1",
+          "semantic_domain": "species",
+          "versions_present": [
+            "euring_1979"
+          ],
+          "format_changes": {
+            "euring_1979": "Length: 3, Type: numeric, Pattern: ^[0-9]{3}$"
+          },
+          "semantic_changes": {
+            "euring_1979": "Additional species or location code"
+          },
+          "data_type_changes": {
+            "euring_1979": "numeric"
+          },
+          "length_changes": {
+            "euring_1979": 3
+          },
+          "validation_changes": {
+            "euring_1979": []
+          }
+        }
+      },
+      "compatibility_matrix": {
+        "euring_1966_euring_1979": "LOSSY",
+        "euring_1966_euring_2000": "INCOMPATIBLE",
+        "euring_1966_euring_2020": "FULL",
+        "euring_1966_euring_2020_official": "INCOMPATIBLE",
+        "euring_1979_euring_1966": "LOSSY",
+        "euring_1979_euring_2000": "INCOMPATIBLE",
+        "euring_1979_euring_2020": "LOSSY",
+        "euring_1979_euring_2020_official": "INCOMPATIBLE",
+        "euring_2000_euring_1966": "INCOMPATIBLE",
+        "euring_2000_euring_1979": "INCOMPATIBLE",
+        "euring_2000_euring_2020": "INCOMPATIBLE",
+        "euring_2000_euring_2020_official": "INCOMPATIBLE",
+        "euring_2020_euring_1966": "FULL",
+        "euring_2020_euring_1979": "LOSSY",
+        "euring_2020_euring_2000": "INCOMPATIBLE",
+        "euring_2020_euring_2020_official": "INCOMPATIBLE",
+        "euring_2020_official_euring_1966": "INCOMPATIBLE",
+        "euring_2020_official_euring_1979": "INCOMPATIBLE",
+        "euring_2020_official_euring_2000": "INCOMPATIBLE",
+        "euring_2020_official_euring_2020": "INCOMPATIBLE"
+      }
+    },
+    "demographics": {
+      "description": "Age and sex classification systems based on plumage characteristics and morphological features",
+      "evolution_entries": [
+        {
+          "version": "euring_1966",
+          "year": 1966,
+          "fields_added": [
+            "age_code"
+          ],
+          "fields_removed": [],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator:  ",
+            "Total length: 55"
+          ],
+          "semantic_improvements": [],
+          "compatibility_notes": []
+        },
+        {
+          "version": "euring_1979",
+          "year": 1979,
+          "fields_added": [
+            "sex_code"
+          ],
+          "fields_removed": [],
+          "fields_modified": [
+            "age_code"
+          ],
+          "format_changes": [
+            "Fixed-length format",
+            "Total length: 78"
+          ],
+          "semantic_improvements": [
+            "Fixed-length format standardization",
+            "Encoded coordinate system",
+            "Additional measurement fields"
+          ],
+          "compatibility_notes": [
+            "Fields added: sex_code",
+            "Fields modified: age_code"
+          ]
+        },
+        {
+          "version": "euring_2000",
+          "year": 2000,
+          "fields_added": [],
+          "fields_removed": [
+            "sex_code"
+          ],
+          "fields_modified": [],
+          "format_changes": [
+            "Fixed-length format",
+            "Total length: 96"
+          ],
+          "semantic_improvements": [
+            "Complex alphanumeric encoding",
+            "Enhanced location accuracy"
+          ],
+          "compatibility_notes": [
+            "Fields removed: sex_code"
+          ]
+        },
+        {
+          "version": "euring_2020",
+          "year": 2020,
+          "fields_added": [
+            "sex_code"
+          ],
+          "fields_removed": [],
+          "fields_modified": [
+            "age_code"
+          ],
+          "format_changes": [
+            "Field separator: |",
+            "Total length: 102"
+          ],
+          "semantic_improvements": [
+            "Decimal coordinate format",
+            "Pipe-delimited structure",
+            "Enhanced biometric measurements"
+          ],
+          "compatibility_notes": [
+            "Fields added: sex_code",
+            "Fields modified: age_code"
+          ]
+        },
+        {
+          "version": "euring_2020_official",
+          "year": 2020,
+          "fields_added": [
+            "sex_mentioned_by_the_person",
+            "age_mentioned_by_the_person",
+            "sex_concluded_by_the_scheme"
+          ],
+          "fields_removed": [
+            "age_code",
+            "sex_code"
+          ],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator: |",
+            "Total length: 150"
+          ],
+          "semantic_improvements": [
+            "Official SKOS thesaurus integration",
+            "Precise field definitions with editorial notes",
+            "Priority-based manipulation codes"
+          ],
+          "compatibility_notes": [
+            "Fields removed: age_code, sex_code",
+            "Fields added: sex_mentioned_by_the_person, age_mentioned_by_the_person, sex_concluded_by_the_scheme"
+          ]
+        }
+      ],
+      "field_evolution_map": {
+        "age_code": {
+          "field_name": "age_code",
+          "semantic_domain": "demographics",
+          "versions_present": [
+            "euring_1966",
+            "euring_1979",
+            "euring_2000",
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_1966": "Length: 1, Type: numeric",
+            "euring_1979": "Length: 1, Type: numeric, Pattern: ^[0-9]$",
+            "euring_2000": "Length: 1, Type: numeric, Pattern: ^[0-9]$",
+            "euring_2020": "Length: 1, Type: numeric, Pattern: ^[1-9]$"
+          },
+          "semantic_changes": {
+            "euring_1966": "Bird age category",
+            "euring_1979": "Bird age category",
+            "euring_2000": "Bird age category",
+            "euring_2020": "Bird age category"
+          },
+          "data_type_changes": {
+            "euring_1966": "numeric",
+            "euring_1979": "numeric",
+            "euring_2000": "numeric",
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_1966": 1,
+            "euring_1979": 1,
+            "euring_2000": 1,
+            "euring_2020": 1
+          },
+          "validation_changes": {
+            "euring_1966": [
+              "range: value in ['1', '2', '3', '4', '5', '6', '7', '8', '9']"
+            ],
+            "euring_1979": [
+              "range: value.isdigit() and len(value) == 1"
+            ],
+            "euring_2000": [
+              "range: value.isdigit() and len(value) == 1"
+            ],
+            "euring_2020": [
+              "range: value.isdigit() and len(value) == 1 and int(value) >= 1"
+            ]
+          }
+        },
+        "sex_code": {
+          "field_name": "sex_code",
+          "semantic_domain": "demographics",
+          "versions_present": [
+            "euring_1979",
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_1979": "Length: 1, Type: numeric, Pattern: ^[0-9]$",
+            "euring_2020": "Length: 1, Type: numeric, Pattern: ^[1-9]$"
+          },
+          "semantic_changes": {
+            "euring_1979": "Bird sex category",
+            "euring_2020": "Bird sex category"
+          },
+          "data_type_changes": {
+            "euring_1979": "numeric",
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_1979": 1,
+            "euring_2020": 1
+          },
+          "validation_changes": {
+            "euring_1979": [
+              "range: value.isdigit() and len(value) == 1"
+            ],
+            "euring_2020": [
+              "range: value.isdigit() and len(value) == 1 and int(value) >= 1"
+            ]
+          }
+        },
+        "sex_mentioned_by_the_person": {
+          "field_name": "sex_mentioned_by_the_person",
+          "semantic_domain": "demographics",
+          "versions_present": [
+            "euring_2020_official"
+          ],
+          "format_changes": {
+            "euring_2020_official": "Length: 1, Type: alphanumeric, Pattern: ^[MFU]$"
+          },
+          "semantic_changes": {
+            "euring_2020_official": "Sex identification by handler"
+          },
+          "data_type_changes": {
+            "euring_2020_official": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_2020_official": 1
+          },
+          "validation_changes": {
+            "euring_2020_official": [
+              "values: value in ['M', 'F', 'U']"
+            ]
+          }
+        },
+        "sex_concluded_by_the_scheme": {
+          "field_name": "sex_concluded_by_the_scheme",
+          "semantic_domain": "demographics",
+          "versions_present": [
+            "euring_2020_official"
+          ],
+          "format_changes": {
+            "euring_2020_official": "Length: 1, Type: alphanumeric, Pattern: ^[MFU]$"
+          },
+          "semantic_changes": {
+            "euring_2020_official": "Verified sex identification by scheme"
+          },
+          "data_type_changes": {
+            "euring_2020_official": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_2020_official": 1
+          },
+          "validation_changes": {
+            "euring_2020_official": [
+              "values: value in ['M', 'F', 'U']"
+            ]
+          }
+        },
+        "age_mentioned_by_the_person": {
+          "field_name": "age_mentioned_by_the_person",
+          "semantic_domain": "demographics",
+          "versions_present": [
+            "euring_2020_official"
+          ],
+          "format_changes": {
+            "euring_2020_official": "Length: 1, Type: alphanumeric, Pattern: ^[0-9A-H]$"
+          },
+          "semantic_changes": {
+            "euring_2020_official": "Age classification based on plumage state"
+          },
+          "data_type_changes": {
+            "euring_2020_official": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_2020_official": 1
+          },
+          "validation_changes": {
+            "euring_2020_official": [
+              "values: value in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']"
+            ]
+          }
+        }
+      },
+      "compatibility_matrix": {
+        "euring_1966_euring_1979": "LOSSY",
+        "euring_1966_euring_2000": "FULL",
+        "euring_1966_euring_2020": "LOSSY",
+        "euring_1966_euring_2020_official": "INCOMPATIBLE",
+        "euring_1979_euring_1966": "LOSSY",
+        "euring_1979_euring_2000": "LOSSY",
+        "euring_1979_euring_2020": "FULL",
+        "euring_1979_euring_2020_official": "INCOMPATIBLE",
+        "euring_2000_euring_1966": "FULL",
+        "euring_2000_euring_1979": "LOSSY",
+        "euring_2000_euring_2020": "LOSSY",
+        "euring_2000_euring_2020_official": "INCOMPATIBLE",
+        "euring_2020_euring_1966": "LOSSY",
+        "euring_2020_euring_1979": "FULL",
+        "euring_2020_euring_2000": "LOSSY",
+        "euring_2020_euring_2020_official": "INCOMPATIBLE",
+        "euring_2020_official_euring_1966": "INCOMPATIBLE",
+        "euring_2020_official_euring_1979": "INCOMPATIBLE",
+        "euring_2020_official_euring_2000": "INCOMPATIBLE",
+        "euring_2020_official_euring_2020": "INCOMPATIBLE"
+      }
+    },
+    "temporal": {
+      "description": "Date and time formats for recording capture, observation, and handling events",
+      "evolution_entries": [
+        {
+          "version": "euring_1966",
+          "year": 1966,
+          "fields_added": [
+            "date_code"
+          ],
+          "fields_removed": [],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator:  ",
+            "Total length: 55"
+          ],
+          "semantic_improvements": [],
+          "compatibility_notes": []
+        },
+        {
+          "version": "euring_1979",
+          "year": 1979,
+          "fields_added": [
+            "date_first",
+            "date_current"
+          ],
+          "fields_removed": [
+            "date_code"
+          ],
+          "fields_modified": [],
+          "format_changes": [
+            "Fixed-length format",
+            "Total length: 78"
+          ],
+          "semantic_improvements": [
+            "Fixed-length format standardization",
+            "Encoded coordinate system",
+            "Additional measurement fields"
+          ],
+          "compatibility_notes": [
+            "Fields removed: date_code",
+            "Fields added: date_first, date_current"
+          ]
+        },
+        {
+          "version": "euring_2000",
+          "year": 2000,
+          "fields_added": [],
+          "fields_removed": [],
+          "fields_modified": [
+            "date_first",
+            "date_current"
+          ],
+          "format_changes": [
+            "Fixed-length format",
+            "Total length: 96"
+          ],
+          "semantic_improvements": [
+            "Complex alphanumeric encoding",
+            "Enhanced location accuracy"
+          ],
+          "compatibility_notes": [
+            "Fields modified: date_first, date_current"
+          ]
+        },
+        {
+          "version": "euring_2020",
+          "year": 2020,
+          "fields_added": [
+            "time_code",
+            "date_code"
+          ],
+          "fields_removed": [
+            "date_first",
+            "date_current"
+          ],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator: |",
+            "Total length: 102"
+          ],
+          "semantic_improvements": [
+            "Decimal coordinate format",
+            "Pipe-delimited structure",
+            "Enhanced biometric measurements"
+          ],
+          "compatibility_notes": [
+            "Fields removed: date_first, date_current",
+            "Fields added: time_code, date_code"
+          ]
+        },
+        {
+          "version": "euring_2020_official",
+          "year": 2020,
+          "fields_added": [],
+          "fields_removed": [
+            "time_code",
+            "date_code"
+          ],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator: |",
+            "Total length: 150"
+          ],
+          "semantic_improvements": [
+            "Official SKOS thesaurus integration",
+            "Precise field definitions with editorial notes",
+            "Priority-based manipulation codes"
+          ],
+          "compatibility_notes": [
+            "Fields removed: time_code, date_code"
+          ]
+        }
+      ],
+      "field_evolution_map": {
+        "time_code": {
+          "field_name": "time_code",
+          "semantic_domain": "temporal",
+          "versions_present": [
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_2020": "Length: 4, Type: numeric, Pattern: ^[0-9]{4}$"
+          },
+          "semantic_changes": {
+            "euring_2020": "Capture/observation time"
+          },
+          "data_type_changes": {
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_2020": 4
+          },
+          "validation_changes": {
+            "euring_2020": [
+              "format: len(value) == 4 and value.isdigit() and int(value[:2]) <= 23 and int(value[2:]) <= 59"
+            ]
+          }
+        },
+        "date_code": {
+          "field_name": "date_code",
+          "semantic_domain": "temporal",
+          "versions_present": [
+            "euring_1966",
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_1966": "Length: 8, Type: numeric, Pattern: ^[0-3][0-9][0-1][0-9][0-9]{4}$",
+            "euring_2020": "Length: 8, Type: numeric, Pattern: ^[0-9]{8}$"
+          },
+          "semantic_changes": {
+            "euring_1966": "Capture date",
+            "euring_2020": "Capture/observation date"
+          },
+          "data_type_changes": {
+            "euring_1966": "numeric",
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_1966": 8,
+            "euring_2020": 8
+          },
+          "validation_changes": {
+            "euring_1966": [
+              "format: len(value) == 8 and value.isdigit() and 1 <= int(value[:2]) <= 31 and 1 <= int(value[2:4]) <= 12"
+            ],
+            "euring_2020": [
+              "format: len(value) == 8 and value.isdigit() and 1 <= int(value[6:8]) <= 31 and 1 <= int(value[4:6]) <= 12 and int(value[:4]) >= 1900"
+            ]
+          }
+        },
+        "date_first": {
+          "field_name": "date_first",
+          "semantic_domain": "temporal",
+          "versions_present": [
+            "euring_1979",
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_1979": "Length: 6, Type: numeric, Pattern: ^[0-9]{6}$",
+            "euring_2000": "Length: 5, Type: numeric, Pattern: ^[0-9]{5}$"
+          },
+          "semantic_changes": {
+            "euring_1979": "Date of first capture/observation",
+            "euring_2000": "Date of first capture/observation"
+          },
+          "data_type_changes": {
+            "euring_1979": "numeric",
+            "euring_2000": "numeric"
+          },
+          "length_changes": {
+            "euring_1979": 6,
+            "euring_2000": 5
+          },
+          "validation_changes": {
+            "euring_1979": [
+              "format: len(value) == 6 and value.isdigit() and 1 <= int(value[:2]) <= 31 and 1 <= int(value[2:4]) <= 12"
+            ],
+            "euring_2000": [
+              "format: len(value) == 5 and value.isdigit()"
+            ]
+          }
+        },
+        "date_current": {
+          "field_name": "date_current",
+          "semantic_domain": "temporal",
+          "versions_present": [
+            "euring_1979",
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_1979": "Length: 6, Type: numeric, Pattern: ^[0-9]{6}$",
+            "euring_2000": "Length: 5, Type: numeric, Pattern: ^[0-9]{5}$"
+          },
+          "semantic_changes": {
+            "euring_1979": "Date of current capture/observation",
+            "euring_2000": "Date of current capture/observation"
+          },
+          "data_type_changes": {
+            "euring_1979": "numeric",
+            "euring_2000": "numeric"
+          },
+          "length_changes": {
+            "euring_1979": 6,
+            "euring_2000": 5
+          },
+          "validation_changes": {
+            "euring_1979": [
+              "format: len(value) == 6 and value.isdigit() and 1 <= int(value[:2]) <= 31 and 1 <= int(value[2:4]) <= 12"
+            ],
+            "euring_2000": [
+              "format: len(value) == 5 and value.isdigit()"
+            ]
+          }
+        }
+      },
+      "compatibility_matrix": {
+        "euring_1966_euring_1979": "INCOMPATIBLE",
+        "euring_1966_euring_2000": "INCOMPATIBLE",
+        "euring_1966_euring_2020": "LOSSY",
+        "euring_1966_euring_2020_official": "INCOMPATIBLE",
+        "euring_1979_euring_1966": "INCOMPATIBLE",
+        "euring_1979_euring_2000": "FULL",
+        "euring_1979_euring_2020": "INCOMPATIBLE",
+        "euring_1979_euring_2020_official": "INCOMPATIBLE",
+        "euring_2000_euring_1966": "INCOMPATIBLE",
+        "euring_2000_euring_1979": "FULL",
+        "euring_2000_euring_2020": "INCOMPATIBLE",
+        "euring_2000_euring_2020_official": "INCOMPATIBLE",
+        "euring_2020_euring_1966": "LOSSY",
+        "euring_2020_euring_1979": "INCOMPATIBLE",
+        "euring_2020_euring_2000": "INCOMPATIBLE",
+        "euring_2020_euring_2020_official": "INCOMPATIBLE",
+        "euring_2020_official_euring_1966": "INCOMPATIBLE",
+        "euring_2020_official_euring_1979": "INCOMPATIBLE",
+        "euring_2020_official_euring_2000": "INCOMPATIBLE",
+        "euring_2020_official_euring_2020": "INCOMPATIBLE"
+      }
+    },
+    "spatial": {
+      "description": "Geographic coordinates, location accuracy, and spatial encoding systems for recording bird locations",
+      "evolution_entries": [
+        {
+          "version": "euring_1966",
+          "year": 1966,
+          "fields_added": [
+            "longitude",
+            "latitude"
+          ],
+          "fields_removed": [],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator:  ",
+            "Total length: 55"
+          ],
+          "semantic_improvements": [],
+          "compatibility_notes": []
+        },
+        {
+          "version": "euring_1979",
+          "year": 1979,
+          "fields_added": [
+            "longitude_encoded",
+            "latitude_encoded",
+            "accuracy_code"
+          ],
+          "fields_removed": [
+            "longitude",
+            "latitude"
+          ],
+          "fields_modified": [],
+          "format_changes": [
+            "Fixed-length format",
+            "Total length: 78"
+          ],
+          "semantic_improvements": [
+            "Fixed-length format standardization",
+            "Encoded coordinate system",
+            "Additional measurement fields"
+          ],
+          "compatibility_notes": [
+            "Fields removed: longitude, latitude",
+            "Fields added: longitude_encoded, latitude_encoded, accuracy_code"
+          ]
+        },
+        {
+          "version": "euring_2000",
+          "year": 2000,
+          "fields_added": [
+            "longitude_value",
+            "latitude_sign",
+            "latitude_value",
+            "location_code",
+            "longitude_sign",
+            "region_code"
+          ],
+          "fields_removed": [
+            "longitude_encoded",
+            "latitude_encoded"
+          ],
+          "fields_modified": [
+            "accuracy_code"
+          ],
+          "format_changes": [
+            "Fixed-length format",
+            "Total length: 96"
+          ],
+          "semantic_improvements": [
+            "Complex alphanumeric encoding",
+            "Enhanced location accuracy"
+          ],
+          "compatibility_notes": [
+            "Fields removed: longitude_encoded, latitude_encoded",
+            "Fields added: longitude_value, latitude_sign, latitude_value, location_code, longitude_sign, region_code",
+            "Fields modified: accuracy_code"
+          ]
+        },
+        {
+          "version": "euring_2020",
+          "year": 2020,
+          "fields_added": [
+            "longitude_decimal",
+            "latitude_decimal"
+          ],
+          "fields_removed": [
+            "longitude_value",
+            "latitude_sign",
+            "latitude_value",
+            "location_code",
+            "longitude_sign",
+            "region_code"
+          ],
+          "fields_modified": [
+            "accuracy_code"
+          ],
+          "format_changes": [
+            "Field separator: |",
+            "Total length: 102"
+          ],
+          "semantic_improvements": [
+            "Decimal coordinate format",
+            "Pipe-delimited structure",
+            "Enhanced biometric measurements"
+          ],
+          "compatibility_notes": [
+            "Fields removed: longitude_value, latitude_sign, latitude_value, location_code, longitude_sign, region_code",
+            "Fields added: longitude_decimal, latitude_decimal",
+            "Fields modified: accuracy_code"
+          ]
+        },
+        {
+          "version": "euring_2020_official",
+          "year": 2020,
+          "fields_added": [],
+          "fields_removed": [
+            "longitude_decimal",
+            "latitude_decimal",
+            "accuracy_code"
+          ],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator: |",
+            "Total length: 150"
+          ],
+          "semantic_improvements": [
+            "Official SKOS thesaurus integration",
+            "Precise field definitions with editorial notes",
+            "Priority-based manipulation codes"
+          ],
+          "compatibility_notes": [
+            "Fields removed: longitude_decimal, latitude_decimal, accuracy_code"
+          ]
+        }
+      ],
+      "field_evolution_map": {
+        "longitude_decimal": {
+          "field_name": "longitude_decimal",
+          "semantic_domain": "spatial",
+          "versions_present": [
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_2020": "Length: 9, Type: decimal, Pattern: ^[+-]?[0-9]+\\.[0-9]+$"
+          },
+          "semantic_changes": {
+            "euring_2020": "Geographic longitude coordinate"
+          },
+          "data_type_changes": {
+            "euring_2020": "decimal"
+          },
+          "length_changes": {
+            "euring_2020": 9
+          },
+          "validation_changes": {
+            "euring_2020": [
+              "range: -180 <= float(value) <= 180"
+            ]
+          }
+        },
+        "latitude": {
+          "field_name": "latitude",
+          "semantic_domain": "spatial",
+          "versions_present": [
+            "euring_1966"
+          ],
+          "format_changes": {
+            "euring_1966": "Length: 5, Type: coordinate, Pattern: ^[0-9]{4}[NS]$"
+          },
+          "semantic_changes": {
+            "euring_1966": "Geographic latitude"
+          },
+          "data_type_changes": {
+            "euring_1966": "coordinate"
+          },
+          "length_changes": {
+            "euring_1966": 5
+          },
+          "validation_changes": {
+            "euring_1966": [
+              "format: len(value) == 5 and value[:-1].isdigit() and value[-1] in ['N', 'S'] and 0 <= int(value[:2]) <= 90 and 0 <= int(value[2:4]) <= 59"
+            ]
+          }
+        },
+        "longitude_value": {
+          "field_name": "longitude_value",
+          "semantic_domain": "spatial",
+          "versions_present": [
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_2000": "Length: 6, Type: numeric, Pattern: ^[0-9]{6}$"
+          },
+          "semantic_changes": {
+            "euring_2000": "Geographic longitude coordinate"
+          },
+          "data_type_changes": {
+            "euring_2000": "numeric"
+          },
+          "length_changes": {
+            "euring_2000": 6
+          },
+          "validation_changes": {
+            "euring_2000": [
+              "format: len(value) == 6 and value.isdigit()"
+            ]
+          }
+        },
+        "latitude_decimal": {
+          "field_name": "latitude_decimal",
+          "semantic_domain": "spatial",
+          "versions_present": [
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_2020": "Length: 8, Type: decimal, Pattern: ^[+-]?[0-9]+\\.[0-9]+$"
+          },
+          "semantic_changes": {
+            "euring_2020": "Geographic latitude coordinate"
+          },
+          "data_type_changes": {
+            "euring_2020": "decimal"
+          },
+          "length_changes": {
+            "euring_2020": 8
+          },
+          "validation_changes": {
+            "euring_2020": [
+              "range: -90 <= float(value) <= 90"
+            ]
+          }
+        },
+        "accuracy_code": {
+          "field_name": "accuracy_code",
+          "semantic_domain": "spatial",
+          "versions_present": [
+            "euring_1979",
+            "euring_2000",
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_1979": "Length: 2, Type: numeric, Pattern: ^[0-9]{2}$",
+            "euring_2000": "Length: 2, Type: alphanumeric, Pattern: ^[A-Z0-9]{2}$",
+            "euring_2020": "Length: 2, Type: numeric, Pattern: ^[0-9]{2}$"
+          },
+          "semantic_changes": {
+            "euring_1979": "Accuracy of location coordinates",
+            "euring_2000": "Accuracy of location coordinates",
+            "euring_2020": "Accuracy of location coordinates"
+          },
+          "data_type_changes": {
+            "euring_1979": "numeric",
+            "euring_2000": "alphanumeric",
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_1979": 2,
+            "euring_2000": 2,
+            "euring_2020": 2
+          },
+          "validation_changes": {
+            "euring_1979": [],
+            "euring_2000": [],
+            "euring_2020": [
+              "format: len(value) == 2 and value.isdigit()"
+            ]
+          }
+        },
+        "latitude_value": {
+          "field_name": "latitude_value",
+          "semantic_domain": "spatial",
+          "versions_present": [
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_2000": "Length: 6, Type: numeric, Pattern: ^[0-9]{6}$"
+          },
+          "semantic_changes": {
+            "euring_2000": "Geographic latitude coordinate"
+          },
+          "data_type_changes": {
+            "euring_2000": "numeric"
+          },
+          "length_changes": {
+            "euring_2000": 6
+          },
+          "validation_changes": {
+            "euring_2000": [
+              "format: len(value) == 6 and value.isdigit()"
+            ]
+          }
+        },
+        "latitude_encoded": {
+          "field_name": "latitude_encoded",
+          "semantic_domain": "spatial",
+          "versions_present": [
+            "euring_1979"
+          ],
+          "format_changes": {
+            "euring_1979": "Length: 6, Type: encoded, Pattern: ^[0-9]{6}$"
+          },
+          "semantic_changes": {
+            "euring_1979": "Geographic latitude"
+          },
+          "data_type_changes": {
+            "euring_1979": "encoded"
+          },
+          "length_changes": {
+            "euring_1979": 6
+          },
+          "validation_changes": {
+            "euring_1979": [
+              "format: len(value) == 6 and value[:-1].isdigit() and value[-1] in ['N', 'S'] and 0 <= int(value[:2]) <= 90 and 0 <= int(value[2:4]) <= 59"
+            ]
+          }
+        },
+        "location_code": {
+          "field_name": "location_code",
+          "semantic_domain": "spatial",
+          "versions_present": [
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_2000": "Length: 5, Type: alphanumeric, Pattern: ^[A-Z0-9]{5}$"
+          },
+          "semantic_changes": {
+            "euring_2000": "Geographic location identifier"
+          },
+          "data_type_changes": {
+            "euring_2000": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_2000": 5
+          },
+          "validation_changes": {
+            "euring_2000": []
+          }
+        },
+        "region_code": {
+          "field_name": "region_code",
+          "semantic_domain": "spatial",
+          "versions_present": [
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_2000": "Length: 4, Type: alphanumeric, Pattern: ^[A-Z0-9]{4}$"
+          },
+          "semantic_changes": {
+            "euring_2000": "Geographic region identifier"
+          },
+          "data_type_changes": {
+            "euring_2000": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_2000": 4
+          },
+          "validation_changes": {
+            "euring_2000": []
+          }
+        },
+        "longitude": {
+          "field_name": "longitude",
+          "semantic_domain": "spatial",
+          "versions_present": [
+            "euring_1966"
+          ],
+          "format_changes": {
+            "euring_1966": "Length: 6, Type: coordinate, Pattern: ^[0-9]{5}[EW]$"
+          },
+          "semantic_changes": {
+            "euring_1966": "Geographic longitude"
+          },
+          "data_type_changes": {
+            "euring_1966": "coordinate"
+          },
+          "length_changes": {
+            "euring_1966": 6
+          },
+          "validation_changes": {
+            "euring_1966": [
+              "format: len(value) == 6 and value[:-1].isdigit() and value[-1] in ['E', 'W'] and 0 <= int(value[:3]) <= 180 and 0 <= int(value[3:5]) <= 59"
+            ]
+          }
+        },
+        "longitude_encoded": {
+          "field_name": "longitude_encoded",
+          "semantic_domain": "spatial",
+          "versions_present": [
+            "euring_1979"
+          ],
+          "format_changes": {
+            "euring_1979": "Length: 6, Type: encoded, Pattern: ^[A-Z0-9]{6}$"
+          },
+          "semantic_changes": {
+            "euring_1979": "Geographic longitude"
+          },
+          "data_type_changes": {
+            "euring_1979": "encoded"
+          },
+          "length_changes": {
+            "euring_1979": 6
+          },
+          "validation_changes": {
+            "euring_1979": [
+              "format: len(value) == 6 and value[:-1].isdigit() and value[-1] in ['E', 'W'] and 0 <= int(value[:3]) <= 180 and 0 <= int(value[3:5]) <= 59"
+            ]
+          }
+        },
+        "longitude_sign": {
+          "field_name": "longitude_sign",
+          "semantic_domain": "spatial",
+          "versions_present": [
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_2000": "Length: 1, Type: string, Pattern: ^[+-]$"
+          },
+          "semantic_changes": {
+            "euring_2000": "Longitude hemisphere indicator"
+          },
+          "data_type_changes": {
+            "euring_2000": "string"
+          },
+          "length_changes": {
+            "euring_2000": 1
+          },
+          "validation_changes": {
+            "euring_2000": [
+              "exact: value in ['+', '-']"
+            ]
+          }
+        },
+        "latitude_sign": {
+          "field_name": "latitude_sign",
+          "semantic_domain": "spatial",
+          "versions_present": [
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_2000": "Length: 1, Type: string, Pattern: ^[+-]$"
+          },
+          "semantic_changes": {
+            "euring_2000": "Latitude hemisphere indicator"
+          },
+          "data_type_changes": {
+            "euring_2000": "string"
+          },
+          "length_changes": {
+            "euring_2000": 1
+          },
+          "validation_changes": {
+            "euring_2000": [
+              "exact: value in ['+', '-']"
+            ]
+          }
+        }
+      },
+      "compatibility_matrix": {
+        "euring_1966_euring_1979": "INCOMPATIBLE",
+        "euring_1966_euring_2000": "INCOMPATIBLE",
+        "euring_1966_euring_2020": "INCOMPATIBLE",
+        "euring_1966_euring_2020_official": "INCOMPATIBLE",
+        "euring_1979_euring_1966": "INCOMPATIBLE",
+        "euring_1979_euring_2000": "INCOMPATIBLE",
+        "euring_1979_euring_2020": "INCOMPATIBLE",
+        "euring_1979_euring_2020_official": "INCOMPATIBLE",
+        "euring_2000_euring_1966": "INCOMPATIBLE",
+        "euring_2000_euring_1979": "INCOMPATIBLE",
+        "euring_2000_euring_2020": "INCOMPATIBLE",
+        "euring_2000_euring_2020_official": "INCOMPATIBLE",
+        "euring_2020_euring_1966": "INCOMPATIBLE",
+        "euring_2020_euring_1979": "INCOMPATIBLE",
+        "euring_2020_euring_2000": "INCOMPATIBLE",
+        "euring_2020_euring_2020_official": "INCOMPATIBLE",
+        "euring_2020_official_euring_1966": "INCOMPATIBLE",
+        "euring_2020_official_euring_1979": "INCOMPATIBLE",
+        "euring_2020_official_euring_2000": "INCOMPATIBLE",
+        "euring_2020_official_euring_2020": "INCOMPATIBLE"
+      }
+    },
+    "biometrics": {
+      "description": "Physical measurements including wing length, weight, bill dimensions, tarsus, fat scores, muscle condition, and moult status",
+      "evolution_entries": [
+        {
+          "version": "euring_1966",
+          "year": 1966,
+          "fields_added": [
+            "wing_length",
+            "weight",
+            "bill_length"
+          ],
+          "fields_removed": [],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator:  ",
+            "Total length: 55"
+          ],
+          "semantic_improvements": [],
+          "compatibility_notes": []
+        },
+        {
+          "version": "euring_1979",
+          "year": 1979,
+          "fields_added": [
+            "additional_code_2",
+            "tarsus_length"
+          ],
+          "fields_removed": [],
+          "fields_modified": [
+            "wing_length",
+            "weight",
+            "bill_length"
+          ],
+          "format_changes": [
+            "Fixed-length format",
+            "Total length: 78"
+          ],
+          "semantic_improvements": [
+            "Fixed-length format standardization",
+            "Encoded coordinate system",
+            "Additional measurement fields"
+          ],
+          "compatibility_notes": [
+            "Fields added: additional_code_2, tarsus_length",
+            "Fields modified: wing_length, weight, bill_length"
+          ]
+        },
+        {
+          "version": "euring_2000",
+          "year": 2000,
+          "fields_added": [
+            "measurement_2",
+            "measurement_4",
+            "measurement_1",
+            "measurement_3"
+          ],
+          "fields_removed": [
+            "bill_length",
+            "wing_length",
+            "weight",
+            "additional_code_2",
+            "tarsus_length"
+          ],
+          "fields_modified": [],
+          "format_changes": [
+            "Fixed-length format",
+            "Total length: 96"
+          ],
+          "semantic_improvements": [
+            "Complex alphanumeric encoding",
+            "Enhanced location accuracy"
+          ],
+          "compatibility_notes": [
+            "Fields removed: bill_length, wing_length, weight, additional_code_2, tarsus_length",
+            "Fields added: measurement_2, measurement_4, measurement_1, measurement_3"
+          ]
+        },
+        {
+          "version": "euring_2020",
+          "year": 2020,
+          "fields_added": [
+            "bill_length",
+            "wing_length",
+            "muscle_score",
+            "fat_score",
+            "moult_code",
+            "weight",
+            "tarsus_length"
+          ],
+          "fields_removed": [
+            "measurement_2",
+            "measurement_4",
+            "measurement_1",
+            "measurement_3"
+          ],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator: |",
+            "Total length: 102"
+          ],
+          "semantic_improvements": [
+            "Decimal coordinate format",
+            "Pipe-delimited structure",
+            "Enhanced biometric measurements"
+          ],
+          "compatibility_notes": [
+            "Fields removed: measurement_2, measurement_4, measurement_1, measurement_3",
+            "Fields added: bill_length, wing_length, muscle_score, fat_score, moult_code, weight, tarsus_length"
+          ]
+        },
+        {
+          "version": "euring_2020_official",
+          "year": 2020,
+          "fields_added": [],
+          "fields_removed": [
+            "fat_score",
+            "moult_code",
+            "muscle_score",
+            "bill_length",
+            "weight",
+            "wing_length",
+            "tarsus_length"
+          ],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator: |",
+            "Total length: 150"
+          ],
+          "semantic_improvements": [
+            "Official SKOS thesaurus integration",
+            "Precise field definitions with editorial notes",
+            "Priority-based manipulation codes"
+          ],
+          "compatibility_notes": [
+            "Fields removed: fat_score, moult_code, muscle_score, bill_length, weight, wing_length, tarsus_length"
+          ]
+        }
+      ],
+      "field_evolution_map": {
+        "wing_length": {
+          "field_name": "wing_length",
+          "semantic_domain": "biometrics",
+          "versions_present": [
+            "euring_1966",
+            "euring_1979",
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_1966": "Length: 3, Type: numeric",
+            "euring_1979": "Length: 3, Type: numeric, Pattern: ^[0-9]{3}$",
+            "euring_2020": "Length: 5, Type: decimal, Pattern: ^[0-9]+\\.[0-9]$"
+          },
+          "semantic_changes": {
+            "euring_1966": "Biometric measurement - wing length",
+            "euring_1979": "Biometric measurement - wing length",
+            "euring_2020": "Biometric measurement - wing length"
+          },
+          "data_type_changes": {
+            "euring_1966": "numeric",
+            "euring_1979": "numeric",
+            "euring_2020": "decimal"
+          },
+          "length_changes": {
+            "euring_1966": 3,
+            "euring_1979": 3,
+            "euring_2020": 5
+          },
+          "validation_changes": {
+            "euring_1966": [
+              "format: len(value) == 3 and value.isdigit()"
+            ],
+            "euring_1979": [
+              "format: len(value) == 3 and value.isdigit()"
+            ],
+            "euring_2020": [
+              "range: float(value) > 0 and float(value) < 1000"
+            ]
+          }
+        },
+        "measurement_4": {
+          "field_name": "measurement_4",
+          "semantic_domain": "biometrics",
+          "versions_present": [
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_2000": "Length: 3, Type: numeric, Pattern: ^[0-9]{3}$"
+          },
+          "semantic_changes": {
+            "euring_2000": "Biometric measurement 4"
+          },
+          "data_type_changes": {
+            "euring_2000": "numeric"
+          },
+          "length_changes": {
+            "euring_2000": 3
+          },
+          "validation_changes": {
+            "euring_2000": []
+          }
+        },
+        "fat_score": {
+          "field_name": "fat_score",
+          "semantic_domain": "biometrics",
+          "versions_present": [
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_2020": "Length: 1, Type: numeric, Pattern: ^[0-9]$"
+          },
+          "semantic_changes": {
+            "euring_2020": "Body fat condition score"
+          },
+          "data_type_changes": {
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_2020": 1
+          },
+          "validation_changes": {
+            "euring_2020": []
+          }
+        },
+        "muscle_score": {
+          "field_name": "muscle_score",
+          "semantic_domain": "biometrics",
+          "versions_present": [
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_2020": "Length: 1, Type: numeric, Pattern: ^[0-9]$"
+          },
+          "semantic_changes": {
+            "euring_2020": "Body muscle condition score"
+          },
+          "data_type_changes": {
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_2020": 1
+          },
+          "validation_changes": {
+            "euring_2020": []
+          }
+        },
+        "weight": {
+          "field_name": "weight",
+          "semantic_domain": "biometrics",
+          "versions_present": [
+            "euring_1966",
+            "euring_1979",
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_1966": "Length: 4, Type: numeric",
+            "euring_1979": "Length: 4, Type: numeric, Pattern: ^[0-9]{4}$",
+            "euring_2020": "Length: 4, Type: decimal, Pattern: ^[0-9]+\\.[0-9]$"
+          },
+          "semantic_changes": {
+            "euring_1966": "Biometric measurement - body weight",
+            "euring_1979": "Biometric measurement - body weight",
+            "euring_2020": "Biometric measurement - body weight"
+          },
+          "data_type_changes": {
+            "euring_1966": "numeric",
+            "euring_1979": "numeric",
+            "euring_2020": "decimal"
+          },
+          "length_changes": {
+            "euring_1966": 4,
+            "euring_1979": 4,
+            "euring_2020": 4
+          },
+          "validation_changes": {
+            "euring_1966": [
+              "format: len(value) == 4 and value.isdigit()"
+            ],
+            "euring_1979": [
+              "format: len(value) == 4 and value.isdigit()"
+            ],
+            "euring_2020": [
+              "range: float(value) > 0 and float(value) < 10000"
+            ]
+          }
+        },
+        "additional_code_2": {
+          "field_name": "additional_code_2",
+          "semantic_domain": "biometrics",
+          "versions_present": [
+            "euring_1979"
+          ],
+          "format_changes": {
+            "euring_1979": "Length: 3, Type: numeric, Pattern: ^[0-9]{3}$"
+          },
+          "semantic_changes": {
+            "euring_1979": "Additional measurement or status code"
+          },
+          "data_type_changes": {
+            "euring_1979": "numeric"
+          },
+          "length_changes": {
+            "euring_1979": 3
+          },
+          "validation_changes": {
+            "euring_1979": []
+          }
+        },
+        "measurement_3": {
+          "field_name": "measurement_3",
+          "semantic_domain": "biometrics",
+          "versions_present": [
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_2000": "Length: 3, Type: numeric, Pattern: ^[0-9]{3}$"
+          },
+          "semantic_changes": {
+            "euring_2000": "Biometric measurement 3"
+          },
+          "data_type_changes": {
+            "euring_2000": "numeric"
+          },
+          "length_changes": {
+            "euring_2000": 3
+          },
+          "validation_changes": {
+            "euring_2000": []
+          }
+        },
+        "bill_length": {
+          "field_name": "bill_length",
+          "semantic_domain": "biometrics",
+          "versions_present": [
+            "euring_1966",
+            "euring_1979",
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_1966": "Length: 4, Type: numeric",
+            "euring_1979": "Length: 4, Type: numeric, Pattern: ^[0-9]{4}$",
+            "euring_2020": "Length: 1, Type: numeric, Pattern: ^[0-9]$"
+          },
+          "semantic_changes": {
+            "euring_1966": "Biometric measurement - bill length",
+            "euring_1979": "Biometric measurement - bill length",
+            "euring_2020": "Biometric measurement - bill length"
+          },
+          "data_type_changes": {
+            "euring_1966": "numeric",
+            "euring_1979": "numeric",
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_1966": 4,
+            "euring_1979": 4,
+            "euring_2020": 1
+          },
+          "validation_changes": {
+            "euring_1966": [
+              "format: len(value) == 4 and value.isdigit()"
+            ],
+            "euring_1979": [
+              "format: len(value) == 4 and value.isdigit()"
+            ],
+            "euring_2020": []
+          }
+        },
+        "tarsus_length": {
+          "field_name": "tarsus_length",
+          "semantic_domain": "biometrics",
+          "versions_present": [
+            "euring_1979",
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_1979": "Length: 2, Type: numeric, Pattern: ^[0-9]{2}$",
+            "euring_2020": "Length: 1, Type: numeric, Pattern: ^[0-9]$"
+          },
+          "semantic_changes": {
+            "euring_1979": "Biometric measurement - tarsus length",
+            "euring_2020": "Biometric measurement - tarsus length"
+          },
+          "data_type_changes": {
+            "euring_1979": "numeric",
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_1979": 2,
+            "euring_2020": 1
+          },
+          "validation_changes": {
+            "euring_1979": [],
+            "euring_2020": []
+          }
+        },
+        "measurement_2": {
+          "field_name": "measurement_2",
+          "semantic_domain": "biometrics",
+          "versions_present": [
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_2000": "Length: 3, Type: numeric, Pattern: ^[0-9]{3}$"
+          },
+          "semantic_changes": {
+            "euring_2000": "Biometric measurement 2"
+          },
+          "data_type_changes": {
+            "euring_2000": "numeric"
+          },
+          "length_changes": {
+            "euring_2000": 3
+          },
+          "validation_changes": {
+            "euring_2000": []
+          }
+        },
+        "moult_code": {
+          "field_name": "moult_code",
+          "semantic_domain": "biometrics",
+          "versions_present": [
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_2020": "Length: 1, Type: numeric, Pattern: ^[0-9]$"
+          },
+          "semantic_changes": {
+            "euring_2020": "Feather moult condition"
+          },
+          "data_type_changes": {
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_2020": 1
+          },
+          "validation_changes": {
+            "euring_2020": []
+          }
+        },
+        "measurement_1": {
+          "field_name": "measurement_1",
+          "semantic_domain": "biometrics",
+          "versions_present": [
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_2000": "Length: 4, Type: numeric, Pattern: ^[0-9]{4}$"
+          },
+          "semantic_changes": {
+            "euring_2000": "Biometric measurement 1"
+          },
+          "data_type_changes": {
+            "euring_2000": "numeric"
+          },
+          "length_changes": {
+            "euring_2000": 4
+          },
+          "validation_changes": {
+            "euring_2000": []
+          }
+        }
+      },
+      "compatibility_matrix": {
+        "euring_1966_euring_1979": "LOSSY",
+        "euring_1966_euring_2000": "INCOMPATIBLE",
+        "euring_1966_euring_2020": "INCOMPATIBLE",
+        "euring_1966_euring_2020_official": "INCOMPATIBLE",
+        "euring_1979_euring_1966": "LOSSY",
+        "euring_1979_euring_2000": "INCOMPATIBLE",
+        "euring_1979_euring_2020": "LOSSY",
+        "euring_1979_euring_2020_official": "INCOMPATIBLE",
+        "euring_2000_euring_1966": "INCOMPATIBLE",
+        "euring_2000_euring_1979": "INCOMPATIBLE",
+        "euring_2000_euring_2020": "INCOMPATIBLE",
+        "euring_2000_euring_2020_official": "INCOMPATIBLE",
+        "euring_2020_euring_1966": "INCOMPATIBLE",
+        "euring_2020_euring_1979": "LOSSY",
+        "euring_2020_euring_2000": "INCOMPATIBLE",
+        "euring_2020_euring_2020_official": "INCOMPATIBLE",
+        "euring_2020_official_euring_1966": "INCOMPATIBLE",
+        "euring_2020_official_euring_1979": "INCOMPATIBLE",
+        "euring_2020_official_euring_2000": "INCOMPATIBLE",
+        "euring_2020_official_euring_2020": "INCOMPATIBLE"
+      }
+    },
+    "methodology": {
+      "description": "Capture methods, handling conditions, manipulation status, lures used, and procedural information",
+      "evolution_entries": [
+        {
+          "version": "euring_1966",
+          "year": 1966,
+          "fields_added": [
+            "condition_code",
+            "method_code"
+          ],
+          "fields_removed": [],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator:  ",
+            "Total length: 55"
+          ],
+          "semantic_improvements": [],
+          "compatibility_notes": []
+        },
+        {
+          "version": "euring_1979",
+          "year": 1979,
+          "fields_added": [
+            "empty_fields_1",
+            "empty_fields_3",
+            "status_code",
+            "empty_fields_2",
+            "padding"
+          ],
+          "fields_removed": [],
+          "fields_modified": [
+            "condition_code",
+            "method_code"
+          ],
+          "format_changes": [
+            "Fixed-length format",
+            "Total length: 78"
+          ],
+          "semantic_improvements": [
+            "Fixed-length format standardization",
+            "Encoded coordinate system",
+            "Additional measurement fields"
+          ],
+          "compatibility_notes": [
+            "Fields added: empty_fields_1, empty_fields_3, status_code, empty_fields_2, padding",
+            "Fields modified: condition_code, method_code"
+          ]
+        },
+        {
+          "version": "euring_2000",
+          "year": 2000,
+          "fields_added": [
+            "separator",
+            "final_code"
+          ],
+          "fields_removed": [
+            "padding",
+            "empty_fields_3",
+            "condition_code",
+            "method_code"
+          ],
+          "fields_modified": [
+            "empty_fields_1",
+            "empty_fields_2",
+            "status_code"
+          ],
+          "format_changes": [
+            "Fixed-length format",
+            "Total length: 96"
+          ],
+          "semantic_improvements": [
+            "Complex alphanumeric encoding",
+            "Enhanced location accuracy"
+          ],
+          "compatibility_notes": [
+            "Fields removed: padding, empty_fields_3, condition_code, method_code",
+            "Fields added: separator, final_code",
+            "Fields modified: empty_fields_1, empty_fields_2, status_code"
+          ]
+        },
+        {
+          "version": "euring_2020",
+          "year": 2020,
+          "fields_added": [
+            "condition_code",
+            "status_info",
+            "method_code"
+          ],
+          "fields_removed": [
+            "empty_fields_1",
+            "status_code",
+            "separator",
+            "final_code",
+            "empty_fields_2"
+          ],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator: |",
+            "Total length: 102"
+          ],
+          "semantic_improvements": [
+            "Decimal coordinate format",
+            "Pipe-delimited structure",
+            "Enhanced biometric measurements"
+          ],
+          "compatibility_notes": [
+            "Fields removed: empty_fields_1, status_code, separator, final_code, empty_fields_2",
+            "Fields added: condition_code, status_info, method_code"
+          ]
+        },
+        {
+          "version": "euring_2020_official",
+          "year": 2020,
+          "fields_added": [
+            "moved_before",
+            "catching_lures",
+            "manipulated",
+            "catching_method"
+          ],
+          "fields_removed": [
+            "condition_code",
+            "status_info",
+            "method_code"
+          ],
+          "fields_modified": [],
+          "format_changes": [
+            "Field separator: |",
+            "Total length: 150"
+          ],
+          "semantic_improvements": [
+            "Official SKOS thesaurus integration",
+            "Precise field definitions with editorial notes",
+            "Priority-based manipulation codes"
+          ],
+          "compatibility_notes": [
+            "Fields removed: condition_code, status_info, method_code",
+            "Fields added: moved_before, catching_lures, manipulated, catching_method"
+          ]
+        }
+      ],
+      "field_evolution_map": {
+        "catching_lures": {
+          "field_name": "catching_lures",
+          "semantic_domain": "methodology",
+          "versions_present": [
+            "euring_2020_official"
+          ],
+          "format_changes": {
+            "euring_2020_official": "Length: 1, Type: alphanumeric, Pattern: ^[A-Z\\-]$"
+          },
+          "semantic_changes": {
+            "euring_2020_official": "Type of lure used in capture"
+          },
+          "data_type_changes": {
+            "euring_2020_official": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_2020_official": 1
+          },
+          "validation_changes": {
+            "euring_2020_official": [
+              "values: value in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'M', 'N', 'U', '-']"
+            ]
+          }
+        },
+        "condition_code": {
+          "field_name": "condition_code",
+          "semantic_domain": "methodology",
+          "versions_present": [
+            "euring_1966",
+            "euring_1979",
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_1966": "Length: 2, Type: numeric",
+            "euring_1979": "Length: 2, Type: numeric, Pattern: ^[0-9]{2}$",
+            "euring_2020": "Length: 1, Type: numeric, Pattern: ^[0-9]$"
+          },
+          "semantic_changes": {
+            "euring_1966": "Bird condition at capture",
+            "euring_1979": "Bird condition at capture",
+            "euring_2020": "Bird condition at capture"
+          },
+          "data_type_changes": {
+            "euring_1966": "numeric",
+            "euring_1979": "numeric",
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_1966": 2,
+            "euring_1979": 2,
+            "euring_2020": 1
+          },
+          "validation_changes": {
+            "euring_1966": [
+              "format: len(value) == 2 and value.isdigit()"
+            ],
+            "euring_1979": [],
+            "euring_2020": []
+          }
+        },
+        "final_code": {
+          "field_name": "final_code",
+          "semantic_domain": "methodology",
+          "versions_present": [
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_2000": "Length: 5, Type: numeric, Pattern: ^[0-9]{5}$"
+          },
+          "semantic_changes": {
+            "euring_2000": "Record validation or checksum code"
+          },
+          "data_type_changes": {
+            "euring_2000": "numeric"
+          },
+          "length_changes": {
+            "euring_2000": 5
+          },
+          "validation_changes": {
+            "euring_2000": [
+              "format: len(value) == 5 and value.isdigit()"
+            ]
+          }
+        },
+        "status_code": {
+          "field_name": "status_code",
+          "semantic_domain": "methodology",
+          "versions_present": [
+            "euring_1979",
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_1979": "Length: 1, Type: numeric, Pattern: ^[0-9]$",
+            "euring_2000": "Length: 1, Type: alphanumeric, Pattern: ^[A-Z0-9]$"
+          },
+          "semantic_changes": {
+            "euring_1979": "Bird status or condition",
+            "euring_2000": "Bird status or condition"
+          },
+          "data_type_changes": {
+            "euring_1979": "numeric",
+            "euring_2000": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_1979": 1,
+            "euring_2000": 1
+          },
+          "validation_changes": {
+            "euring_1979": [],
+            "euring_2000": []
+          }
+        },
+        "status_info": {
+          "field_name": "status_info",
+          "semantic_domain": "methodology",
+          "versions_present": [
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_2020": "Length: 1, Type: numeric, Pattern: ^[0-9]$"
+          },
+          "semantic_changes": {
+            "euring_2020": "Additional status information"
+          },
+          "data_type_changes": {
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_2020": 1
+          },
+          "validation_changes": {
+            "euring_2020": []
+          }
+        },
+        "empty_fields_2": {
+          "field_name": "empty_fields_2",
+          "semantic_domain": "methodology",
+          "versions_present": [
+            "euring_1979",
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_1979": "Length: 2, Type: string, Pattern: ^--$",
+            "euring_2000": "Length: 3, Type: string, Pattern: ^---$"
+          },
+          "semantic_changes": {
+            "euring_1979": "Placeholder for unused fields",
+            "euring_2000": "Placeholder for unused fields"
+          },
+          "data_type_changes": {
+            "euring_1979": "string",
+            "euring_2000": "string"
+          },
+          "length_changes": {
+            "euring_1979": 2,
+            "euring_2000": 3
+          },
+          "validation_changes": {
+            "euring_1979": [
+              "exact: value == '--'"
+            ],
+            "euring_2000": [
+              "exact: value == '---'"
+            ]
+          }
+        },
+        "padding": {
+          "field_name": "padding",
+          "semantic_domain": "methodology",
+          "versions_present": [
+            "euring_1979"
+          ],
+          "format_changes": {
+            "euring_1979": "Length: 6, Type: string, Pattern: ^------$"
+          },
+          "semantic_changes": {
+            "euring_1979": "End-of-record padding"
+          },
+          "data_type_changes": {
+            "euring_1979": "string"
+          },
+          "length_changes": {
+            "euring_1979": 6
+          },
+          "validation_changes": {
+            "euring_1979": [
+              "exact: value == '------'"
+            ]
+          }
+        },
+        "method_code": {
+          "field_name": "method_code",
+          "semantic_domain": "methodology",
+          "versions_present": [
+            "euring_1966",
+            "euring_1979",
+            "euring_2020"
+          ],
+          "format_changes": {
+            "euring_1966": "Length: 1, Type: numeric",
+            "euring_1979": "Length: 1, Type: numeric, Pattern: ^[0-9]$",
+            "euring_2020": "Length: 2, Type: numeric, Pattern: ^[0-9]{2}$"
+          },
+          "semantic_changes": {
+            "euring_1966": "Method used for capture/observation",
+            "euring_1979": "Method used for capture/observation",
+            "euring_2020": "Method used for capture/observation"
+          },
+          "data_type_changes": {
+            "euring_1966": "numeric",
+            "euring_1979": "numeric",
+            "euring_2020": "numeric"
+          },
+          "length_changes": {
+            "euring_1966": 1,
+            "euring_1979": 1,
+            "euring_2020": 2
+          },
+          "validation_changes": {
+            "euring_1966": [
+              "format: len(value) == 1 and value.isdigit()"
+            ],
+            "euring_1979": [],
+            "euring_2020": [
+              "format: len(value) == 2 and value.isdigit()"
+            ]
+          }
+        },
+        "empty_fields_3": {
+          "field_name": "empty_fields_3",
+          "semantic_domain": "methodology",
+          "versions_present": [
+            "euring_1979"
+          ],
+          "format_changes": {
+            "euring_1979": "Length: 2, Type: string, Pattern: ^--$"
+          },
+          "semantic_changes": {
+            "euring_1979": "Placeholder for unused fields"
+          },
+          "data_type_changes": {
+            "euring_1979": "string"
+          },
+          "length_changes": {
+            "euring_1979": 2
+          },
+          "validation_changes": {
+            "euring_1979": [
+              "exact: value == '--'"
+            ]
+          }
+        },
+        "moved_before": {
+          "field_name": "moved_before",
+          "semantic_domain": "methodology",
+          "versions_present": [
+            "euring_2020_official"
+          ],
+          "format_changes": {
+            "euring_2020_official": "Length: 1, Type: numeric, Pattern: ^[0-9]$"
+          },
+          "semantic_changes": {
+            "euring_2020_official": "Movement status before capture/recovery"
+          },
+          "data_type_changes": {
+            "euring_2020_official": "numeric"
+          },
+          "length_changes": {
+            "euring_2020_official": 1
+          },
+          "validation_changes": {
+            "euring_2020_official": [
+              "values: value in ['0', '2', '4', '6', '9']"
+            ]
+          }
+        },
+        "catching_method": {
+          "field_name": "catching_method",
+          "semantic_domain": "methodology",
+          "versions_present": [
+            "euring_2020_official"
+          ],
+          "format_changes": {
+            "euring_2020_official": "Length: 1, Type: alphanumeric, Pattern: ^[A-Z\\-]$"
+          },
+          "semantic_changes": {
+            "euring_2020_official": "Capture method employed"
+          },
+          "data_type_changes": {
+            "euring_2020_official": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_2020_official": 1
+          },
+          "validation_changes": {
+            "euring_2020_official": [
+              "values: value in ['A', 'B', 'C', 'D', 'F', 'G', 'H', 'L', 'M', 'N', 'O', 'P', 'R', 'S', 'T', 'U', 'V', 'W', 'Z', '-']"
+            ]
+          }
+        },
+        "manipulated": {
+          "field_name": "manipulated",
+          "semantic_domain": "methodology",
+          "versions_present": [
+            "euring_2020_official"
+          ],
+          "format_changes": {
+            "euring_2020_official": "Length: 1, Type: alphanumeric, Pattern: ^[A-Z]$"
+          },
+          "semantic_changes": {
+            "euring_2020_official": "Type of manipulation performed on bird"
+          },
+          "data_type_changes": {
+            "euring_2020_official": "alphanumeric"
+          },
+          "length_changes": {
+            "euring_2020_official": 1
+          },
+          "validation_changes": {
+            "euring_2020_official": [
+              "values: value in ['N', 'H', 'K', 'C', 'F', 'T', 'M', 'R', 'E', 'P', 'U']"
+            ]
+          }
+        },
+        "empty_fields_1": {
+          "field_name": "empty_fields_1",
+          "semantic_domain": "methodology",
+          "versions_present": [
+            "euring_1979",
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_1979": "Length: 2, Type: string, Pattern: ^--$",
+            "euring_2000": "Length: 5, Type: string, Pattern: ^-----$"
+          },
+          "semantic_changes": {
+            "euring_1979": "Placeholder for unused fields",
+            "euring_2000": "Placeholder for unused fields"
+          },
+          "data_type_changes": {
+            "euring_1979": "string",
+            "euring_2000": "string"
+          },
+          "length_changes": {
+            "euring_1979": 2,
+            "euring_2000": 5
+          },
+          "validation_changes": {
+            "euring_1979": [
+              "exact: value == '--'"
+            ],
+            "euring_2000": [
+              "exact: value == '-----'"
+            ]
+          }
+        },
+        "separator": {
+          "field_name": "separator",
+          "semantic_domain": "methodology",
+          "versions_present": [
+            "euring_2000"
+          ],
+          "format_changes": {
+            "euring_2000": "Length: 3, Type: string, Pattern: ^\\.\\.\\.$"
+          },
+          "semantic_changes": {
+            "euring_2000": "Field delimiter"
+          },
+          "data_type_changes": {
+            "euring_2000": "string"
+          },
+          "length_changes": {
+            "euring_2000": 3
+          },
+          "validation_changes": {
+            "euring_2000": [
+              "exact: value == '...'"
+            ]
+          }
+        }
+      },
+      "compatibility_matrix": {
+        "euring_1966_euring_1979": "INCOMPATIBLE",
+        "euring_1966_euring_2000": "INCOMPATIBLE",
+        "euring_1966_euring_2020": "LOSSY",
+        "euring_1966_euring_2020_official": "INCOMPATIBLE",
+        "euring_1979_euring_1966": "INCOMPATIBLE",
+        "euring_1979_euring_2000": "INCOMPATIBLE",
+        "euring_1979_euring_2020": "INCOMPATIBLE",
+        "euring_1979_euring_2020_official": "INCOMPATIBLE",
+        "euring_2000_euring_1966": "INCOMPATIBLE",
+        "euring_2000_euring_1979": "INCOMPATIBLE",
+        "euring_2000_euring_2020": "INCOMPATIBLE",
+        "euring_2000_euring_2020_official": "INCOMPATIBLE",
+        "euring_2020_euring_1966": "LOSSY",
+        "euring_2020_euring_1979": "INCOMPATIBLE",
+        "euring_2020_euring_2000": "INCOMPATIBLE",
+        "euring_2020_euring_2020_official": "INCOMPATIBLE",
+        "euring_2020_official_euring_1966": "INCOMPATIBLE",
+        "euring_2020_official_euring_1979": "INCOMPATIBLE",
+        "euring_2020_official_euring_2000": "INCOMPATIBLE",
+        "euring_2020_official_euring_2020": "INCOMPATIBLE"
+      }
+    }
+  }
+}

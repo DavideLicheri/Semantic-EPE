@@ -1,0 +1,50 @@
+/* Alternative: Centered Logo Above Title */
+.header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.epe-logo {
+  height: 80px;
+  width: auto;
+  filter: brightness(0) invert(1);
+  margin-bottom: 0.5rem;
+}
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Or for logo on the left with title on the right */
+.header-content-horizontal {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.epe-logo-left {
+  height: 60px;
+  width: auto;
+  filter: brightness(0) invert(1);
+  flex-shrink: 0;
+}
+
+.header-text-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}

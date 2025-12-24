@@ -1,0 +1,381 @@
+{
+  "domain": "demographics",
+  "evolution_entries": [
+    {
+      "version": "euring_1966",
+      "year": 1966,
+      "changes": [
+        {
+          "change_type": "added",
+          "field_name": "age_code",
+          "semantic_impact": "New field added to demographics domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        }
+      ],
+      "fields_added": [
+        "age_code"
+      ],
+      "fields_removed": [],
+      "fields_modified": [],
+      "semantic_notes": [],
+      "format_changes": [
+        "Field separator:  ",
+        "Total length: 55"
+      ],
+      "field_mappings": []
+    },
+    {
+      "version": "euring_1979",
+      "year": 1979,
+      "changes": [
+        {
+          "change_type": "added",
+          "field_name": "sex_code",
+          "semantic_impact": "New field added to demographics domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "modified",
+          "field_name": "age_code",
+          "semantic_impact": "Field modified in demographics domain",
+          "compatibility_impact": "partial",
+          "previous_value": "previous_format",
+          "new_value": "new_format"
+        }
+      ],
+      "fields_added": [
+        "sex_code"
+      ],
+      "fields_removed": [],
+      "fields_modified": [
+        "age_code"
+      ],
+      "semantic_notes": [
+        "Fixed-length format standardization",
+        "Encoded coordinate system",
+        "Additional measurement fields"
+      ],
+      "format_changes": [
+        "Fixed-length format",
+        "Total length: 78"
+      ],
+      "field_mappings": []
+    },
+    {
+      "version": "euring_2000",
+      "year": 2000,
+      "changes": [
+        {
+          "change_type": "removed",
+          "field_name": "sex_code",
+          "semantic_impact": "Field removed from demographics domain",
+          "compatibility_impact": "lossy",
+          "previous_value": "field_existed",
+          "new_value": null
+        }
+      ],
+      "fields_added": [],
+      "fields_removed": [
+        "sex_code"
+      ],
+      "fields_modified": [],
+      "semantic_notes": [
+        "Complex alphanumeric encoding",
+        "Enhanced location accuracy"
+      ],
+      "format_changes": [
+        "Fixed-length format",
+        "Total length: 96"
+      ],
+      "field_mappings": []
+    },
+    {
+      "version": "euring_2020",
+      "year": 2020,
+      "changes": [
+        {
+          "change_type": "added",
+          "field_name": "sex_code",
+          "semantic_impact": "New field added to demographics domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "modified",
+          "field_name": "age_code",
+          "semantic_impact": "Field modified in demographics domain",
+          "compatibility_impact": "partial",
+          "previous_value": "previous_format",
+          "new_value": "new_format"
+        }
+      ],
+      "fields_added": [
+        "sex_code"
+      ],
+      "fields_removed": [],
+      "fields_modified": [
+        "age_code"
+      ],
+      "semantic_notes": [
+        "Decimal coordinate format",
+        "Pipe-delimited structure",
+        "Enhanced biometric measurements"
+      ],
+      "format_changes": [
+        "Field separator: |",
+        "Total length: 102"
+      ],
+      "field_mappings": []
+    },
+    {
+      "version": "euring_2020_official",
+      "year": 2020,
+      "changes": [
+        {
+          "change_type": "added",
+          "field_name": "sex_mentioned_by_the_person",
+          "semantic_impact": "New field added to demographics domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "added",
+          "field_name": "age_mentioned_by_the_person",
+          "semantic_impact": "New field added to demographics domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "added",
+          "field_name": "sex_concluded_by_the_scheme",
+          "semantic_impact": "New field added to demographics domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "removed",
+          "field_name": "age_code",
+          "semantic_impact": "Field removed from demographics domain",
+          "compatibility_impact": "lossy",
+          "previous_value": "field_existed",
+          "new_value": null
+        },
+        {
+          "change_type": "removed",
+          "field_name": "sex_code",
+          "semantic_impact": "Field removed from demographics domain",
+          "compatibility_impact": "lossy",
+          "previous_value": "field_existed",
+          "new_value": null
+        }
+      ],
+      "fields_added": [
+        "sex_mentioned_by_the_person",
+        "age_mentioned_by_the_person",
+        "sex_concluded_by_the_scheme"
+      ],
+      "fields_removed": [
+        "age_code",
+        "sex_code"
+      ],
+      "fields_modified": [],
+      "semantic_notes": [
+        "Official SKOS thesaurus integration",
+        "Precise field definitions with editorial notes",
+        "Priority-based manipulation codes"
+      ],
+      "format_changes": [
+        "Field separator: |",
+        "Total length: 150"
+      ],
+      "field_mappings": []
+    }
+  ],
+  "compatibility_matrix": {
+    "domain": "demographics",
+    "compatibility_map": {
+      "euring->1966_euring_1979": "lossy",
+      "euring->1966_euring_2000": "full",
+      "euring->1966_euring_2020": "lossy",
+      "euring->1966_euring_2020_official": "incompatible",
+      "euring->1979_euring_1966": "lossy",
+      "euring->1979_euring_2000": "lossy",
+      "euring->1979_euring_2020": "full",
+      "euring->1979_euring_2020_official": "incompatible",
+      "euring->2000_euring_1966": "full",
+      "euring->2000_euring_1979": "lossy",
+      "euring->2000_euring_2020": "lossy",
+      "euring->2000_euring_2020_official": "incompatible",
+      "euring->2020_euring_1966": "lossy",
+      "euring->2020_euring_1979": "full",
+      "euring->2020_euring_2000": "lossy",
+      "euring->2020_euring_2020_official": "incompatible",
+      "euring->2020_official_euring_1966": "incompatible",
+      "euring->2020_official_euring_1979": "incompatible",
+      "euring->2020_official_euring_2000": "incompatible",
+      "euring->2020_official_euring_2020": "incompatible"
+    }
+  },
+  "field_evolution_map": {
+    "age_code": {
+      "field_name": "age_code",
+      "semantic_domain": "demographics",
+      "versions_present": [
+        "euring_1966",
+        "euring_1979",
+        "euring_2000",
+        "euring_2020"
+      ],
+      "format_changes": {
+        "euring_1966": "Length: 1, Type: numeric",
+        "euring_1979": "Length: 1, Type: numeric, Pattern: ^[0-9]$",
+        "euring_2000": "Length: 1, Type: numeric, Pattern: ^[0-9]$",
+        "euring_2020": "Length: 1, Type: numeric, Pattern: ^[1-9]$"
+      },
+      "semantic_changes": {
+        "euring_1966": "Bird age category",
+        "euring_1979": "Bird age category",
+        "euring_2000": "Bird age category",
+        "euring_2020": "Bird age category"
+      },
+      "data_type_changes": {
+        "euring_1966": "numeric",
+        "euring_1979": "numeric",
+        "euring_2000": "numeric",
+        "euring_2020": "numeric"
+      },
+      "length_changes": {
+        "euring_1966": 1,
+        "euring_1979": 1,
+        "euring_2000": 1,
+        "euring_2020": 1
+      },
+      "validation_changes": {
+        "euring_1966": [
+          "range: value in ['1', '2', '3', '4', '5', '6', '7', '8', '9']"
+        ],
+        "euring_1979": [
+          "range: value.isdigit() and len(value) == 1"
+        ],
+        "euring_2000": [
+          "range: value.isdigit() and len(value) == 1"
+        ],
+        "euring_2020": [
+          "range: value.isdigit() and len(value) == 1 and int(value) >= 1"
+        ]
+      }
+    },
+    "sex_code": {
+      "field_name": "sex_code",
+      "semantic_domain": "demographics",
+      "versions_present": [
+        "euring_1979",
+        "euring_2020"
+      ],
+      "format_changes": {
+        "euring_1979": "Length: 1, Type: numeric, Pattern: ^[0-9]$",
+        "euring_2020": "Length: 1, Type: numeric, Pattern: ^[1-9]$"
+      },
+      "semantic_changes": {
+        "euring_1979": "Bird sex category",
+        "euring_2020": "Bird sex category"
+      },
+      "data_type_changes": {
+        "euring_1979": "numeric",
+        "euring_2020": "numeric"
+      },
+      "length_changes": {
+        "euring_1979": 1,
+        "euring_2020": 1
+      },
+      "validation_changes": {
+        "euring_1979": [
+          "range: value.isdigit() and len(value) == 1"
+        ],
+        "euring_2020": [
+          "range: value.isdigit() and len(value) == 1 and int(value) >= 1"
+        ]
+      }
+    },
+    "sex_mentioned_by_the_person": {
+      "field_name": "sex_mentioned_by_the_person",
+      "semantic_domain": "demographics",
+      "versions_present": [
+        "euring_2020_official"
+      ],
+      "format_changes": {
+        "euring_2020_official": "Length: 1, Type: alphanumeric, Pattern: ^[MFU]$"
+      },
+      "semantic_changes": {
+        "euring_2020_official": "Sex identification by handler"
+      },
+      "data_type_changes": {
+        "euring_2020_official": "alphanumeric"
+      },
+      "length_changes": {
+        "euring_2020_official": 1
+      },
+      "validation_changes": {
+        "euring_2020_official": [
+          "values: value in ['M', 'F', 'U']"
+        ]
+      }
+    },
+    "sex_concluded_by_the_scheme": {
+      "field_name": "sex_concluded_by_the_scheme",
+      "semantic_domain": "demographics",
+      "versions_present": [
+        "euring_2020_official"
+      ],
+      "format_changes": {
+        "euring_2020_official": "Length: 1, Type: alphanumeric, Pattern: ^[MFU]$"
+      },
+      "semantic_changes": {
+        "euring_2020_official": "Verified sex identification by scheme"
+      },
+      "data_type_changes": {
+        "euring_2020_official": "alphanumeric"
+      },
+      "length_changes": {
+        "euring_2020_official": 1
+      },
+      "validation_changes": {
+        "euring_2020_official": [
+          "values: value in ['M', 'F', 'U']"
+        ]
+      }
+    },
+    "age_mentioned_by_the_person": {
+      "field_name": "age_mentioned_by_the_person",
+      "semantic_domain": "demographics",
+      "versions_present": [
+        "euring_2020_official"
+      ],
+      "format_changes": {
+        "euring_2020_official": "Length: 1, Type: alphanumeric, Pattern: ^[0-9A-H]$"
+      },
+      "semantic_changes": {
+        "euring_2020_official": "Age classification based on plumage state"
+      },
+      "data_type_changes": {
+        "euring_2020_official": "alphanumeric"
+      },
+      "length_changes": {
+        "euring_2020_official": 1
+      },
+      "validation_changes": {
+        "euring_2020_official": [
+          "values: value in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']"
+        ]
+      }
+    }
+  }
+}

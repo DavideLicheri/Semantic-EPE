@@ -1,0 +1,38 @@
+[
+  {
+    "from_version": "euring_1966",
+    "to_version": "euring_1979",
+    "relationship_type": "predecessor",
+    "description": "EURING 1963 was replaced by EURING 1979 with expanded age codes and condition field"
+  },
+  {
+    "from_version": "euring_1979",
+    "to_version": "euring_2000",
+    "relationship_type": "predecessor",
+    "description": "EURING 1979 was replaced by EURING 2000 with further field expansions"
+  },
+  {
+    "from_version": "euring_2000",
+    "to_version": "euring_2024",
+    "relationship_type": "predecessor",
+    "description": "EURING 2000 was updated to EURING 2024 with additional fields and validation"
+  },
+  {
+    "from_version": "euring_1979",
+    "to_version": "euring_1966",
+    "relationship_type": "successor",
+    "description": "EURING 1979 succeeded EURING 1966"
+  },
+  {
+    "from_version": "euring_2000",
+    "to_version": "euring_1979",
+    "relationship_type": "successor",
+    "description": "EURING 2000 succeeded EURING 1979"
+  },
+  {
+    "from_version": "euring_2024",
+    "to_version": "euring_2000",
+    "relationship_type": "successor",
+    "description": "EURING 2024 succeeded EURING 2000"
+  }
+]

@@ -1,0 +1,363 @@
+/* 
+ * Semantic Domains Visualization CSS
+ * Stili per la visualizzazione dei 7 domini semantici EURING
+ */
+
+/* Base domain badge styles */
+.domain-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85em;
+  font-weight: 500;
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin: 1px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  cursor: help;
+}
+
+.domain-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.domain-icon {
+  font-size: 1.1em;
+  margin-right: 2px;
+}
+
+.domain-name {
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+/* Compact badge variant */
+.domain-badge.compact {
+  padding: 1px 4px;
+  font-size: 0.75em;
+}
+
+.domain-badge.compact .domain-name {
+  display: none;
+}
+
+/* Icon-only variant */
+.domain-badge.icon-only {
+  padding: 2px;
+  min-width: 24px;
+  justify-content: center;
+}
+
+.domain-badge.icon-only .domain-name {
+  display: none;
+}
+
+/* Specific domain styles */
+
+/* 1. Identification & Marking - Red */
+.semantic-domain-identification-marking {
+  background-color: #FFE5E5;
+  color: #CC2E2E;
+  border: 1px solid #FF6B6B40;
+}
+
+.semantic-domain-identification-marking:hover {
+  background-color: #FF6B6B20;
+  border-color: #FF6B6B;
+}
+
+.field-identification-marking {
+  border-left: 3px solid #FF6B6B;
+  background: linear-gradient(90deg, #FFE5E5 0%, transparent 100%);
+}
+
+.matrix-cell-identification-marking {
+  background-color: #FFE5E5;
+  border-left: 2px solid #FF6B6B;
+}
+
+/* 2. Species - Teal */
+.semantic-domain-species {
+  background-color: #E5F9F7;
+  color: #2E8B87;
+  border: 1px solid #4ECDC440;
+}
+
+.semantic-domain-species:hover {
+  background-color: #4ECDC420;
+  border-color: #4ECDC4;
+}
+
+.field-species {
+  border-left: 3px solid #4ECDC4;
+  background: linear-gradient(90deg, #E5F9F7 0%, transparent 100%);
+}
+
+.matrix-cell-species {
+  background-color: #E5F9F7;
+  border-left: 2px solid #4ECDC4;
+}
+
+/* 3. Demographics - Blue */
+.semantic-domain-demographics {
+  background-color: #E5F3FB;
+  color: #2E7BA7;
+  border: 1px solid #45B7D140;
+}
+
+.semantic-domain-demographics:hover {
+  background-color: #45B7D120;
+  border-color: #45B7D1;
+}
+
+.field-demographics {
+  border-left: 3px solid #45B7D1;
+  background: linear-gradient(90deg, #E5F3FB 0%, transparent 100%);
+}
+
+.matrix-cell-demographics {
+  background-color: #E5F3FB;
+  border-left: 2px solid #45B7D1;
+}
+
+/* 4. Temporal - Orange */
+.semantic-domain-temporal {
+  background-color: #FFF0E5;
+  color: #CC6B47;
+  border: 1px solid #FFA07A40;
+}
+
+.semantic-domain-temporal:hover {
+  background-color: #FFA07A20;
+  border-color: #FFA07A;
+}
+
+.field-temporal {
+  border-left: 3px solid #FFA07A;
+  background: linear-gradient(90deg, #FFF0E5 0%, transparent 100%);
+}
+
+.matrix-cell-temporal {
+  background-color: #FFF0E5;
+  border-left: 2px solid #FFA07A;
+}
+
+/* 5. Spatial - Green */
+.semantic-domain-spatial {
+  background-color: #E8F5F2;
+  color: #5FA896;
+  border: 1px solid #98D8C840;
+}
+
+.semantic-domain-spatial:hover {
+  background-color: #98D8C820;
+  border-color: #98D8C8;
+}
+
+.field-spatial {
+  border-left: 3px solid #98D8C8;
+  background: linear-gradient(90deg, #E8F5F2 0%, transparent 100%);
+}
+
+.matrix-cell-spatial {
+  background-color: #E8F5F2;
+  border-left: 2px solid #98D8C8;
+}
+
+/* 6. Biometrics - Yellow */
+.semantic-domain-biometrics {
+  background-color: #FEFBEA;
+  color: #C4A942;
+  border: 1px solid #F7DC6F40;
+}
+
+.semantic-domain-biometrics:hover {
+  background-color: #F7DC6F20;
+  border-color: #F7DC6F;
+}
+
+.field-biometrics {
+  border-left: 3px solid #F7DC6F;
+  background: linear-gradient(90deg, #FEFBEA 0%, transparent 100%);
+}
+
+.matrix-cell-biometrics {
+  background-color: #FEFBEA;
+  border-left: 2px solid #F7DC6F;
+}
+
+/* 7. Methodology - Green */
+.semantic-domain-methodology {
+  background-color: #E8F5E8;
+  color: #4CAF50;
+  border: 1px solid #81C78440;
+}
+
+.semantic-domain-methodology:hover {
+  background-color: #81C78420;
+  border-color: #81C784;
+}
+
+.field-methodology {
+  border-left: 3px solid #81C784;
+  background: linear-gradient(90deg, #E8F5E8 0%, transparent 100%);
+}
+
+.matrix-cell-methodology {
+  background-color: #E8F5E8;
+  border-left: 2px solid #81C784;
+}
+
+/* Matrix integration styles */
+.matrix-table .version-cell {
+  position: relative;
+}
+
+.matrix-table .version-cell.has-field {
+  padding-left: 8px;
+}
+
+.matrix-table .field-info {
+  position: relative;
+}
+
+.matrix-table .field-info::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 1px;
+}
+
+/* Domain legend */
+.domain-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.domain-legend-title {
+  width: 100%;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #495057;
+}
+
+.domain-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9em;
+}
+
+.domain-legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+/* String navigator integration */
+.string-field-row {
+  transition: background-color 0.2s ease;
+}
+
+.string-field-row:hover {
+  background-color: rgba(0,0,0,0.02);
+}
+
+.string-field-name {
+  position: relative;
+  padding-left: 8px;
+}
+
+.string-field-name::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  border-radius: 1px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .domain-badge {
+    font-size: 0.75em;
+    padding: 1px 4px;
+  }
+  
+  .domain-badge .domain-name {
+    display: none;
+  }
+  
+  .domain-legend {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .domain-legend-item {
+    font-size: 0.8em;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .domain-legend {
+    background-color: #2d3748;
+    border-color: #4a5568;
+  }
+  
+  .domain-legend-title {
+    color: #e2e8f0;
+  }
+  
+  .string-field-row:hover {
+    background-color: rgba(255,255,255,0.05);
+  }
+}
+
+/* Animation for domain highlighting */
+@keyframes domainHighlight {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.domain-badge.highlight {
+  animation: domainHighlight 0.3s ease-in-out;
+}
+
+/* Accessibility improvements */
+.domain-badge:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.domain-badge[aria-pressed="true"] {
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Print styles */
+@media print {
+  .domain-badge {
+    border: 1px solid #000 !important;
+    background: transparent !important;
+    color: #000 !important;
+  }
+  
+  .domain-badge::after {
+    content: " (" attr(title) ")";
+    font-size: 0.8em;
+  }
+}

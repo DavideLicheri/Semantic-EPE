@@ -1,0 +1,357 @@
+{
+  "domain": "temporal",
+  "evolution_entries": [
+    {
+      "version": "euring_1966",
+      "year": 1966,
+      "changes": [
+        {
+          "change_type": "added",
+          "field_name": "date_code",
+          "semantic_impact": "New field added to temporal domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        }
+      ],
+      "fields_added": [
+        "date_code"
+      ],
+      "fields_removed": [],
+      "fields_modified": [],
+      "semantic_notes": [],
+      "format_changes": [
+        "Field separator:  ",
+        "Total length: 55"
+      ],
+      "field_mappings": []
+    },
+    {
+      "version": "euring_1979",
+      "year": 1979,
+      "changes": [
+        {
+          "change_type": "added",
+          "field_name": "date_first",
+          "semantic_impact": "New field added to temporal domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "added",
+          "field_name": "date_current",
+          "semantic_impact": "New field added to temporal domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "removed",
+          "field_name": "date_code",
+          "semantic_impact": "Field removed from temporal domain",
+          "compatibility_impact": "lossy",
+          "previous_value": "field_existed",
+          "new_value": null
+        }
+      ],
+      "fields_added": [
+        "date_first",
+        "date_current"
+      ],
+      "fields_removed": [
+        "date_code"
+      ],
+      "fields_modified": [],
+      "semantic_notes": [
+        "Fixed-length format standardization",
+        "Encoded coordinate system",
+        "Additional measurement fields"
+      ],
+      "format_changes": [
+        "Fixed-length format",
+        "Total length: 78"
+      ],
+      "field_mappings": []
+    },
+    {
+      "version": "euring_2000",
+      "year": 2000,
+      "changes": [
+        {
+          "change_type": "modified",
+          "field_name": "date_first",
+          "semantic_impact": "Field modified in temporal domain",
+          "compatibility_impact": "partial",
+          "previous_value": "previous_format",
+          "new_value": "new_format"
+        },
+        {
+          "change_type": "modified",
+          "field_name": "date_current",
+          "semantic_impact": "Field modified in temporal domain",
+          "compatibility_impact": "partial",
+          "previous_value": "previous_format",
+          "new_value": "new_format"
+        }
+      ],
+      "fields_added": [],
+      "fields_removed": [],
+      "fields_modified": [
+        "date_first",
+        "date_current"
+      ],
+      "semantic_notes": [
+        "Complex alphanumeric encoding",
+        "Enhanced location accuracy"
+      ],
+      "format_changes": [
+        "Fixed-length format",
+        "Total length: 96"
+      ],
+      "field_mappings": []
+    },
+    {
+      "version": "euring_2020",
+      "year": 2020,
+      "changes": [
+        {
+          "change_type": "added",
+          "field_name": "time_code",
+          "semantic_impact": "New field added to temporal domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "added",
+          "field_name": "date_code",
+          "semantic_impact": "New field added to temporal domain",
+          "compatibility_impact": "partial",
+          "previous_value": null,
+          "new_value": "field_added"
+        },
+        {
+          "change_type": "removed",
+          "field_name": "date_first",
+          "semantic_impact": "Field removed from temporal domain",
+          "compatibility_impact": "lossy",
+          "previous_value": "field_existed",
+          "new_value": null
+        },
+        {
+          "change_type": "removed",
+          "field_name": "date_current",
+          "semantic_impact": "Field removed from temporal domain",
+          "compatibility_impact": "lossy",
+          "previous_value": "field_existed",
+          "new_value": null
+        }
+      ],
+      "fields_added": [
+        "time_code",
+        "date_code"
+      ],
+      "fields_removed": [
+        "date_first",
+        "date_current"
+      ],
+      "fields_modified": [],
+      "semantic_notes": [
+        "Decimal coordinate format",
+        "Pipe-delimited structure",
+        "Enhanced biometric measurements"
+      ],
+      "format_changes": [
+        "Field separator: |",
+        "Total length: 102"
+      ],
+      "field_mappings": []
+    },
+    {
+      "version": "euring_2020_official",
+      "year": 2020,
+      "changes": [
+        {
+          "change_type": "removed",
+          "field_name": "time_code",
+          "semantic_impact": "Field removed from temporal domain",
+          "compatibility_impact": "lossy",
+          "previous_value": "field_existed",
+          "new_value": null
+        },
+        {
+          "change_type": "removed",
+          "field_name": "date_code",
+          "semantic_impact": "Field removed from temporal domain",
+          "compatibility_impact": "lossy",
+          "previous_value": "field_existed",
+          "new_value": null
+        }
+      ],
+      "fields_added": [],
+      "fields_removed": [
+        "time_code",
+        "date_code"
+      ],
+      "fields_modified": [],
+      "semantic_notes": [
+        "Official SKOS thesaurus integration",
+        "Precise field definitions with editorial notes",
+        "Priority-based manipulation codes"
+      ],
+      "format_changes": [
+        "Field separator: |",
+        "Total length: 150"
+      ],
+      "field_mappings": []
+    }
+  ],
+  "compatibility_matrix": {
+    "domain": "temporal",
+    "compatibility_map": {
+      "euring->1966_euring_1979": "incompatible",
+      "euring->1966_euring_2000": "incompatible",
+      "euring->1966_euring_2020": "lossy",
+      "euring->1966_euring_2020_official": "incompatible",
+      "euring->1979_euring_1966": "incompatible",
+      "euring->1979_euring_2000": "full",
+      "euring->1979_euring_2020": "incompatible",
+      "euring->1979_euring_2020_official": "incompatible",
+      "euring->2000_euring_1966": "incompatible",
+      "euring->2000_euring_1979": "full",
+      "euring->2000_euring_2020": "incompatible",
+      "euring->2000_euring_2020_official": "incompatible",
+      "euring->2020_euring_1966": "lossy",
+      "euring->2020_euring_1979": "incompatible",
+      "euring->2020_euring_2000": "incompatible",
+      "euring->2020_euring_2020_official": "incompatible",
+      "euring->2020_official_euring_1966": "incompatible",
+      "euring->2020_official_euring_1979": "incompatible",
+      "euring->2020_official_euring_2000": "incompatible",
+      "euring->2020_official_euring_2020": "incompatible"
+    }
+  },
+  "field_evolution_map": {
+    "time_code": {
+      "field_name": "time_code",
+      "semantic_domain": "temporal",
+      "versions_present": [
+        "euring_2020"
+      ],
+      "format_changes": {
+        "euring_2020": "Length: 4, Type: numeric, Pattern: ^[0-9]{4}$"
+      },
+      "semantic_changes": {
+        "euring_2020": "Capture/observation time"
+      },
+      "data_type_changes": {
+        "euring_2020": "numeric"
+      },
+      "length_changes": {
+        "euring_2020": 4
+      },
+      "validation_changes": {
+        "euring_2020": [
+          "format: len(value) == 4 and value.isdigit() and int(value[:2]) <= 23 and int(value[2:]) <= 59"
+        ]
+      }
+    },
+    "date_code": {
+      "field_name": "date_code",
+      "semantic_domain": "temporal",
+      "versions_present": [
+        "euring_1966",
+        "euring_2020"
+      ],
+      "format_changes": {
+        "euring_1966": "Length: 8, Type: numeric, Pattern: ^[0-3][0-9][0-1][0-9][0-9]{4}$",
+        "euring_2020": "Length: 8, Type: numeric, Pattern: ^[0-9]{8}$"
+      },
+      "semantic_changes": {
+        "euring_1966": "Capture date",
+        "euring_2020": "Capture/observation date"
+      },
+      "data_type_changes": {
+        "euring_1966": "numeric",
+        "euring_2020": "numeric"
+      },
+      "length_changes": {
+        "euring_1966": 8,
+        "euring_2020": 8
+      },
+      "validation_changes": {
+        "euring_1966": [
+          "format: len(value) == 8 and value.isdigit() and 1 <= int(value[:2]) <= 31 and 1 <= int(value[2:4]) <= 12"
+        ],
+        "euring_2020": [
+          "format: len(value) == 8 and value.isdigit() and 1 <= int(value[6:8]) <= 31 and 1 <= int(value[4:6]) <= 12 and int(value[:4]) >= 1900"
+        ]
+      }
+    },
+    "date_first": {
+      "field_name": "date_first",
+      "semantic_domain": "temporal",
+      "versions_present": [
+        "euring_1979",
+        "euring_2000"
+      ],
+      "format_changes": {
+        "euring_1979": "Length: 6, Type: numeric, Pattern: ^[0-9]{6}$",
+        "euring_2000": "Length: 5, Type: numeric, Pattern: ^[0-9]{5}$"
+      },
+      "semantic_changes": {
+        "euring_1979": "Date of first capture/observation",
+        "euring_2000": "Date of first capture/observation"
+      },
+      "data_type_changes": {
+        "euring_1979": "numeric",
+        "euring_2000": "numeric"
+      },
+      "length_changes": {
+        "euring_1979": 6,
+        "euring_2000": 5
+      },
+      "validation_changes": {
+        "euring_1979": [
+          "format: len(value) == 6 and value.isdigit() and 1 <= int(value[:2]) <= 31 and 1 <= int(value[2:4]) <= 12"
+        ],
+        "euring_2000": [
+          "format: len(value) == 5 and value.isdigit()"
+        ]
+      }
+    },
+    "date_current": {
+      "field_name": "date_current",
+      "semantic_domain": "temporal",
+      "versions_present": [
+        "euring_1979",
+        "euring_2000"
+      ],
+      "format_changes": {
+        "euring_1979": "Length: 6, Type: numeric, Pattern: ^[0-9]{6}$",
+        "euring_2000": "Length: 5, Type: numeric, Pattern: ^[0-9]{5}$"
+      },
+      "semantic_changes": {
+        "euring_1979": "Date of current capture/observation",
+        "euring_2000": "Date of current capture/observation"
+      },
+      "data_type_changes": {
+        "euring_1979": "numeric",
+        "euring_2000": "numeric"
+      },
+      "length_changes": {
+        "euring_1979": 6,
+        "euring_2000": 5
+      },
+      "validation_changes": {
+        "euring_1979": [
+          "format: len(value) == 6 and value.isdigit() and 1 <= int(value[:2]) <= 31 and 1 <= int(value[2:4]) <= 12"
+        ],
+        "euring_2000": [
+          "format: len(value) == 5 and value.isdigit()"
+        ]
+      }
+    }
+  }
+}

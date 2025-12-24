@@ -1,0 +1,71 @@
+@prefix : <http://www.semanticweb.org/davidelicheri/ontologies/2025/5/EURING_CODE_SKOS/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@base <http://www.semanticweb.org/davidelicheri/ontologies/2025/5/EURING_CODE_SKOS/> .
+
+<http://www.semanticweb.org/davidelicheri/ontologies/2025/5/EURING_CODE_SKOS> rdf:type owl:Ontology ;
+owl:versionIRI <http://www.semanticweb.org/davidelicheri/ontologies/2025/5/EURING_CODE_SKOS/1.0.0> ;
+owl:imports <http://www.w3.org/2004/02/skos/core> ;
+<http://purl.org/dc/terms/creator> "https://orcid.org/0009-0002-5317-8809"@en ;
+rdfs:comment "Thesaurus SKOS per la codifica e lo scambio dei dati di inanellamento a scopo scientifico EURING"@it .
+
+##################################################################
+#    Object Properties
+##################################################################
+
+###  http://www.semanticweb.org/davidelicheri/ontologies/2025/5/EURING_CODE_SKOS/attribute_type
+
+:attribute_type rdf:type owl:ObjectProperty ;
+rdfs:domain skos:Concept ;
+rdfs:range skos:Concept ;
+rdfs:comment "Connects a value to its attribute category"@en ;
+skos:prefLabel "attribute type"@en .
+
+##################################################################
+#    Data properties
+##################################################################
+
+###  http://www.semanticweb.org/davidelicheri/ontologies/2025/5/EURING_CODE_SKOS/priority_order
+
+:priority_order rdf:type owl:DatatypeProperty ;
+rdfs:domain skos:Concept ;
+rdfs:range xsd:integer ;
+rdfs:comment "Indicates the priority order of manipulation codes (lower numbers = higher priority)"@en ;
+skos:prefLabel "Priority order"@en .
+
+##################################################################
+#    Individuals
+##################################################################
+###  http://www.semanticweb.org/davidelicheri/ontologies/2025/5/EURING_CODE_SKOS#AMP_age_unknown
+
+:AMP_age_unknown rdf:type owl:NamedIndividual ,
+skos:Concept ;
+skos:inScheme :home ;
+skos:notation "0|" ;
+skos:prefLabel "AMP Age unknown, i.e. not recorded"@en .
+
+###  http://www.semanticweb.org/davidelicheri/ontologies/2025/5/EURING_CODE_SKOS#age_mentioned_by_the_person
+
+:age_mentioned_by_the_person rdf:type owl:NamedIndividual ,
+skos:Concept ;
+skos:inScheme :home ;
+<http://purl.org/dc/terms/description> "The age code is a statement about the plumage of the bird rather than about its age in years"@en ;
+skos:definition "alphanumeric, one character"@en ;
+skos:editorialNote "Because the calendar year is used throughout this coding system all birds change code overnight on December 31st – January 1st. Every code from 2 upwards has two added to the age because a bird identifiable at the end of December as 'First-year' (code 3) will, at the beginning of January, be 'Second-year' (code 5) and so on. After the autumn moult, the age code reverts to a lower value"@en ;
+skos:example """In this system, odd numbers indicate that the calendar year of hatching can be determined exactly from the state of the plumage; even numbers indicate that the year cannot be known exactly from the plumage. With each increasing year of knowable age, the code increases by 2. Note that letter codes will only be usable on a very small number of birds – even a very large bird of prey is unlikely to be ageable as anything higher than G or H at the very most. Codes over 6 are unlikely to be usable on small passerines.Note that, in many cases where birds are reported by members of the public, the age code will be 0 or 2."""@en ;
+skos:prefLabel "Age, as mentioned by the person who handled the bird"@en ;
+skos:scopeNote "Do not calculate the age of a retrapped bird even if you know the exact age of the bird from its ringing circumstances. The task of calculation of ages belongs to the analyst, not the ringer or data coder"@en .
+
+###  http://www.semanticweb.org/davidelicheri/ontologies/2025/5/EURING_CODE_SKOS/identification_number
+
+:identification_number rdf:type owl:NamedIndividual ,
+skos:Concept ;
+skos:inScheme :home ;
+<http://purl.org/dc/terms/description> "A sequence of ten characters, to be coded directly. Every recovery of any individual bird should always have the original ring number placed on that bird as the number coded here."@en ;
+skos:definition "alphanumeric, ten characters"@en ;
+skos:editorialNote """Although this sequence of characters generally includes some letters, it is still commonly referred to as the ring 'number'. Where a ring number consists of fewer than ten characters, this field is padded with dots. These dots are always inserted to the left of the rightmost row of numbers.The figure 0 (zero) must be entered where, and only where, it appears on a ring number. Thus 1234 56 must be given as ....123456 and 01 2345 6 as ...0123456.When part of the ring number is unknown (worn ring, incomplete number reported etc.) the missing parts of the ring number are to be entered as '-'. Thus if the 5 has worn from a ring AB123 45 (or the number is covered by an overlap) it should be coded as AB... 1234-.Every recovery of any individual bird should always have the original ring number placed on that bird as the number coded here. This applies through all subsequent replacements of the ring, whether by the scheme originally ringing the bird or by any other scheme.If a metal ring is added on first capture the identification number will always be that metal ring number.If a bird is not metal-ringed on first capture but is identified in another way (primary identification method not A0), a number relating to that bird must be entered in this field. That unique number will represent a not-present-metal-ring-number. It must be a unique number because this identification number is unique for database reasons. That unique number must be allocated by the national scheme. It is recommended to start that unique number with the characters "NMR" (meaning "not metal ring") and then followed by seven numbers. For example: NMR00 0000 1. It is recommended that the Scheme and ringer agree this unique number that will be used to identify the bird throughout its life."""@en ;
+skos:prefLabel "Identification number (ring) [#]"@en .

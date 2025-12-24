@@ -1,0 +1,96 @@
+/* Simple Domain Filter - Horizontal buttons */
+.simple-domain-filter {
+  margin-bottom: 16px;
+}
+
+.filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.filter-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 2px solid #dee2e6;
+  border-radius: 16px;
+  background: white;
+  color: #495057;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.filter-button:hover {
+  border-color: #007bff;
+  background-color: #f8f9fa;
+  transform: translateY(-1px);
+}
+
+.filter-button.selected {
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+}
+
+.filter-button.all-button {
+  background: #f8f9fa;
+  border-color: #6c757d;
+}
+
+.filter-button.all-button.selected {
+  background: #e9ecef;
+  border-color: #495057;
+  color: #495057;
+}
+
+.filter-icon {
+  font-size: 1em;
+}
+
+.filter-label {
+  font-size: 0.8em;
+}
+
+/* Compact variant */
+.simple-domain-filter.compact .filter-button {
+  padding: 4px 8px;
+  min-width: 32px;
+  justify-content: center;
+}
+
+.simple-domain-filter.compact .filter-icon {
+  font-size: 1.1em;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .filter-button {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+  
+  .filter-label {
+    display: none;
+  }
+  
+  .filter-button {
+    min-width: 32px;
+    justify-content: center;
+  }
+}
+
+/* Focus states */
+.filter-button:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.filter-button:focus:not(:focus-visible) {
+  outline: none;
+}

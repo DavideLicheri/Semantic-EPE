@@ -1,0 +1,14 @@
+{
+  "field_name": "metal_ring_info",
+  "version": "2020",
+  "lookup_data": {
+    "name": "Metal Ring Information",
+    "description": "Status and type of metal ring",
+    "values": [
+      {"code": "0", "meaning": "Ring not mentioned"},
+      {"code": "1", "meaning": "Ring confirmed present"},
+      {"code": "2", "meaning": "Ring confirmed absent"},
+      {"code": "NEW_TEST", "meaning": "New test value from debug"}
+    ]
+  }
+}

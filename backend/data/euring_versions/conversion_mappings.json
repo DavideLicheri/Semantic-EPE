@@ -1,0 +1,455 @@
+[
+  {
+    "from_version": "euring_1966",
+    "to_version": "euring_1979",
+    "field_mappings": [
+      {
+        "source_field": "ring_number",
+        "target_field": "ring_number",
+        "transformation_type": "direct",
+        "transformation_function": "pad_to_length(9)"
+      },
+      {
+        "source_field": "species_code",
+        "target_field": "species_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "age_code",
+        "target_field": "age_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "sex_code",
+        "target_field": "sex_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "date_code",
+        "target_field": "date_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "location_code",
+        "target_field": "location_code",
+        "transformation_type": "direct",
+        "transformation_function": "pad_to_length(5)"
+      }
+    ],
+    "transformation_rules": [
+      {
+        "rule_id": "default_condition_1979",
+        "source_field": null,
+        "target_field": "condition_code",
+        "transformation_type": "calculated",
+        "transformation_expression": "'0'",
+        "conditions": null
+      }
+    ],
+    "compatibility_level": "full"
+  },
+  {
+    "from_version": "euring_1979",
+    "to_version": "euring_2000",
+    "field_mappings": [
+      {
+        "source_field": "ring_number",
+        "target_field": "ring_number",
+        "transformation_type": "direct",
+        "transformation_function": "pad_to_length(10)"
+      },
+      {
+        "source_field": "species_code",
+        "target_field": "species_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "age_code",
+        "target_field": "age_code",
+        "transformation_type": "calculated",
+        "transformation_function": "convert_age_1979_to_2000"
+      },
+      {
+        "source_field": "sex_code",
+        "target_field": "sex_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "date_code",
+        "target_field": "date_code",
+        "transformation_type": "calculated",
+        "transformation_function": "convert_date_ddmmyy_to_ddmmyyyy"
+      },
+      {
+        "source_field": "location_code",
+        "target_field": "location_code",
+        "transformation_type": "direct",
+        "transformation_function": "pad_to_length(6)"
+      },
+      {
+        "source_field": "condition_code",
+        "target_field": "condition_code",
+        "transformation_type": "calculated",
+        "transformation_function": "convert_condition_1979_to_2000"
+      }
+    ],
+    "transformation_rules": [
+      {
+        "rule_id": "age_conversion_1979_2000",
+        "source_field": "age_code",
+        "target_field": "age_code",
+        "transformation_type": "calculated",
+        "transformation_expression": "{'1': '01', '2': '02', '3': '03', '4': '04', '5': '05', '6': '06', '7': '07', '8': '08', '9': '09'}[value]",
+        "conditions": null
+      },
+      {
+        "rule_id": "date_conversion_1979_2000",
+        "source_field": "date_code",
+        "target_field": "date_code",
+        "transformation_type": "calculated",
+        "transformation_expression": "value[:4] + '19' + value[4:] if int(value[4:]) > 50 else value[:4] + '20' + value[4:]",
+        "conditions": null
+      },
+      {
+        "rule_id": "condition_conversion_1979_2000",
+        "source_field": "condition_code",
+        "target_field": "condition_code",
+        "transformation_type": "calculated",
+        "transformation_expression": "'0' + value",
+        "conditions": null
+      }
+    ],
+    "compatibility_level": "full"
+  },
+  {
+    "from_version": "euring_1966",
+    "to_version": "euring_2000",
+    "field_mappings": [
+      {
+        "source_field": "ring_number",
+        "target_field": "ring_number",
+        "transformation_type": "direct",
+        "transformation_function": "pad_to_length(10)"
+      },
+      {
+        "source_field": "species_code",
+        "target_field": "species_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "age_code",
+        "target_field": "age_code",
+        "transformation_type": "calculated",
+        "transformation_function": "convert_age_1963_to_2000"
+      },
+      {
+        "source_field": "sex_code",
+        "target_field": "sex_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "date_code",
+        "target_field": "date_code",
+        "transformation_type": "calculated",
+        "transformation_function": "convert_date_ddmmyy_to_ddmmyyyy"
+      },
+      {
+        "source_field": "location_code",
+        "target_field": "location_code",
+        "transformation_type": "direct",
+        "transformation_function": "pad_to_length(6)"
+      }
+    ],
+    "transformation_rules": [
+      {
+        "rule_id": "age_conversion_1963_2000",
+        "source_field": "age_code",
+        "target_field": "age_code",
+        "transformation_type": "calculated",
+        "transformation_expression": "{'1': '01', '2': '02', '3': '03', '4': '04', '5': '05'}[value]",
+        "conditions": null
+      },
+      {
+        "rule_id": "date_conversion_1963_2000",
+        "source_field": "date_code",
+        "target_field": "date_code",
+        "transformation_type": "calculated",
+        "transformation_expression": "value[:4] + '19' + value[4:] if int(value[4:]) > 50 else value[:4] + '20' + value[4:]",
+        "conditions": null
+      }
+    ],
+    "compatibility_level": "partial"
+  },
+  {
+    "from_version": "euring_2000",
+    "to_version": "euring_2024",
+    "field_mappings": [
+      {
+        "source_field": "ring_number",
+        "target_field": "ring_number",
+        "transformation_type": "direct",
+        "transformation_function": "pad_to_length(12)"
+      },
+      {
+        "source_field": "species_code",
+        "target_field": "species_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "age_code",
+        "target_field": "age_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "sex_code",
+        "target_field": "sex_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "date_code",
+        "target_field": "date_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "location_code",
+        "target_field": "location_code",
+        "transformation_type": "direct",
+        "transformation_function": "pad_to_length(8)"
+      },
+      {
+        "source_field": "condition_code",
+        "target_field": "condition_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      }
+    ],
+    "transformation_rules": [
+      {
+        "rule_id": "default_circumstances_2024",
+        "source_field": null,
+        "target_field": "circumstances_code",
+        "transformation_type": "calculated",
+        "transformation_expression": "'00'",
+        "conditions": null
+      },
+      {
+        "rule_id": "default_method_2024",
+        "source_field": null,
+        "target_field": "method_code",
+        "transformation_type": "calculated",
+        "transformation_expression": "'01'",
+        "conditions": null
+      }
+    ],
+    "compatibility_level": "full"
+  },
+  {
+    "from_version": "euring_2000",
+    "to_version": "euring_1966",
+    "field_mappings": [
+      {
+        "source_field": "ring_number",
+        "target_field": "ring_number",
+        "transformation_type": "calculated",
+        "transformation_function": "truncate_to_length(8)"
+      },
+      {
+        "source_field": "species_code",
+        "target_field": "species_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "age_code",
+        "target_field": "age_code",
+        "transformation_type": "calculated",
+        "transformation_function": "convert_age_2000_to_1963"
+      },
+      {
+        "source_field": "sex_code",
+        "target_field": "sex_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "date_code",
+        "target_field": "date_code",
+        "transformation_type": "calculated",
+        "transformation_function": "convert_date_ddmmyyyy_to_ddmmyy"
+      },
+      {
+        "source_field": "location_code",
+        "target_field": "location_code",
+        "transformation_type": "calculated",
+        "transformation_function": "truncate_to_length(4)"
+      }
+    ],
+    "transformation_rules": [
+      {
+        "rule_id": "age_conversion_2000_1963",
+        "source_field": "age_code",
+        "target_field": "age_code",
+        "transformation_type": "calculated",
+        "transformation_expression": "{'01': '1', '02': '2', '03': '3', '04': '4', '05': '5'}.get(value, '5')",
+        "conditions": null
+      },
+      {
+        "rule_id": "date_conversion_2000_1963",
+        "source_field": "date_code",
+        "target_field": "date_code",
+        "transformation_type": "calculated",
+        "transformation_expression": "value[:4] + value[6:]",
+        "conditions": null
+      }
+    ],
+    "compatibility_level": "limited"
+  },
+  {
+    "from_version": "euring_1979",
+    "to_version": "euring_1966",
+    "field_mappings": [
+      {
+        "source_field": "ring_number",
+        "target_field": "ring_number",
+        "transformation_type": "calculated",
+        "transformation_function": "truncate_to_length(8)"
+      },
+      {
+        "source_field": "species_code",
+        "target_field": "species_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "age_code",
+        "target_field": "age_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "sex_code",
+        "target_field": "sex_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "date_code",
+        "target_field": "date_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "location_code",
+        "target_field": "location_code",
+        "transformation_type": "calculated",
+        "transformation_function": "truncate_to_length(4)"
+      }
+    ],
+    "transformation_rules": [
+      {
+        "rule_id": "ring_truncation_1979_1963",
+        "source_field": "ring_number",
+        "target_field": "ring_number",
+        "transformation_type": "calculated",
+        "transformation_expression": "value[:8]",
+        "conditions": null
+      },
+      {
+        "rule_id": "location_truncation_1979_1963",
+        "source_field": "location_code",
+        "target_field": "location_code",
+        "transformation_type": "calculated",
+        "transformation_expression": "value[:4]",
+        "conditions": null
+      }
+    ],
+    "compatibility_level": "partial"
+  },
+  {
+    "from_version": "euring_2000",
+    "to_version": "euring_1979",
+    "field_mappings": [
+      {
+        "source_field": "ring_number",
+        "target_field": "ring_number",
+        "transformation_type": "calculated",
+        "transformation_function": "truncate_to_length(9)"
+      },
+      {
+        "source_field": "species_code",
+        "target_field": "species_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "age_code",
+        "target_field": "age_code",
+        "transformation_type": "calculated",
+        "transformation_function": "convert_age_2000_to_1979"
+      },
+      {
+        "source_field": "sex_code",
+        "target_field": "sex_code",
+        "transformation_type": "direct",
+        "transformation_function": null
+      },
+      {
+        "source_field": "date_code",
+        "target_field": "date_code",
+        "transformation_type": "calculated",
+        "transformation_function": "convert_date_ddmmyyyy_to_ddmmyy"
+      },
+      {
+        "source_field": "location_code",
+        "target_field": "location_code",
+        "transformation_type": "calculated",
+        "transformation_function": "truncate_to_length(5)"
+      },
+      {
+        "source_field": "condition_code",
+        "target_field": "condition_code",
+        "transformation_type": "calculated",
+        "transformation_function": "convert_condition_2000_to_1979"
+      }
+    ],
+    "transformation_rules": [
+      {
+        "rule_id": "age_conversion_2000_1979",
+        "source_field": "age_code",
+        "target_field": "age_code",
+        "transformation_type": "calculated",
+        "transformation_expression": "{'01': '1', '02': '2', '03': '3', '04': '4', '05': '5', '06': '6', '07': '7', '08': '8', '09': '9'}.get(value, '9')",
+        "conditions": null
+      },
+      {
+        "rule_id": "date_conversion_2000_1979",
+        "source_field": "date_code",
+        "target_field": "date_code",
+        "transformation_type": "calculated",
+        "transformation_expression": "value[:4] + value[6:]",
+        "conditions": null
+      },
+      {
+        "rule_id": "condition_conversion_2000_1979",
+        "source_field": "condition_code",
+        "target_field": "condition_code",
+        "transformation_type": "calculated",
+        "transformation_expression": "value[1] if len(value) == 2 else value",
+        "conditions": null
+      }
+    ],
+    "compatibility_level": "partial"
+  }
+]
