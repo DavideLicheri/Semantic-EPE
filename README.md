@@ -1,5 +1,4 @@
 
-
 <div align="center">
 
 ![EPE Logo](assets/epe-logo.jpg)
@@ -57,12 +56,14 @@ Gestione coordinate (gradi/minuti ↔ decimali)
 Conversione unità automatica
 Note dettagliate per ogni conversione
 📡 API REST Completa
-POST /api/euring/recognize          # Riconoscimento singolo
-POST /api/euring/convert            # Conversione singola  
-POST /api/euring/batch/recognize    # Batch riconoscimento
-POST /api/euring/batch/convert      # Batch conversione
-GET  /api/euring/versions           # Info versioni
-GET  /api/euring/health             # Health check
+Endpoint principali disponibili:
+
+POST /api/euring/recognize - Riconoscimento singolo
+POST /api/euring/convert - Conversione singola
+POST /api/euring/batch/recognize - Batch riconoscimento
+POST /api/euring/batch/convert - Batch conversione
+GET /api/euring/versions - Info versioni
+GET /api/euring/health - Health check
 📊 Versioni EURING Supportate
 Versione	Anno	Formato	Lunghezza	Separatore	Status
 1966	1966	Spazi	~55 char	Spazi	✅
