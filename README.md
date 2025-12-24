@@ -1,14 +1,28 @@
+<div align="center">
+
+![EPE Logo](https://raw.githubusercontent.com/DavideLicheri/Semantic-EPE/main/assets/epe-logo.jpg)
+
 # 🦅 Semantic EPE - EURING Code Recognition System
 
-Sistema semantico completo per il riconoscimento e la conversione automatica dei codici EURING tra diverse versioni (1966, 1979, 2000, 2020) con compatibilità EPE ASP.
+**Sistema semantico completo per il riconoscimento e la conversione automatica dei codici EURING**  
+*Compatibilità EPE ASP garantita per sistemi esistenti*
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688.svg)](https://fastapi.tiangolo.com/)
+
+</div>
+
+---
 
 ## 🎯 Panoramica
 
-Il sistema EURING è composto da:
+Il **Semantic EPE** è un sistema completo per la gestione dei codici EURING che unisce:
 - **Backend API** (FastAPI + Python) per riconoscimento e conversione
-- **Frontend Web** (React + TypeScript + Vite) per interfaccia utente
+- **Frontend Web** (React + TypeScript) con matrix editor interattivo
 - **Sistema semantico** per conversioni intelligenti tra versioni
-- **Batch processing** per elaborazione di grandi volumi
+- **Compatibilità EPE ASP** per integrazione con sistemi esistenti
 
 ## 🚀 Avvio Rapido
 
@@ -17,12 +31,10 @@ Il sistema EURING è composto da:
 - Node.js 16+
 - npm o yarn
 
-### 1. Avvia il Backend
+### 1. Clone e Avvio
 ```bash
-# Metodo automatico
-./start_euring_system.sh
+git clone https://github.com/DavideLicheri/Semantic-EPE.git
+cd Semantic-EPE
 
-# O manualmente
-cd backend
-pip install fastapi uvicorn pydantic
-PYTHONPATH=. python3 main.py
+# Avvio automatico completo
+./start_euring_system.sh
