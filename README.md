@@ -1,10 +1,10 @@
 <div align="center">
 
-![EPE Logo](https://raw.githubusercontent.com/DavideLicheri/Semantic-EPE/main/assets/epe-logo.jpg)
+![EPE Logo](assets/epe-logo.jpg)
 
-# 🦅 Semantic EPE - EURING Code Recognition System
+# EURING Code Evolution System (ECES)
 
-**Sistema semantico completo per il riconoscimento e la conversione automatica dei codici EURING**  
+**Sistema completo per l'evoluzione e gestione dei codici EURING**  
 *Compatibilità EPE ASP garantita per sistemi esistenti*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -18,7 +18,7 @@
 
 ## 🎯 Panoramica
 
-Il **Semantic EPE** è un sistema completo per la gestione dei codici EURING che unisce:
+**ECES** (EURING Code Evolution System) è un sistema completo per la gestione e l'evoluzione dei codici EURING che unisce:
 - **Backend API** (FastAPI + Python) per riconoscimento e conversione
 - **Frontend Web** (React + TypeScript) con matrix editor interattivo
 - **Sistema semantico** per conversioni intelligenti tra versioni
@@ -26,15 +26,7 @@ Il **Semantic EPE** è un sistema completo per la gestione dei codici EURING che
 
 ## 🚀 Avvio Rapido
 
-### Prerequisiti
-- Python 3.8+
-- Node.js 16+
-- npm o yarn
-
-### 1. Clone e Avvio
 ```bash
 git clone https://github.com/DavideLicheri/Semantic-EPE.git
 cd Semantic-EPE
-
-# Avvio automatico completo
 ./start_euring_system.sh
