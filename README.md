@@ -1,119 +1,290 @@
-<div align="center">
+# 🎨 ECES Frontend - Interfaccia Utente
 
-![EPE Logo](assets/epe-logo.jpg)
+Frontend React + TypeScript + Vite per **ECES** (EURING Code Evolution System).
 
-# EURING Code Evolution System (ECES)
+## 🚀 Avvio Rapido
 
-**Sistema completo per l'evoluzione e gestione dei codici EURING**
+### Prerequisiti
+- Node.js 16+ 
+- npm o yarn
+- Backend EURING in esecuzione su http://localhost:8000
 
-*Compatibilità EPE ASP garantita per sistemi esistenti*
+### Installazione e Avvio
 
-</div>
+```bash
+# Dalla directory root del progetto
+./start_frontend.sh
 
----
+# O manualmente:
+cd frontend
+npm install
+npm run dev
+```
 
-## Panoramica
+Il frontend sarà disponibile su **http://localhost:3000**
 
-**ECES** (EURING Code Evolution System) è un sistema completo per la gestione e l'evoluzione dei codici EURING che unisce:
+## 🏗️ Architettura
 
-- **Backend API** (FastAPI + Python) per riconoscimento e conversione
-- **Frontend Web** (React + TypeScript) con matrix editor interattivo  
-- **Sistema semantico** per conversioni intelligenti tra versioni
-- **Compatibilità EPE ASP** per integrazione con sistemi esistenti
+```
+frontend/
+├── src/
+│   ├── components/          # Componenti React
+│   │   ├── RecognitionPanel.tsx    # Pannello riconoscimento
+│   │   ├── ConversionPanel.tsx     # Pannello conversione
+│   │   └── ResultsPanel.tsx        # Pannello risultati
+│   ├── services/           # Servizi API
+│   │   └── api.ts         # Client API per backend
+│   ├── types/             # Definizioni TypeScript
+│   │   ├── api-types.ts   # Tipi API
+│   │   └── euring-types.ts # Tipi EURING
+│   ├── App.tsx            # Componente principale
+│   ├── main.tsx           # Entry point
+│   └── index.css          # Stili globali
+├── index.html             # Template HTML
+├── package.json           # Dipendenze
+└── vite.config.ts         # Configurazione Vite
+```
 
-## Avvio Rapido
+## 🎯 Funzionalità
 
-Clona il repository e avvia il sistema:
+### 🔍 Pannello Riconoscimento
+- **Riconoscimento singolo**: Analizza una stringa EURING
+- **Riconoscimento batch**: Analizza più stringhe (max 100)
+- **Analisi dettagliata**: Include discriminanti e metriche
+- **Esempi integrati**: Carica esempi per ogni versione
+- **Validazione input**: Controlli di formato in tempo reale
 
-    git clone https://github.com/DavideLicheri/Semantic-EPE.git
-    cd Semantic-EPE
-    ./start_euring_system.sh
+### 🔄 Pannello Conversione
+- **Conversione singola**: Converti tra versioni EURING
+- **Conversione batch**: Converti più stringhe (max 50)
+- **Auto-rilevamento**: Rileva automaticamente versione sorgente
+- **Conversione semantica**: Mantiene integrità semantica
+- **Note dettagliate**: Mostra note di conversione
 
-**Accesso Sistema:**
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs
+### 📊 Risultati
+- **Visualizzazione chiara**: Risultati organizzati e leggibili
+- **Metriche performance**: Tempi di elaborazione e confidenza
+- **Copia negli appunti**: Copia risultati con un click
+- **Export multipli**: JSON, CSV, TXT
+- **Statistiche**: Riepilogo successi/errori
 
-## Funzionalità Principali
+## 🎨 Design
 
-### Riconoscimento Automatico
-- **100% accuratezza** su stringhe EURING reali
-- **Pattern matching** multi-fattore con discriminanti
-- **Batch processing** fino a 1000 stringhe
+### Tema e Colori
+- **Gradiente principale**: `#667eea` → `#764ba2`
+- **Sfondo**: Gradiente blu-viola
+- **Cards**: Bianco con ombre sottili
+- **Successo**: Verde `#28a745`
+- **Errore**: Rosso `#dc3545`
+- **Warning**: Giallo `#ffc107`
 
-### Matrix Editor Interattivo
-- **Editing in tempo reale** dei campi EURING
-- **Lookup tables** personalizzabili con dropdown
-- **Valori predefiniti** modificabili dall'utente
-- **Interfaccia responsive** mobile-friendly
+### Responsive Design
+- **Desktop**: Layout a colonne ottimizzato
+- **Tablet**: Layout adattivo con stack verticale
+- **Mobile**: Interfaccia touch-friendly
 
-### Conversione Semantica
-- **Conversione intelligente** tra tutte le versioni
-- **Preservazione semantica** dei dati
-- **Gestione coordinate** (gradi/minuti ↔ decimali)
+### Accessibilità
+- **Contrasti**: WCAG AA compliant
+- **Keyboard navigation**: Supporto completo
+- **Screen readers**: ARIA labels appropriati
+- **Focus indicators**: Visibili e chiari
 
-### API REST Completa
-- POST /api/euring/recognize - Riconoscimento singolo
-- POST /api/euring/convert - Conversione singola  
-- POST /api/euring/batch/recognize - Batch riconoscimento
-- GET /api/euring/versions - Info versioni
-- GET /api/euring/health - Health check
+## 🔧 Configurazione
 
-## Versioni EURING Supportate
+### Proxy API
+Il frontend è configurato per proxy delle chiamate API:
+```typescript
+// vite.config.ts
+server: {
+  port: 3000,
+  proxy: {
+    '/api': {
+      target: 'http://localhost:8000',
+      changeOrigin: true,
+    }
+  }
+}
+```
 
-| Versione | Anno | Formato | Status |
-|----------|------|---------|--------|
-| **1966** | 1966 | Spazi | ✅ |
-| **1979** | 1979 | Fisso | ✅ |
-| **2000** | 2000 | Codificato | ✅ |
-| **2020** | 2020 | Pipe | ✅ |
+### Variabili Ambiente
+Crea `.env.local` per configurazioni personalizzate:
+```env
+VITE_API_BASE_URL=http://localhost:8000
+VITE_API_TIMEOUT=30000
+```
 
-## Esempi di Stringhe
+## 📡 Integrazione API
 
-Esempi di codici EURING per ogni versione:
+### Client API
+```typescript
+import { EuringAPI } from './services/api';
 
-    1966: 5320 TA12345 3 11022023 5215N 01325E 10 2 050 0115 0750
-    1979: 05320ISA12345 099200501199505215215N01325E10321--0500115--075010--001090------
-    2000: IABA0SA...7285004ZZ1187011870H0ZUMM55U-----0105200600600IA13+452409+009033908200400000---00086
-    2020: 05320|ISA12345|0|09920|3|2|20230521|1430|52.25412|-1.34521|1|10|01|0|0|135.5|19.5|4|2|0|0|2
+// Riconoscimento
+const result = await EuringAPI.recognize({
+  euring_string: "5320 TA12345 3 11022023 5215N 01325E 10 2 050 0115 0750",
+  include_analysis: true
+});
 
-## Performance
+// Conversione
+const conversion = await EuringAPI.convert({
+  euring_string: "5320 TA12345 3 11022023 5215N 01325E 10 2 050 0115 0750",
+  source_version: "1966",
+  target_version: "2020",
+  use_semantic: true
+});
+```
 
-| Metrica | Valore |
-|---------|--------|
-| **Accuratezza Riconoscimento** | 100% |
-| **Tempo Riconoscimento** | < 50ms |
-| **Tempo Conversione** | < 100ms |
-| **Versioni Supportate** | 4 complete |
+### Gestione Errori
+- **Network errors**: Retry automatico
+- **API errors**: Messaggi user-friendly
+- **Validation errors**: Feedback in tempo reale
+- **Loading states**: Indicatori di caricamento
 
-## Risultati Raggiunti
+## 🧪 Testing
 
-✅ **Sistema completo** con backend + frontend  
-✅ **100% accuratezza** nel riconoscimento  
-✅ **Conversione semantica** tra tutte le versioni  
-✅ **Matrix editor** con lookup tables personalizzabili  
-✅ **API REST moderna** con 7 endpoint  
-✅ **Interfaccia responsive** mobile-friendly  
-✅ **Compatibilità EPE ASP** per sistemi esistenti  
+### Test Manuali
+1. **Riconoscimento**: Testa con stringhe di esempio
+2. **Conversione**: Verifica conversioni bidirezionali
+3. **Batch**: Testa con multiple stringhe
+4. **Export**: Verifica download file
+5. **Responsive**: Testa su diversi dispositivi
 
-## Documentazione
+### Esempi di Test
+```typescript
+// Stringhe di test per ogni versione
+const testStrings = {
+  '1966': '5320 TA12345 3 11022023 5215N 01325E 10 2 050 0115 0750',
+  '1979': '05320ISA12345 099200501199505215215N01325E10321--0500115--075010--001090------',
+  '2000': 'IABA0SA...7285004ZZ1187011870H0ZUMM55U-----0105200600600IA13+452409+009033908200400000---00086',
+  '2020': '05320|ISA12345|0|09920|3|2|20230521|1430|52.25412|-1.34521|1|10|01|0|0|135.5|19.5|4|2|0|0|2'
+};
+```
 
-- **Matrix Guide** - Guida completa matrix editor
-- **Deployment** - Deploy in produzione  
-- **API Documentation** - Documentazione API completa
+## 🚀 Build e Deploy
 
-## Licenza
+### Build di Produzione
+```bash
+npm run build
+```
 
-MIT License - Sviluppato per la community ornitologica europea.
+### Preview Build
+```bash
+npm run preview
+```
 
----
+### Deploy
+Il build genera file statici in `dist/` pronti per deploy su:
+- **Netlify**: Drag & drop della cartella `dist`
+- **Vercel**: Connessione GitHub automatica
+- **Apache/Nginx**: Servire file statici
+- **AWS S3**: Hosting statico
 
-<div align="center">
+### Configurazione Server
+Per SPA routing, configura il server per servire `index.html` per tutte le route:
 
-**ECES - Sistema EURING completo e operativo!**
+**Nginx:**
+```nginx
+location / {
+  try_files $uri $uri/ /index.html;
+}
+```
 
-*Riconoscimento e conversione automatica dei codici EURING con accuratezza del 100%*
+**Apache:**
+```apache
+RewriteEngine On
+RewriteRule ^(?!.*\.).*$ /index.html [L]
+```
 
-**Compatibile con EPE ASP • Interfaccia moderna • API completa**
+## 📱 Utilizzo
 
-</div>
+### Workflow Tipico
+
+1. **Avvia Backend**
+   ```bash
+   ./start_euring_system.sh
+   ```
+
+2. **Avvia Frontend**
+   ```bash
+   ./start_frontend.sh
+   ```
+
+3. **Accedi all'Interfaccia**
+   - Apri http://localhost:3000
+   - Scegli tab "Riconoscimento" o "Conversione"
+
+4. **Riconoscimento**
+   - Incolla stringa EURING
+   - Abilita analisi dettagliata se necessario
+   - Clicca "Riconosci"
+   - Visualizza risultati con confidenza e metriche
+
+5. **Conversione**
+   - Incolla stringa EURING
+   - Seleziona versioni sorgente e target
+   - Abilita auto-rilevamento (consigliato)
+   - Clicca "Converti"
+   - Copia risultato o esporta
+
+6. **Batch Processing**
+   - Abilita modalità batch
+   - Incolla multiple stringhe (una per riga)
+   - Processa fino a 100 riconoscimenti o 50 conversioni
+   - Esporta risultati in JSON/CSV/TXT
+
+## 🔍 Troubleshooting
+
+### Problemi Comuni
+
+**Frontend non si avvia:**
+```bash
+# Pulisci cache e reinstalla
+rm -rf node_modules package-lock.json
+npm install
+```
+
+**API non raggiungibile:**
+- Verifica che il backend sia in esecuzione su porta 8000
+- Controlla configurazione proxy in `vite.config.ts`
+- Verifica CORS nel backend
+
+**Build fallisce:**
+```bash
+# Controlla errori TypeScript
+npm run lint
+npx tsc --noEmit
+```
+
+**Performance lente:**
+- Riduci numero stringhe in batch
+- Disabilita analisi dettagliata se non necessaria
+- Controlla connessione di rete
+
+### Debug
+
+**Console del Browser:**
+- Apri DevTools (F12)
+- Controlla tab Console per errori JavaScript
+- Controlla tab Network per chiamate API
+
+**Logs API:**
+- Le chiamate API sono loggate automaticamente
+- Controlla console per request/response details
+
+## 📚 Risorse
+
+- **Vite**: https://vitejs.dev/
+- **React**: https://react.dev/
+- **TypeScript**: https://www.typescriptlang.org/
+- **Axios**: https://axios-http.com/
+
+## 🎉 Conclusione
+
+Il frontend EURING fornisce un'interfaccia moderna e intuitiva per:
+- ✅ Riconoscimento automatico versioni EURING
+- ✅ Conversione semantica tra versioni
+- ✅ Batch processing ottimizzato
+- ✅ Export risultati multipli formati
+- ✅ Design responsive e accessibile
+
+**Sistema completo e pronto per l'uso!** 🚀

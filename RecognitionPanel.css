@@ -1,0 +1,420 @@
+/* Recognition Panel Styles - EURING Classic */
+.recognition-panel {
+  max-width: 1000px;
+  margin: 0 auto;
+  background-color: #FFFAF0;
+}
+
+.panel-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.panel-header h2 {
+  font-size: 18pt;
+  color: #663333;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+.panel-header p {
+  color: #666;
+  font-size: 12pt;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+/* Form Styles - EURING Table Style */
+.recognition-form {
+  background: #FFFFFF;
+  padding: 2rem;
+  border: solid 1px #000000;
+  margin-bottom: 2rem;
+  border-radius: 0;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: bold;
+  color: #663333;
+  margin-bottom: 0.5rem;
+  font-size: 12pt;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+.form-group textarea {
+  width: 100%;
+  padding: 8px;
+  border: solid 1px #000000;
+  font-family: 'Courier New', monospace;
+  font-size: 11pt;
+  line-height: 1.4;
+  resize: vertical;
+  background-color: #FFFFFF;
+}
+
+.form-group textarea:focus {
+  outline: none;
+  border: solid 2px #663333;
+  background-color: #FFFAF0;
+}
+
+.form-group textarea.loading {
+  opacity: 0.6;
+  pointer-events: none;
+  background-color: #f5f5f5;
+}
+
+/* Form Options - EURING Style */
+.form-options {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: normal;
+  color: #663333;
+  cursor: pointer;
+  font-size: 11pt;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+/* Form Actions - EURING Buttons */
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn-primary, .btn-secondary {
+  padding: 8px 16px;
+  border: solid 1px #000000;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 11pt;
+  font-family: Arial, Verdana, sans-serif;
+  border-radius: 0;
+}
+
+.btn-primary {
+  background-color: #663333;
+  color: #FFFFFF;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #441111;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #999999;
+}
+
+.btn-secondary {
+  background-color: #FFFFFF;
+  color: #663333;
+  border: solid 1px #663333;
+}
+
+.btn-secondary:hover {
+  background-color: #f5f5f5;
+}
+
+/* Examples Section - EURING Table */
+.examples-section {
+  background: #FFFFFF;
+  padding: 1.5rem;
+  border: solid 1px #000000;
+  margin-bottom: 2rem;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.examples-section h3 {
+  margin-bottom: 1rem;
+  color: #663333;
+  font-size: 14pt;
+  font-weight: bold;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+.examples-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.example-btn {
+  padding: 8px 12px;
+  background: #FFFFFF;
+  border: solid 1px #663333;
+  cursor: pointer;
+  font-weight: normal;
+  color: #663333;
+  font-size: 10pt;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+.example-btn:hover {
+  background-color: #663333;
+  color: #FFFFFF;
+}
+
+/* Results Section - EURING Table Style */
+.results-section {
+  background: #FFFFFF;
+  padding: 2rem;
+  border: solid 1px #000000;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.results-section h3 {
+  margin-bottom: 1.5rem;
+  color: #663333;
+  font-size: 16pt;
+  font-weight: bold;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+.results-summary {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  padding: 8px;
+  background-color: #663333;
+  color: #FFFFFF;
+  border: solid 1px #000000;
+  flex-wrap: wrap;
+}
+
+.summary-item {
+  color: #FFFFFF;
+  font-weight: normal;
+  font-size: 11pt;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+.summary-item strong {
+  color: #FFFFFF;
+  font-weight: bold;
+}
+
+/* Result Cards - EURING Table Rows */
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.result-card {
+  border: solid 1px #000000;
+  overflow: hidden;
+}
+
+.result-card.success {
+  border-color: #006600;
+}
+
+.result-card.error {
+  border-color: #CC0000;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #663333;
+  color: #FFFFFF;
+  border-bottom: solid 1px #000000;
+  font-weight: bold;
+  font-size: 12pt;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+.result-card.success .result-header {
+  background-color: #006600;
+}
+
+.result-card.error .result-header {
+  background-color: #CC0000;
+}
+
+.result-index {
+  font-weight: bold;
+  color: #FFFFFF;
+}
+
+.result-status {
+  font-size: 12pt;
+}
+
+.result-content {
+  padding: 12px;
+  background-color: #FFFFFF;
+}
+
+.original-string {
+  margin-bottom: 1rem;
+}
+
+.original-string strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #663333;
+  font-weight: bold;
+  font-size: 11pt;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+.original-string code {
+  display: block;
+  background-color: #f5f5f5;
+  padding: 8px;
+  border: solid 1px #000000;
+  font-family: 'Courier New', monospace;
+  font-size: 10pt;
+  word-break: break-all;
+  border-left: solid 4px #663333;
+}
+
+/* Recognition Info - EURING Data Cells */
+.recognition-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 6px;
+  border: solid 1px #000000;
+  background-color: #FFFFFF;
+}
+
+.info-item .label {
+  font-weight: bold;
+  color: #663333;
+  font-size: 10pt;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+.info-item .value {
+  font-weight: normal;
+  color: #000000;
+  font-size: 11pt;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+.version-badge {
+  background-color: #663333;
+  color: #FFFFFF;
+  padding: 4px 8px;
+  border: solid 1px #000000;
+  font-size: 10pt;
+  display: inline-block;
+  width: fit-content;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+.confidence-badge {
+  background-color: #006600;
+  color: #FFFFFF;
+  padding: 4px 8px;
+  border: solid 1px #000000;
+  font-size: 10pt;
+  display: inline-block;
+  width: fit-content;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+/* Analysis Section - EURING Data Table */
+.analysis-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: solid 1px #000000;
+}
+
+.analysis-section h4 {
+  margin-bottom: 1rem;
+  color: #663333;
+  font-size: 12pt;
+  font-weight: bold;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 2px;
+}
+
+.analysis-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px;
+  background-color: #FFFFFF;
+  border: solid 1px #000000;
+  font-size: 10pt;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+.analysis-key {
+  font-weight: bold;
+  color: #663333;
+}
+
+.analysis-value {
+  color: #000000;
+}
+
+/* Error Info */
+.error-info {
+  color: #CC0000;
+  font-weight: bold;
+  font-size: 12pt;
+  font-family: Arial, Verdana, sans-serif;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .recognition-form {
+    padding: 1.5rem;
+  }
+  
+  .form-options {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .results-summary {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .recognition-info {
+    grid-template-columns: 1fr;
+  }
+  
+  .examples-grid {
+    grid-template-columns: 1fr;
+  }
+}
