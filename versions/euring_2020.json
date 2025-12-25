@@ -1,0 +1,437 @@
+{
+  "id": "euring_2020",
+  "name": "EURING Code 2020",
+  "year": 2020,
+  "description": "Current EURING code version with pipe-delimited format and decimal coordinates",
+  "field_definitions": [
+    {
+      "position": 1,
+      "name": "species_code",
+      "data_type": "numeric",
+      "length": 5,
+      "valid_values": null,
+      "description": "Species identification code (5 digits)",
+      "semantic_domain": null,
+      "semantic_meaning": "EURING species code",
+      "evolution_notes": null
+    },
+    {
+      "position": 2,
+      "name": "ring_number",
+      "data_type": "alphanumeric",
+      "length": 8,
+      "valid_values": null,
+      "description": "Ring number (3 letters + 5 digits)",
+      "semantic_domain": null,
+      "semantic_meaning": "Unique ring identifier",
+      "evolution_notes": null
+    },
+    {
+      "position": 3,
+      "name": "metal_ring_info",
+      "data_type": "numeric",
+      "length": 1,
+      "valid_values": [
+        "1",
+        "2"
+      ],
+      "description": "Metal ring information code",
+      "semantic_domain": null,
+      "semantic_meaning": "Metal ring status or type",
+      "evolution_notes": null
+    },
+    {
+      "position": 4,
+      "name": "other_marks_info",
+      "data_type": "numeric",
+      "length": 5,
+      "valid_values": [
+        "1",
+        "5",
+        "3",
+        "2x"
+      ],
+      "description": "Other marks information code",
+      "semantic_domain": null,
+      "semantic_meaning": "Additional marking information",
+      "evolution_notes": null
+    },
+    {
+      "position": 5,
+      "name": "age_code",
+      "data_type": "numeric",
+      "length": 1,
+      "valid_values": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "description": "Age classification code (1 digit)",
+      "semantic_domain": null,
+      "semantic_meaning": "Bird age category",
+      "evolution_notes": null
+    },
+    {
+      "position": 6,
+      "name": "sex_code",
+      "data_type": "numeric",
+      "length": 1,
+      "valid_values": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "description": "Sex identification code (1 digit)",
+      "semantic_domain": null,
+      "semantic_meaning": "Bird sex category",
+      "evolution_notes": null
+    },
+    {
+      "position": 7,
+      "name": "date_code",
+      "data_type": "numeric",
+      "length": 8,
+      "valid_values": null,
+      "description": "Date in YYYYMMDD format",
+      "semantic_domain": null,
+      "semantic_meaning": "Capture/observation date",
+      "evolution_notes": null
+    },
+    {
+      "position": 8,
+      "name": "time_code",
+      "data_type": "numeric",
+      "length": 4,
+      "valid_values": null,
+      "description": "Time in HHMM format",
+      "semantic_domain": null,
+      "semantic_meaning": "Capture/observation time",
+      "evolution_notes": null
+    },
+    {
+      "position": 9,
+      "name": "latitude_decimal",
+      "data_type": "decimal",
+      "length": 8,
+      "valid_values": null,
+      "description": "Latitude in decimal degrees",
+      "semantic_domain": null,
+      "semantic_meaning": "Geographic latitude coordinate",
+      "evolution_notes": null
+    },
+    {
+      "position": 10,
+      "name": "longitude_decimal",
+      "data_type": "decimal",
+      "length": 9,
+      "valid_values": null,
+      "description": "Longitude in decimal degrees",
+      "semantic_domain": null,
+      "semantic_meaning": "Geographic longitude coordinate",
+      "evolution_notes": null
+    },
+    {
+      "position": 11,
+      "name": "condition_code",
+      "data_type": "numeric",
+      "length": 1,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "description": "Condition or circumstances code",
+      "semantic_domain": null,
+      "semantic_meaning": "Bird condition at capture",
+      "evolution_notes": null
+    },
+    {
+      "position": 12,
+      "name": "method_code",
+      "data_type": "numeric",
+      "length": 2,
+      "valid_values": null,
+      "description": "Capture or observation method code",
+      "semantic_domain": null,
+      "semantic_meaning": "Method used for capture/observation",
+      "evolution_notes": null
+    },
+    {
+      "position": 13,
+      "name": "accuracy_code",
+      "data_type": "numeric",
+      "length": 2,
+      "valid_values": null,
+      "description": "Location accuracy code",
+      "semantic_domain": null,
+      "semantic_meaning": "Accuracy of location coordinates",
+      "evolution_notes": null
+    },
+    {
+      "position": 14,
+      "name": "status_info",
+      "data_type": "numeric",
+      "length": 1,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "description": "Status information code",
+      "semantic_domain": null,
+      "semantic_meaning": "Additional status information",
+      "evolution_notes": null
+    },
+    {
+      "position": 15,
+      "name": "verification_code",
+      "data_type": "numeric",
+      "length": 1,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "description": "Verification status code",
+      "semantic_domain": null,
+      "semantic_meaning": "Data verification status",
+      "evolution_notes": null
+    },
+    {
+      "position": 16,
+      "name": "wing_length",
+      "data_type": "decimal",
+      "length": 5,
+      "valid_values": null,
+      "description": "Wing length measurement (mm)",
+      "semantic_domain": null,
+      "semantic_meaning": "Biometric measurement - wing length",
+      "evolution_notes": null
+    },
+    {
+      "position": 17,
+      "name": "weight",
+      "data_type": "decimal",
+      "length": 4,
+      "valid_values": null,
+      "description": "Body weight measurement (g)",
+      "semantic_domain": null,
+      "semantic_meaning": "Biometric measurement - body weight",
+      "evolution_notes": null
+    },
+    {
+      "position": 18,
+      "name": "bill_length",
+      "data_type": "numeric",
+      "length": 1,
+      "valid_values": null,
+      "description": "Bill length code or measurement",
+      "semantic_domain": null,
+      "semantic_meaning": "Biometric measurement - bill length",
+      "evolution_notes": null
+    },
+    {
+      "position": 19,
+      "name": "tarsus_length",
+      "data_type": "numeric",
+      "length": 1,
+      "valid_values": null,
+      "description": "Tarsus length code or measurement",
+      "semantic_domain": null,
+      "semantic_meaning": "Biometric measurement - tarsus length",
+      "evolution_notes": null
+    },
+    {
+      "position": 20,
+      "name": "fat_score",
+      "data_type": "numeric",
+      "length": 1,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "description": "Fat score assessment",
+      "semantic_domain": null,
+      "semantic_meaning": "Body fat condition score",
+      "evolution_notes": null
+    },
+    {
+      "position": 21,
+      "name": "muscle_score",
+      "data_type": "numeric",
+      "length": 1,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "description": "Muscle score assessment",
+      "semantic_domain": null,
+      "semantic_meaning": "Body muscle condition score",
+      "evolution_notes": null
+    },
+    {
+      "position": 22,
+      "name": "moult_code",
+      "data_type": "numeric",
+      "length": 1,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "description": "Moult status code",
+      "semantic_domain": null,
+      "semantic_meaning": "Feather moult condition",
+      "evolution_notes": null
+    }
+  ],
+  "validation_rules": [
+    {
+      "field_name": "species_code",
+      "rule_type": "format",
+      "rule_expression": "value.isdigit() and len(value) == 5",
+      "error_message": "Species code must be exactly 5 digits"
+    },
+    {
+      "field_name": "ring_number",
+      "rule_type": "format",
+      "rule_expression": "len(value) == 8 and value[:3].isalpha() and value[3:].isdigit() and value[:3].isupper()",
+      "error_message": "Ring number must be 3 uppercase letters followed by 5 digits"
+    },
+    {
+      "field_name": "age_code",
+      "rule_type": "range",
+      "rule_expression": "value.isdigit() and len(value) == 1 and int(value) >= 1",
+      "error_message": "Age code must be a single digit from 1-9"
+    },
+    {
+      "field_name": "sex_code",
+      "rule_type": "range",
+      "rule_expression": "value.isdigit() and len(value) == 1 and int(value) >= 1",
+      "error_message": "Sex code must be a single digit from 1-9"
+    },
+    {
+      "field_name": "date_code",
+      "rule_type": "format",
+      "rule_expression": "len(value) == 8 and value.isdigit() and 1 <= int(value[6:8]) <= 31 and 1 <= int(value[4:6]) <= 12 and int(value[:4]) >= 1900",
+      "error_message": "Date must be 8 digits in valid YYYYMMDD format"
+    },
+    {
+      "field_name": "time_code",
+      "rule_type": "format",
+      "rule_expression": "len(value) == 4 and value.isdigit() and int(value[:2]) <= 23 and int(value[2:]) <= 59",
+      "error_message": "Time must be 4 digits in valid HHMM format (00:00-23:59)"
+    },
+    {
+      "field_name": "latitude_decimal",
+      "rule_type": "range",
+      "rule_expression": "-90 <= float(value) <= 90",
+      "error_message": "Latitude must be between -90 and 90 degrees"
+    },
+    {
+      "field_name": "longitude_decimal",
+      "rule_type": "range",
+      "rule_expression": "-180 <= float(value) <= 180",
+      "error_message": "Longitude must be between -180 and 180 degrees"
+    },
+    {
+      "field_name": "metal_ring_info",
+      "rule_type": "range",
+      "rule_expression": "value.isdigit() and len(value) == 1",
+      "error_message": "Metal ring info must be a single digit"
+    },
+    {
+      "field_name": "other_marks_info",
+      "rule_type": "format",
+      "rule_expression": "len(value) == 5 and value.isdigit()",
+      "error_message": "Other marks info must be exactly 5 digits"
+    },
+    {
+      "field_name": "method_code",
+      "rule_type": "format",
+      "rule_expression": "len(value) == 2 and value.isdigit()",
+      "error_message": "Method code must be exactly 2 digits"
+    },
+    {
+      "field_name": "accuracy_code",
+      "rule_type": "format",
+      "rule_expression": "len(value) == 2 and value.isdigit()",
+      "error_message": "Accuracy code must be exactly 2 digits"
+    },
+    {
+      "field_name": "wing_length",
+      "rule_type": "range",
+      "rule_expression": "float(value) > 0 and float(value) < 1000",
+      "error_message": "Wing length must be a positive decimal less than 1000mm"
+    },
+    {
+      "field_name": "weight",
+      "rule_type": "range",
+      "rule_expression": "float(value) > 0 and float(value) < 10000",
+      "error_message": "Weight must be a positive decimal less than 10000g"
+    }
+  ],
+  "format_specification": {
+    "total_length": 102,
+    "field_separator": "|",
+    "encoding": "utf-8",
+    "validation_pattern": "^[0-9]{5}\\|[A-Z]{3}[0-9]{5}\\|[0-9]\\|[0-9]{5}\\|[1-9]\\|[1-9]\\|[0-9]{8}\\|[0-9]{4}\\|[+-]?[0-9]+\\.[0-9]+\\|[+-]?[0-9]+\\.[0-9]+\\|[0-9]\\|[0-9]{2}\\|[0-9]{2}\\|[0-9]\\|[0-9]\\|[0-9]+\\.[0-9]\\|[0-9]+\\.[0-9]\\|[0-9]\\|[0-9]\\|[0-9]\\|[0-9]\\|[0-9]$"
+  },
+  "semantic_domains": null
+}

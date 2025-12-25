@@ -1,0 +1,318 @@
+{
+  "id": "euring_2020_official",
+  "name": "EURING Code 2020 (Official SKOS)",
+  "year": 2020,
+  "description": "Official EURING 2020 code based on SKOS thesaurus with precise field definitions",
+  "field_definitions": [
+    {
+      "position": 1,
+      "name": "identification_number",
+      "data_type": "alphanumeric",
+      "length": 10,
+      "valid_values": null,
+      "description": "Ring identification number - sequence of ten characters, padded with dots if needed",
+      "semantic_meaning": "Unique ring identifier for the bird throughout its life",
+      "format_pattern": "^[A-Z0-9\\.\\-]{10}$",
+      "example_values": ["ISA12345...", "...0123456", "AB...1234-"],
+      "editorial_note": "Dots inserted to left of rightmost numbers. Use '-' for unknown/worn parts. Always use original ring number."
+    },
+    {
+      "position": 2,
+      "name": "ringing_scheme",
+      "data_type": "alphanumeric",
+      "length": 3,
+      "valid_values": ["IAB", "DEH"],
+      "description": "Ringing scheme code identifying the issuing center",
+      "semantic_meaning": "Identification of ringing scheme or country",
+      "format_pattern": "^[A-Z]{3}$",
+      "example_values": ["IAB", "DEH"],
+      "editorial_note": "Centers issuing rings with alphanumeric numbers that could be confused without address"
+    },
+    {
+      "position": 3,
+      "name": "primary_identification_method",
+      "data_type": "alphanumeric",
+      "length": 2,
+      "valid_values": ["A0", "B0", "C0", "D0", "E0", "F0", "G0", "H0", "K0", "L0", "R0", "T0"],
+      "description": "Primary method used to identify the bird",
+      "semantic_meaning": "Primary identification marker type",
+      "format_pattern": "^[A-Z][0-9]$",
+      "example_values": ["A0", "B0", "E0"],
+      "editorial_note": "A0=Metal ring (most common). Same method used throughout bird's life. Changes to A0 if metal ring added later."
+    },
+    {
+      "position": 4,
+      "name": "metal_ring_information",
+      "data_type": "numeric",
+      "length": 1,
+      "valid_values": ["0", "1", "2", "3", "4", "5", "6", "7"],
+      "description": "Metal ring status information",
+      "semantic_meaning": "Status of metal ring on the bird",
+      "format_pattern": "^[0-7]$",
+      "example_values": ["0", "1", "4"],
+      "editorial_note": "0=not present, 1=added on tarsus/above, 2=added on tarsus, 3=added above tarsus, 4=already present, 5=changed, 6=removed, 7=extra ring added"
+    },
+    {
+      "position": 5,
+      "name": "other_marks_information",
+      "data_type": "alphanumeric",
+      "length": 2,
+      "valid_values": ["ZZ", "OM", "OP", "OT", "MM", "B-", "BB", "BC", "BD", "BE", "C-", "CB", "CC", "CD", "CE"],
+      "description": "Information about marks other than conventional metal ring",
+      "semantic_meaning": "Additional marking information",
+      "format_pattern": "^[A-Z\\-]{2}$",
+      "example_values": ["ZZ", "BB", "CD"],
+      "editorial_note": "ZZ=no other marks. First char=mark type, second=status. Special cases: OM/OP/OT/MM for multiple marks."
+    },
+    {
+      "position": 6,
+      "name": "species_as_mentioned_by_finder",
+      "data_type": "numeric",
+      "length": 5,
+      "valid_values": null,
+      "description": "Species code as reported by the finder",
+      "semantic_meaning": "Species identification by person who found/handled bird",
+      "format_pattern": "^[0-9]{5}$",
+      "example_values": ["05320", "12000", "12010"],
+      "editorial_note": "Based on Voous numbering system. May be incorrect identification by finder."
+    },
+    {
+      "position": 7,
+      "name": "species_as_mentioned_by_scheme",
+      "data_type": "numeric",
+      "length": 5,
+      "valid_values": null,
+      "description": "Species code as concluded by the ringing scheme",
+      "semantic_meaning": "Verified species identification by scheme",
+      "format_pattern": "^[0-9]{5}$",
+      "example_values": ["05320", "12010"],
+      "editorial_note": "Scheme's verification of species. Same for all records of particular bird. Based on IOC taxonomy."
+    },
+    {
+      "position": 8,
+      "name": "age_mentioned_by_the_person",
+      "data_type": "alphanumeric",
+      "length": 1,
+      "valid_values": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H"],
+      "description": "Age as mentioned by person who handled the bird",
+      "semantic_meaning": "Age classification based on plumage state",
+      "format_pattern": "^[0-9A-H]$",
+      "example_values": ["0", "2", "3"],
+      "editorial_note": "Statement about plumage, not actual age in years. Odd=exact year determinable, even=year not exact. Changes Dec 31-Jan 1."
+    },
+    {
+      "position": 9,
+      "name": "sex_mentioned_by_the_person",
+      "data_type": "alphanumeric",
+      "length": 1,
+      "valid_values": ["M", "F", "U"],
+      "description": "Sex as mentioned by person who handled the bird",
+      "semantic_meaning": "Sex identification by handler",
+      "format_pattern": "^[MFU]$",
+      "example_values": ["M", "F", "U"],
+      "editorial_note": "M=Male, F=Female, U=Unknown"
+    },
+    {
+      "position": 10,
+      "name": "sex_concluded_by_the_scheme",
+      "data_type": "alphanumeric",
+      "length": 1,
+      "valid_values": ["M", "F", "U"],
+      "description": "Sex as concluded by the ringing scheme",
+      "semantic_meaning": "Verified sex identification by scheme",
+      "format_pattern": "^[MFU]$",
+      "example_values": ["M", "F", "U"],
+      "editorial_note": "Scheme's verification of sex determination"
+    },
+    {
+      "position": 11,
+      "name": "manipulated",
+      "data_type": "alphanumeric",
+      "length": 1,
+      "valid_values": ["N", "H", "K", "C", "F", "T", "M", "R", "E", "P", "U"],
+      "description": "Bird manipulation status (priority order)",
+      "semantic_meaning": "Type of manipulation performed on bird",
+      "format_pattern": "^[A-Z]$",
+      "example_values": ["N", "M", "C"],
+      "editorial_note": "Priority order: H=hand reared(1), K=fledging provoked(2), C=captive >24h(3), F=transported from(4), T=transported to(5), M=manipulated(6), R=ringing accident(7), E=euthanised(8), P=poor condition(9), N=normal(10), U=unknown(11)",
+      "priority_order": true
+    },
+    {
+      "position": 12,
+      "name": "moved_before",
+      "data_type": "numeric",
+      "length": 1,
+      "valid_values": ["0", "2", "4", "6", "9"],
+      "description": "Movement before the encounter",
+      "semantic_meaning": "Movement status before capture/recovery",
+      "format_pattern": "^[0-9]$",
+      "example_values": ["0", "2", "6"],
+      "editorial_note": "0=not moved, 2=moved unintentionally, 4=moved intentionally by man, 6=moved by water, 9=unknown"
+    },
+    {
+      "position": 13,
+      "name": "catching_method",
+      "data_type": "alphanumeric",
+      "length": 1,
+      "valid_values": ["A", "B", "C", "D", "F", "G", "H", "L", "M", "N", "O", "P", "R", "S", "T", "U", "V", "W", "Z", "-"],
+      "description": "Method used for catching the bird",
+      "semantic_meaning": "Capture method employed",
+      "format_pattern": "^[A-Z\\-]$",
+      "example_values": ["M", "N", "H"],
+      "editorial_note": "M=mist net, N=on nest, H=by hand, A=actively triggered trap, etc. -=not applicable (found dead/shot)"
+    },
+    {
+      "position": 14,
+      "name": "catching_lures",
+      "data_type": "alphanumeric",
+      "length": 1,
+      "valid_values": ["A", "B", "C", "D", "E", "F", "G", "H", "M", "N", "U", "-"],
+      "description": "Lures used for catching",
+      "semantic_meaning": "Type of lure used in capture",
+      "format_pattern": "^[A-Z\\-]$",
+      "example_values": ["A", "N", "U"],
+      "editorial_note": "A=food, B=water, C=light, D=decoy birds alive, E=decoy birds stuffed, F=playback same species, G=playback other species, H=mechanical whistle, M=more than one, N=definitely no lure, U=unknown, -=not applicable"
+    },
+    {
+      "position": 15,
+      "name": "verification_of_the_metal_ring",
+      "data_type": "numeric",
+      "length": 1,
+      "valid_values": ["0", "1", "9"],
+      "description": "Verification status of the metal ring",
+      "semantic_meaning": "Whether ring was verified by scheme",
+      "format_pattern": "^[0-9]$",
+      "example_values": ["0", "1"],
+      "editorial_note": "0=not verified, 1=verified by scheme, 9=unknown. Verification by ring sent, photo, photocopy, rubbing, or carbon copy."
+    }
+  ]
+,
+  "validation_rules": [
+    {
+      "field_name": "identification_number",
+      "rule_type": "format",
+      "rule_expression": "len(value) == 10 and all(c.isalnum() or c in '.-' for c in value)",
+      "error_message": "Identification number must be exactly 10 characters (letters, numbers, dots, dashes)"
+    },
+    {
+      "field_name": "ringing_scheme",
+      "rule_type": "values",
+      "rule_expression": "value in ['IAB', 'DEH']",
+      "error_message": "Ringing scheme must be a valid 3-letter code"
+    },
+    {
+      "field_name": "primary_identification_method",
+      "rule_type": "format",
+      "rule_expression": "len(value) == 2 and value[0].isalpha() and value[1].isdigit()",
+      "error_message": "Primary identification method must be letter + digit (e.g., A0)"
+    },
+    {
+      "field_name": "metal_ring_information",
+      "rule_type": "values",
+      "rule_expression": "value in ['0', '1', '2', '3', '4', '5', '6', '7']",
+      "error_message": "Metal ring information must be 0-7"
+    },
+    {
+      "field_name": "other_marks_information",
+      "rule_type": "format",
+      "rule_expression": "len(value) == 2 and all(c.isalpha() or c == '-' for c in value)",
+      "error_message": "Other marks information must be 2 alphabetic characters or dashes"
+    },
+    {
+      "field_name": "species_as_mentioned_by_finder",
+      "rule_type": "format",
+      "rule_expression": "len(value) == 5 and value.isdigit()",
+      "error_message": "Species code must be exactly 5 digits"
+    },
+    {
+      "field_name": "species_as_mentioned_by_scheme",
+      "rule_type": "format",
+      "rule_expression": "len(value) == 5 and value.isdigit()",
+      "error_message": "Species code must be exactly 5 digits"
+    },
+    {
+      "field_name": "age_mentioned_by_the_person",
+      "rule_type": "values",
+      "rule_expression": "value in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']",
+      "error_message": "Age code must be 0-9 or A-H"
+    },
+    {
+      "field_name": "sex_mentioned_by_the_person",
+      "rule_type": "values",
+      "rule_expression": "value in ['M', 'F', 'U']",
+      "error_message": "Sex code must be M, F, or U"
+    },
+    {
+      "field_name": "sex_concluded_by_the_scheme",
+      "rule_type": "values",
+      "rule_expression": "value in ['M', 'F', 'U']",
+      "error_message": "Sex code must be M, F, or U"
+    },
+    {
+      "field_name": "manipulated",
+      "rule_type": "values",
+      "rule_expression": "value in ['N', 'H', 'K', 'C', 'F', 'T', 'M', 'R', 'E', 'P', 'U']",
+      "error_message": "Manipulation code must be one of: N, H, K, C, F, T, M, R, E, P, U"
+    },
+    {
+      "field_name": "moved_before",
+      "rule_type": "values",
+      "rule_expression": "value in ['0', '2', '4', '6', '9']",
+      "error_message": "Moved before code must be 0, 2, 4, 6, or 9"
+    },
+    {
+      "field_name": "catching_method",
+      "rule_type": "values",
+      "rule_expression": "value in ['A', 'B', 'C', 'D', 'F', 'G', 'H', 'L', 'M', 'N', 'O', 'P', 'R', 'S', 'T', 'U', 'V', 'W', 'Z', '-']",
+      "error_message": "Catching method must be a valid single character code"
+    },
+    {
+      "field_name": "catching_lures",
+      "rule_type": "values",
+      "rule_expression": "value in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'M', 'N', 'U', '-']",
+      "error_message": "Catching lures must be a valid single character code"
+    },
+    {
+      "field_name": "verification_of_the_metal_ring",
+      "rule_type": "values",
+      "rule_expression": "value in ['0', '1', '9']",
+      "error_message": "Ring verification must be 0, 1, or 9"
+    }
+  ],
+  "format_specification": {
+    "total_length": 150,
+    "field_separator": "|",
+    "encoding": "utf-8",
+    "validation_pattern": "^[A-Z0-9\\.\\-]{10}\\|[A-Z]{3}\\|[A-Z][0-9]\\|[0-7]\\|[A-Z\\-]{2}\\|[0-9]{5}\\|[0-9]{5}\\|[0-9A-H]\\|[MFU]\\|[MFU]\\|[A-Z]\\|[0-9]\\|[A-Z\\-]\\|[A-Z\\-]\\|[0-9]$",
+    "description": "Official EURING 2020 format based on SKOS thesaurus"
+  },
+  "parsing_instructions": {
+    "method": "pipe_delimited_official",
+    "field_order": [
+      "identification_number",
+      "ringing_scheme", 
+      "primary_identification_method",
+      "metal_ring_information",
+      "other_marks_information",
+      "species_as_mentioned_by_finder",
+      "species_as_mentioned_by_scheme",
+      "age_mentioned_by_the_person",
+      "sex_mentioned_by_the_person",
+      "sex_concluded_by_the_scheme",
+      "manipulated",
+      "moved_before",
+      "catching_method",
+      "catching_lures",
+      "verification_of_the_metal_ring"
+    ],
+    "coordinate_format": "not_included",
+    "notes": "This is the official EURING 2020 format based on SKOS thesaurus. Note that coordinates and measurements are not included in this core format."
+  },
+  "skos_source": {
+    "ontology_uri": "http://www.semanticweb.org/davidelicheri/ontologies/2025/5/EURING_CODE_SKOS/",
+    "version": "1.0.0",
+    "creator": "https://orcid.org/0009-0002-5317-8809",
+    "description": "Based on official SKOS thesaurus for EURING scientific bird ringing data coding and exchange",
+    "language": "it/en"
+  }
+}
