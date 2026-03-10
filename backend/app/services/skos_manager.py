@@ -179,20 +179,33 @@ class SKOSManagerImpl(SKOSManager):
     
     async def update_version(self, version: EuringVersion) -> None:
         """Update an existing version in the model"""
+        print(f"🔄 [SKOS Manager] Updating version: {version.id}")
+        
         if not self._version_model:
             await self.load_version_model()
             
         # Update cache
         self._version_cache[version.id] = version
+        print(f"✅ [SKOS Manager] Updated cache for {version.id}")
         
         # Update in model list
         for i, v in enumerate(self._version_model.versions):
             if v.id == version.id:
                 self._version_model.versions[i] = version
+                print(f"✅ [SKOS Manager] Updated version in model list at index {i}")
                 break
         
         # Persist to repository
+        print(f"💾 [SKOS Manager] Saving to repository...")
         await self.repository.save_version(version)
+        print(f"✅ [SKOS Manager] Save complete for {version.id}!")
+        
+        # CRITICAL: Invalidate cache to force reload from disk on next request
+        # This ensures all workers (in multi-worker setup) get fresh data
+        print(f"🔄 [SKOS Manager] Invalidating cache to force reload from disk...")
+        self._version_model = None
+        self._version_cache.clear()
+        print(f"✅ [SKOS Manager] Cache invalidated! Next request will reload from disk.")
     
     async def reload_version_model(self) -> None:
         """Force reload the version model from storage"""

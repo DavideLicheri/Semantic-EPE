@@ -215,6 +215,91 @@ class LookupTableService:
             }
         }
     
+    def _find_field_in_version(self, version_obj, field_name: str):
+        """Find a field by name, or by semantic meaning if name doesn't match.
+        The matrix uses reference field names (from EURING 2000) which may differ
+        from actual field names in other versions (e.g. 'scheme_code' vs 'scheme_country')."""
+        # First try exact name match
+        for field in version_obj.field_definitions:
+            if field.name == field_name:
+                return field
+        
+        # If not found, try to find by semantic meaning using the reference version
+        # Load the reference version (2000) to get the semantic meaning for this field name
+        import asyncio
+        try:
+            ref_version = None
+            for vid in ['euring_2000']:
+                # We need sync access here, but we can check cached versions
+                pass
+            
+            # Simpler approach: check if any field in this version has a semantic_meaning
+            # that matches what we'd expect for the given field_name
+            # Build a mapping from common reference names to semantic meanings
+            name_to_semantic = {
+                'scheme': 'Ringing scheme identifier',
+                'scheme_code': 'Ringing scheme identifier',
+                'scheme_country': 'Ringing scheme identifier',
+                'primary_identification_method': 'Primary identification method',
+                'identification_number': 'Ring number',
+                'verification_metal_ring': 'Metal ring verification',
+                'metal_ring_information': 'Metal ring information',
+                'metal_ring_info': 'Metal ring information',
+                'other_marks': 'Other marks information',
+                'species_reported': 'Species reported',
+                'species_concluded': 'Species concluded',
+                'species': 'Species reported',
+                'manipulation': 'Manipulation code',
+                'moved_before': 'Moved before capture',
+                'catching_method': 'Catching method',
+                'lures_used': 'Lures used',
+                'sex_reported': 'Sex reported',
+                'sex_concluded': 'Sex concluded',
+                'sex': 'Sex reported',
+                'age_reported': 'Age reported',
+                'age_concluded': 'Age concluded',
+                'age': 'Age reported',
+                'status': 'Status code',
+                'brood_size': 'Brood size',
+                'pullus_age': 'Pullus age',
+                'accuracy_pullus_age': 'Pullus age accuracy',
+                'day': 'Day',
+                'month': 'Month',
+                'year': 'Year',
+                'accuracy_date': 'Date accuracy',
+                'time': 'Time',
+                'area_code_edb': 'Area code',
+                'latitude': 'Latitude',
+                'longitude': 'Longitude',
+                'accuracy_coordinates': 'Coordinate accuracy',
+                'condition_code': 'Condition code',
+                'condition': 'Condition code',
+                'circumstances_code': 'Circumstances code',
+                'circumstances': 'Circumstances code',
+                'circumstances_presumed': 'Circumstances presumed',
+                'euring_code_identifier': 'EURING code identifier',
+                'distance': 'Distance',
+                'direction': 'Direction',
+                'elapsed_time': 'Elapsed time',
+                'ringing_scheme': 'Ringing scheme identifier',
+            }
+            
+            expected_semantic = name_to_semantic.get(field_name)
+            if expected_semantic:
+                for field in version_obj.field_definitions:
+                    if field.semantic_meaning == expected_semantic:
+                        return field
+            
+            # Last resort: fuzzy name matching (e.g. 'scheme' in field.name)
+            base_name = field_name.replace('_code', '').replace('_reported', '').replace('_concluded', '')
+            for field in version_obj.field_definitions:
+                if base_name in field.name or field.name in field_name:
+                    return field
+        except Exception:
+            pass
+        
+        return None
+
     async def get_field_lookup_table(self, field_name: str, version: str) -> Optional[Dict[str, Any]]:
         """Get lookup table for a specific field in a version"""
         try:
@@ -225,15 +310,16 @@ class LookupTableService:
             if not version_obj:
                 return None
             
-            # Find the field
-            field_def = None
-            for field in version_obj.field_definitions:
-                if field.name == field_name:
-                    field_def = field
-                    break
+            # Find the field (supports cross-version name resolution)
+            field_def = self._find_field_in_version(version_obj, field_name)
             
             # If field exists in version data and has valid_values, use that (updated data)
             if field_def and field_def.valid_values:
+                # Load persisted descriptions into memory cache if not already there
+                cache_key = f"{field_name}_{version}"
+                if cache_key not in self._custom_meanings and field_def.valid_values_descriptions:
+                    self._custom_meanings[cache_key] = dict(field_def.valid_values_descriptions)
+                
                 # Create lookup table from valid_values
                 lookup_table = {
                     "name": f"{field_name.replace('_', ' ').title()} Values",
@@ -241,11 +327,15 @@ class LookupTableService:
                     "values": []
                 }
                 
-                # Convert valid_values to code-meaning pairs using custom meanings if available
+                # Convert valid_values to code-meaning pairs using descriptions
                 for value in field_def.valid_values:
+                    meaning = self._get_meaning_for_value(field_name, value, version)
+                    # Also check persisted descriptions directly
+                    if field_def.valid_values_descriptions and value in field_def.valid_values_descriptions:
+                        meaning = field_def.valid_values_descriptions[value]
                     lookup_table["values"].append({
                         "code": value,
-                        "meaning": self._get_meaning_for_value(field_name, value, version)
+                        "meaning": meaning
                     })
                 
                 return lookup_table
@@ -262,13 +352,11 @@ class LookupTableService:
     
     def _get_meaning_for_value(self, field_name: str, value: str, version: str = None) -> str:
         """Get human-readable meaning for a field value"""
-        # Check for custom meanings first
+        # Check for custom meanings in memory cache first
         if version:
             cache_key = f"{field_name}_{version}"
             if cache_key in self._custom_meanings and value in self._custom_meanings[cache_key]:
-                custom_meaning = self._custom_meanings[cache_key][value]
-                print(f"🔍 Using custom meaning for {cache_key}[{value}]: {custom_meaning}")
-                return custom_meaning
+                return self._custom_meanings[cache_key][value]
         
         # Fallback to generic descriptions
         if value in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
@@ -312,34 +400,39 @@ class LookupTableService:
             version_obj = await self.skos_manager.get_version_by_id(f"euring_{version}")
             
             if not version_obj:
+                print(f"❌ Version euring_{version} not found")
                 return False
             
-            # Find the field
-            field_def = None
-            for field in version_obj.field_definitions:
-                if field.name == field_name:
-                    field_def = field
-                    break
+            # Find the field (supports cross-version name resolution)
+            field_def = self._find_field_in_version(version_obj, field_name)
             
             if not field_def:
+                print(f"❌ Field '{field_name}' not found in version {version}. Available fields: {[f.name for f in version_obj.field_definitions[:10]]}...")
                 return False
+            
+            print(f"✅ Found field '{field_def.name}' for requested '{field_name}' in version {version}")
             
             # Update valid_values from lookup data
             if "values" in lookup_data:
                 # Save codes to valid_values
                 field_def.valid_values = [item["code"] for item in lookup_data["values"]]
                 
-                # Save custom meanings to cache
+                # Save descriptions persistently in the model
+                descriptions = {}
                 custom_meanings = {}
                 for item in lookup_data["values"]:
                     if "meaning" in item:
+                        descriptions[item["code"]] = item["meaning"]
                         custom_meanings[item["code"]] = item["meaning"]
                 
-                # Store custom meanings with field_name as key
+                # Persist descriptions in the field definition (saved to JSON)
+                field_def.valid_values_descriptions = descriptions if descriptions else None
+                
+                # Also update in-memory cache for immediate access
                 cache_key = f"{field_name}_{version}"
                 self._custom_meanings[cache_key] = custom_meanings
                 
-                print(f"💾 Saved custom meanings for {cache_key}: {custom_meanings}")
+                print(f"💾 Saved {len(descriptions)} valid_values with descriptions for {field_name} in version {version}")
                 
                 # Save the updated version
                 await self.skos_manager.update_version(version_obj)

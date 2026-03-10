@@ -56,9 +56,11 @@ class DomainChangeType(str, Enum):
 class FieldDefinition(BaseModel):
     position: int
     name: str
+    canonical_name: Optional[str] = None  # universal field name shared across versions
     data_type: str
     length: int
     valid_values: Optional[List[str]] = None
+    valid_values_descriptions: Optional[Dict[str, str]] = None  # code -> description mapping
     description: str
     semantic_domain: Optional[SemanticDomain] = None
     semantic_meaning: Optional[str] = None

@@ -1,6 +1,6 @@
-# 🎨 EURING Frontend - Interfaccia Utente
+# 🎨 ECES Frontend - Interfaccia Utente
 
-Frontend React + TypeScript + Vite per il sistema EURING Code Recognition.
+Frontend React + TypeScript + Vite per **ECES** (EURING Code Evolution System).
 
 ## 🚀 Avvio Rapido
 

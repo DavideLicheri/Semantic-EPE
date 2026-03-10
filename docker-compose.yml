@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database per sviluppo locale
+  postgres:
+    image: postgres:14
+    container_name: eces-postgres-dev
+    environment:
+      POSTGRES_DB: eces_analytics
+      POSTGRES_USER: eces_user
+      POSTGRES_PASSWORD: eces_dev_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/app/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    networks:
+      - eces-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eces_user -d eces_analytics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend FastAPI (opzionale - per sviluppo completo in Docker)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: eces-backend-dev
+    environment:
+      - DATABASE_URL=postgresql://eces_user:eces_dev_password@postgres:5432/eces_analytics
+      - SECRET_KEY=eces-local-dev-secret-key-2024
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=480
+      - CORS_ORIGINS=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"]
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - ENABLE_DATABASE_LOGGING=true
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - backend_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - eces-network
+    command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+volumes:
+  postgres_data:
+  backend_data:
+
+networks:
+  eces-network:
+    driver: bridge
