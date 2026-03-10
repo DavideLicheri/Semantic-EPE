@@ -37,10 +37,32 @@ class SKOSRepository:
         versions_dir.mkdir(exist_ok=True)
         
         version_file = versions_dir / f"{version.id}.json"
+        print(f"💾 [Repository] Saving {version.id} to {version_file}")
+        print(f"💾 [Repository] Total fields to save: {len(version.field_definitions)}")
+        
         version_data = version.model_dump()
+        
+        # Log field count and positions
+        if version_data.get('field_definitions'):
+            positions = sorted([f['position'] for f in version_data['field_definitions']])
+            print(f"📊 [Repository] Field positions being saved: {positions}")
+            sample_field = version_data['field_definitions'][0]
+            print(f"📝 [Repository] Sample field before save: {sample_field.get('name')} - data_type: {sample_field.get('data_type')}")
         
         with open(version_file, 'w', encoding='utf-8') as f:
             json.dump(version_data, f, indent=2, ensure_ascii=False, default=str)
+        
+        print(f"✅ [Repository] File written successfully to {version_file}")
+        
+        # Verify the file was written by reading it back
+        with open(version_file, 'r', encoding='utf-8') as f:
+            verify_data = json.load(f)
+            if verify_data.get('field_definitions'):
+                verify_positions = sorted([f['position'] for f in verify_data['field_definitions']])
+                print(f"✅ [Repository] Verification: {len(verify_data['field_definitions'])} fields saved")
+                print(f"✅ [Repository] Verification positions: {verify_positions}")
+                verify_field = verify_data['field_definitions'][0]
+                print(f"✅ [Repository] Verification sample: {verify_field.get('name')} - data_type: {verify_field.get('data_type')}")
     
     async def load_version(self, version_id: str) -> Optional[EuringVersion]:
         """Load a specific EURING version from storage"""
