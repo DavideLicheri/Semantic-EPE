@@ -1,6 +1,7 @@
 """
 EURING Code Recognition System - Main FastAPI Application
 """
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -8,6 +9,8 @@ import uvicorn
 from contextlib import asynccontextmanager
 
 from app.api.euring_api import router as euring_router
+from app.api.auth_api import router as auth_router
+from app.api.analytics_api import router as analytics_router
 
 
 @asynccontextmanager
@@ -34,16 +37,19 @@ app = FastAPI(
 )
 
 # Configure CORS
+cors_origins = os.getenv("ECES_CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:5173").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"],  # React + Vite
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Include API routers
+app.include_router(auth_router)
 app.include_router(euring_router)
+app.include_router(analytics_router)
 
 
 @app.get("/")
@@ -101,10 +107,17 @@ async def global_exception_handler(request, exc):
 
 
 if __name__ == "__main__":
+    # Get configuration from environment
+    host = os.getenv("ECES_HOST", "0.0.0.0")
+    port = int(os.getenv("ECES_PORT", "8000"))
+    workers = int(os.getenv("ECES_MAX_WORKERS", "1"))
+    log_level = os.getenv("ECES_LOG_LEVEL", "info").lower()
+    
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
+        host=host,
+        port=port,
+        reload=os.getenv("ECES_ENVIRONMENT", "development") == "development",
+        log_level=log_level,
+        workers=workers if os.getenv("ECES_ENVIRONMENT") == "production" else 1
     )

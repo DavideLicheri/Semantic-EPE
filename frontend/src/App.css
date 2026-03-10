@@ -20,7 +20,7 @@ body {
   background-color: #FFFAF0;
 }
 
-/* Header - EURING Style with EPE Logo */
+/* Header - ECES Style with EPE Logo (compatibility) */
 .app-header {
   background-color: #663333;
   color: #FFFFFF;
@@ -239,4 +239,237 @@ body {
     padding: 10px 16px;
     font-size: 11pt;
   }
+}
+/* User Info Styles */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: white;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 14px;
+}
+
+.user-name {
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.user-role {
+  font-size: 12px;
+  opacity: 0.9;
+  margin-bottom: 1px;
+}
+
+.user-department {
+  font-size: 11px;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.user-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.profile-button {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s ease;
+}
+
+.profile-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.logout-button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s ease;
+}
+
+.logout-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Loading Styles */
+.app-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #663333 0%, #8B4513 100%);
+  color: white;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Tab Button Disabled State */
+.tab-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #ccc;
+}
+
+.tab-button:disabled:hover {
+  background-color: #ccc;
+  transform: none;
+}
+
+/* Responsive User Info */
+@media (max-width: 768px) {
+  .user-info {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .user-details {
+    align-items: center;
+    text-align: center;
+  }
+  
+  .user-actions {
+    flex-direction: row;
+    justify-content: center;
+  }
+  
+  .profile-button,
+  .logout-button {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}
+/* Language Selector in Header */
+.header-language {
+  margin-left: auto;
+  margin-right: 20px;
+}
+
+.header-language .language-current {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.header-language .language-current:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.header-language .language-name {
+  color: white;
+}
+
+.header-language .language-arrow {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.header-language .language-options {
+  background: white;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .header-text {
+    text-align: center;
+  }
+  
+  .header-language {
+    margin: 0;
+    align-self: center;
+  }
+  
+  .user-info {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  .user-details {
+    text-align: center;
+  }
+  
+  .user-actions {
+    justify-content: center;
+  }
+}
+
+/* Language change animation */
+.app.language-changing {
+  animation: languageTransition 0.3s ease-in-out;
+}
+
+@keyframes languageTransition {
+  0% { opacity: 1; }
+  50% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+
+/* Improved header layout */
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.header-text {
+  flex: 1;
+  margin-left: 20px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
