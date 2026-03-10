@@ -2,6 +2,7 @@
  * API Service for EURING Backend Communication
  */
 import axios from 'axios';
+import { authService } from './auth';
 import {
   RecognitionRequest,
   RecognitionResponse,
@@ -24,12 +25,39 @@ import {
 
 // Configure axios
 const api = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Add auth interceptor
+api.interceptors.request.use(
+  (config) => {
+    const token = authService.getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for auth errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid
+      authService.logout();
+      window.location.reload();
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Add request interceptor for logging
 api.interceptors.request.use(
@@ -110,7 +138,9 @@ export class EuringAPI {
    */
   static async getEuringVersionsMatrix(): Promise<any> {
     try {
-      const response = await api.get('/api/euring/versions/matrix');
+      // Add timestamp to bypass cache
+      const timestamp = new Date().getTime();
+      const response = await api.get(`/api/euring/versions/matrix?_t=${timestamp}`);
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || error.message || 'Failed to get EURING versions matrix');
@@ -321,10 +351,11 @@ export class EuringAPI {
   /**
    * Parse a single EURING string into field-value pairs
    */
-  static async parseEuringString(euringString: string): Promise<any> {
+  static async parseEuringString(euringString: string, language: string = 'it'): Promise<any> {
     try {
       const response = await api.post('/api/euring/parse', {
-        euring_string: euringString
+        euring_string: euringString,
+        language: language
       });
       return response.data;
     } catch (error: any) {
@@ -335,10 +366,11 @@ export class EuringAPI {
   /**
    * Parse multiple EURING strings in batch
    */
-  static async parseEuringStringsBatch(euringStrings: string[]): Promise<any> {
+  static async parseEuringStringsBatch(euringStrings: string[], language: string = 'it'): Promise<any> {
     try {
       const response = await api.post('/api/euring/parse/batch', {
-        euring_strings: euringStrings
+        euring_strings: euringStrings,
+        language: language
       });
       return response.data;
     } catch (error: any) {
@@ -434,6 +466,20 @@ export class EuringAPI {
   }
 
   /**
+   * Delete a field from a specific EURING version
+   */
+  static async deleteFieldFromVersion(fieldName: string, version: string): Promise<any> {
+    try {
+      const response = await api.delete('/api/euring/versions/matrix/field/remove', {
+        data: { field_name: fieldName, version: version }
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.message || 'Failed to delete field from version');
+    }
+  }
+
+  /**
    * Update multiple fields in the EURING matrix in bulk
    */
   static async updateMatrixBulk(updates: Array<{
@@ -491,6 +537,65 @@ export class EuringAPI {
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || error.message || 'Failed to update field lookup table');
     }
+  }
+
+  /**
+   * Get field description for EURING fields
+   */
+  static getFieldDescription(fieldName: string): string {
+    const descriptions: Record<string, string> = {
+      // Campi in italiano
+      'Osservatorio': 'Codice dell\'osservatorio che ha emesso l\'anello',
+      'Centro': 'Centro di inanellamento',
+      'Metodo di identificazione primario': 'Metodo principale utilizzato per identificare l\'uccello',
+      'Verifica dell\'anello metallico': 'Verifica della presenza e leggibilità dell\'anello metallico',
+      'Informazioni anello metallico': 'Dettagli sull\'anello metallico applicato',
+      'Informazioni altri segni': 'Informazioni su altri segni di identificazione',
+      'Specie': 'Codice della specie secondo la classificazione EURING',
+      'Età conclusa': 'Età dell\'uccello determinata dall\'operatore',
+      'Età riportata': 'Età dell\'uccello come riportata originariamente',
+      'Sesso concluso': 'Sesso dell\'uccello determinato dall\'operatore',
+      'Sesso riportato': 'Sesso dell\'uccello come riportato originariamente',
+      'Data': 'Data dell\'osservazione o cattura',
+      'Giorno': 'Giorno del mese (1-31)',
+      'Mese': 'Mese dell\'anno (1-12)',
+      'Anno': 'Anno dell\'osservazione',
+      'Ora': 'Ora dell\'osservazione o cattura',
+      'Codice luogo': 'Codice del luogo di osservazione',
+      'Coordinate': 'Coordinate geografiche del luogo',
+      'Latitudine': 'Latitudine in gradi decimali',
+      'Longitudine': 'Longitudine in gradi decimali',
+      'Precisione delle coordinate': 'Precisione delle coordinate geografiche',
+      'Condizione': 'Condizione fisica dell\'uccello',
+      'Circostanze': 'Circostanze della cattura o osservazione',
+      'Circostanze presunte': 'Circostanze presunte della cattura',
+      'Identificatore codice EURING': 'Identificatore univoco del codice EURING',
+      'Lunghezza ala': 'Lunghezza dell\'ala in millimetri',
+      'Terza primaria': 'Lunghezza della terza penna primaria',
+      'Stato della punta dell\'ala': 'Condizione della punta dell\'ala',
+      'Massa': 'Peso dell\'uccello in grammi',
+      'Muta': 'Stato della muta delle penne',
+      'Codice piumaggio': 'Codice che descrive il piumaggio',
+      'Artiglio posteriore': 'Lunghezza dell\'artiglio posteriore',
+      'Lunghezza becco': 'Lunghezza del becco in millimetri',
+      'Metodo becco': 'Metodo utilizzato per misurare il becco',
+      'Lunghezza totale testa': 'Lunghezza totale della testa',
+      'Tarso': 'Lunghezza del tarso in millimetri',
+      'Metodo tarso': 'Metodo utilizzato per misurare il tarso',
+      'Lunghezza coda': 'Lunghezza della coda in millimetri',
+      'Differenza coda': 'Differenza nella lunghezza delle penne della coda',
+      'Punteggio grasso': 'Valutazione della quantità di grasso',
+      'Metodo punteggio grasso': 'Metodo utilizzato per valutare il grasso',
+      'Muscolo pettorale': 'Valutazione del muscolo pettorale',
+      'Placca incubatrice': 'Presenza e stato della placca incubatrice',
+      'Punteggio primarie': 'Valutazione dello stato delle penne primarie',
+      'Muta primarie': 'Stato della muta delle penne primarie',
+      'Copritrici maggiori vecchie': 'Numero di copritrici maggiori vecchie',
+      'Alula': 'Stato dell\'alula',
+      'Copritrice carpale': 'Stato della copritrice carpale'
+    };
+    
+    return descriptions[fieldName] || 'Campo della stringa EURING';
   }
 }
 

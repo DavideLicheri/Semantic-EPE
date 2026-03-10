@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import EuringAPI from '../services/api';
+import PositionalMatrix from './PositionalMatrix';
 import './EuringMatrix.css';
 
 interface VersionMetadata {
@@ -17,6 +18,7 @@ interface FieldInfo {
   length: number;
   description: string;
   valid_values: string[];
+  valid_values_count?: number;
   semantic_domain?: string;
 }
 
@@ -38,7 +40,19 @@ interface MatrixData {
   error?: string;
 }
 
-const EuringMatrix: React.FC = () => {
+interface EuringMatrixProps {
+  currentUser?: {
+    id: string;
+    username: string;
+    email: string;
+    full_name: string;
+    role: 'super_admin' | 'admin' | 'matrix_editor' | 'user' | 'viewer';
+    department?: string;
+    is_active: boolean;
+  } | null;
+}
+
+const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
   const [matrixData, setMatrixData] = useState<MatrixData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +62,8 @@ const EuringMatrix: React.FC = () => {
   const [editValue, setEditValue] = useState<string>('');
   const [saveStatus, setSaveStatus] = useState<{type: 'success' | 'error' | null, message: string}>({type: null, message: ''});
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
-  const [refreshKey, setRefreshKey] = useState<number>(0); // Add refresh key to force re-renders
+  const [refreshKey, setRefreshKey] = useState<number>(0);
+  const [viewMode, setViewMode] = useState<'table' | 'positional'>('table');
   const [modalEditData, setModalEditData] = useState<{
     fieldName: string;
     version: string;
@@ -56,7 +71,6 @@ const EuringMatrix: React.FC = () => {
     currentValue: string;
     fieldInfo: FieldInfo | null;
   } | null>(null);
-  const [fieldDescriptions, setFieldDescriptions] = useState<Record<string, Record<string, string>>>({});
 
   useEffect(() => {
     loadMatrixData();
@@ -78,7 +92,7 @@ const EuringMatrix: React.FC = () => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [showEditModal]);
+  }, [showEditModal, editValue, modalEditData]);
 
   const toggleVersion = (year: string) => {
     setSelectedVersions(prev => 
@@ -115,7 +129,7 @@ const EuringMatrix: React.FC = () => {
     return matrixData.field_matrix.filter(shouldShowField);
   }, [matrixData, selectedVersions, showEmptyFields]);
 
-  const startEditing = (fieldName: string, version: string, property: string, currentValue: string) => {
+  const startEditing = async (fieldName: string, version: string, property: string, currentValue: string) => {
     // Trova le informazioni del campo
     const fieldRow = matrixData?.field_matrix.find(f => f.field_name === fieldName);
     const fieldInfo = fieldRow?.versions[version] || null;
@@ -127,8 +141,33 @@ const EuringMatrix: React.FC = () => {
       currentValue,
       fieldInfo
     });
-    setEditValue(currentValue);
     setShowEditModal(true);
+    
+    // For valid_values, load full data from lookup table API
+    if (property === 'valid_values') {
+      setEditValue(''); // Clear while loading
+      try {
+        const response = await EuringAPI.getFieldLookupTable(fieldName, version);
+        if (response.success && response.lookup_table && response.lookup_table.values) {
+          const lines = response.lookup_table.values.map((item: any) => 
+            `${item.code}:${item.meaning}`
+          );
+          setEditValue(lines.join('\n'));
+        } else if (currentValue !== '__LOADING__') {
+          setEditValue(currentValue);
+        }
+      } catch (error) {
+        console.error('Error loading lookup table:', error);
+        // Fallback: use valid_values codes from field info
+        if (fieldInfo?.valid_values && fieldInfo.valid_values.length > 0) {
+          setEditValue(fieldInfo.valid_values.join('\n'));
+        } else if (currentValue !== '__LOADING__') {
+          setEditValue(currentValue);
+        }
+      }
+    } else {
+      setEditValue(currentValue);
+    }
   };
 
   // Componente per visualizzare i valori con descrizioni
@@ -136,41 +175,17 @@ const EuringMatrix: React.FC = () => {
     fieldName: string;
     version: string;
     values: string[];
+    valuesCount?: number;
     editMode: boolean;
     onEdit: () => void | Promise<void>;
-  }> = ({ fieldName, version, values, editMode, onEdit }) => {
-    const [displayValues, setDisplayValues] = useState<string[]>(values);
-    const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-      const loadDescriptions = async () => {
-        if (values.length === 0) return;
-        
-        setLoading(true);
-        try {
-          // Usa descrizioni troncate per la visualizzazione nella matrice
-          const valuesWithDescriptions = await getFieldValueWithDescription(fieldName, version, values, true);
-          setDisplayValues(valuesWithDescriptions);
-        } catch (error) {
-          console.error('Error loading descriptions:', error);
-          setDisplayValues(values);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      loadDescriptions();
-    }, [fieldName, version, values.join(',')]);
+  }> = ({ values, valuesCount, editMode, onEdit }) => {
+    const totalCount = valuesCount || values.length;
 
     const handleEdit = async () => {
       if (editMode) {
         await onEdit();
       }
     };
-
-    if (loading) {
-      return <span style={{ color: '#666', fontSize: '0.75em' }}>Caricamento...</span>;
-    }
 
     return (
       <div 
@@ -184,67 +199,18 @@ const EuringMatrix: React.FC = () => {
           fontFamily: 'monospace'
         }}
         onClick={handleEdit}
-        title={displayValues.length > 0 ? `Clicca per modificare:\n${displayValues.join('\n')}` : undefined}
+        title={editMode ? 'Clicca per modificare i valori' : `${totalCount} valori definiti`}
       >
-        {displayValues.slice(0, 2).join(', ')}
-        {displayValues.length > 2 && ` (+${displayValues.length - 2} altri)`}
-        {editMode && <span style={{ marginLeft: '4px', color: '#17a2b8' }}>✏️</span>}
+        {totalCount > 0 ? (
+          <>
+            📋 {totalCount} {'valori definiti'}
+            {editMode && <span style={{ marginLeft: '4px', color: '#17a2b8' }}>✏️</span>}
+          </>
+        ) : (
+          <span style={{ color: '#999' }}>{'Nessun valore'}</span>
+        )}
       </div>
     );
-  };
-
-  const getFieldValueWithDescription = async (fieldName: string, version: string, codes: string[], truncateForDisplay: boolean = false): Promise<string[]> => {
-    const cacheKey = `${fieldName}_${version}`;
-    
-    // Se abbiamo già le descrizioni in cache, usale
-    if (fieldDescriptions[cacheKey]) {
-      return codes.map(code => {
-        const description = fieldDescriptions[cacheKey][code];
-        if (description) {
-          // Tronca la descrizione se richiesto per la visualizzazione
-          const displayDescription = truncateForDisplay && description.length > 20 
-            ? description.substring(0, 20) + '...' 
-            : description;
-          return `${code}:${displayDescription}`;
-        }
-        return code;
-      });
-    }
-    
-    // Altrimenti prova a recuperarle dal backend
-    try {
-      const response = await EuringAPI.getFieldLookupTable(fieldName, version);
-      if (response.success && response.lookup_table && response.lookup_table.values) {
-        const descriptions: Record<string, string> = {};
-        response.lookup_table.values.forEach((item: any) => {
-          descriptions[item.code] = item.meaning;
-        });
-        
-        // Salva in cache
-        setFieldDescriptions(prev => ({
-          ...prev,
-          [cacheKey]: descriptions
-        }));
-        
-        // Restituisci i valori con descrizioni
-        return codes.map(code => {
-          const description = descriptions[code];
-          if (description) {
-            // Tronca la descrizione se richiesto per la visualizzazione
-            const displayDescription = truncateForDisplay && description.length > 20 
-              ? description.substring(0, 20) + '...' 
-              : description;
-            return `${code}:${displayDescription}`;
-          }
-          return code;
-        });
-      }
-    } catch (error) {
-      console.log('No lookup table available for', fieldName);
-    }
-    
-    // Fallback: restituisci solo i codici
-    return codes;
   };
 
   const saveEdit = async () => {
@@ -254,7 +220,7 @@ const EuringMatrix: React.FC = () => {
     if (modalEditData.property === 'position') {
       const positionValue = parseInt(editValue);
       if (isNaN(positionValue) || positionValue < 0) {
-        setSaveStatus({type: 'error', message: 'La posizione deve essere un numero intero maggiore o uguale a 0'});
+        setSaveStatus({type: 'error', message: 'Posizione non valida'});
         setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
         return;
       }
@@ -264,7 +230,7 @@ const EuringMatrix: React.FC = () => {
     if (modalEditData.property === 'length') {
       const lengthValue = parseInt(editValue);
       if (isNaN(lengthValue) || lengthValue < 1) {
-        setSaveStatus({type: 'error', message: 'La lunghezza deve essere un numero intero maggiore di 0'});
+        setSaveStatus({type: 'error', message: 'Lunghezza non valida'});
         setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
         return;
       }
@@ -283,7 +249,7 @@ const EuringMatrix: React.FC = () => {
       await handleRegularFieldUpdate();
       
     } catch (error) {
-      setSaveStatus({type: 'error', message: `Errore di connessione: ${error}`});
+      setSaveStatus({type: 'error', message: `${'Errore di connessione:'} ${error}`});
       setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
       console.error('Error saving edit:', error);
       
@@ -297,53 +263,29 @@ const EuringMatrix: React.FC = () => {
   };
 
   const handleValidValuesUpdate = async () => {
-    // Parse the input - support both formats
+    // Parse the input - support CODE:DESCRIPTION format (one per line)
     const lines = editValue.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-    const values = [];
+    const values: Array<{code: string, meaning: string}> = [];
     
-    console.log('🔍 Parsing input:', editValue);
-    console.log('🔍 Lines found:', lines);
-    
-    // Check if it's the new line-by-line format (CODICE:DESCRIZIONE)
-    const hasColonFormat = lines.some(line => line.includes(':'));
-    console.log('🔍 Has colon format:', hasColonFormat);
-    
-    if (hasColonFormat) {
-      // Parse line-by-line format: CODICE:DESCRIZIONE
-      for (const line of lines) {
-        if (line.includes(':')) {
-          const parts = line.split(':');
-          if (parts.length >= 2) {
-            const code = parts[0].trim();
-            const meaning = parts.slice(1).join(':').trim();
-            if (code && meaning) {
-              values.push({ code, meaning });
-              console.log('✅ Parsed line with colon:', { code, meaning });
-            }
-          }
-        } else {
-          // Line without colon, treat as code only
-          const code = line.trim();
-          if (code) {
-            values.push({ code, meaning: `Value: ${code}` });
-            console.log('✅ Parsed line without colon:', { code, meaning: `Value: ${code}` });
-          }
+    for (const line of lines) {
+      if (line.includes(':')) {
+        const colonIndex = line.indexOf(':');
+        const code = line.substring(0, colonIndex).trim();
+        const meaning = line.substring(colonIndex + 1).trim();
+        if (code && meaning) {
+          values.push({ code, meaning });
         }
-      }
-    } else {
-      // Parse comma-separated format: A0,B0,C0
-      const codes = editValue.split(',').map(v => v.trim()).filter(v => v.length > 0);
-      console.log('🔍 Codes found:', codes);
-      for (const code of codes) {
-        values.push({ code, meaning: `Value: ${code}` });
-        console.log('✅ Parsed comma-separated:', { code, meaning: `Value: ${code}` });
+      } else {
+        // Line without colon, treat as code only
+        const code = line.trim();
+        if (code) {
+          values.push({ code, meaning: code });
+        }
       }
     }
     
-    console.log('🔍 Final parsed values:', values);
-    
     if (values.length === 0) {
-      setSaveStatus({type: 'error', message: 'Inserisci almeno un valore nel formato CODICE:DESCRIZIONE o codici separati da virgola'});
+      setSaveStatus({type: 'error', message: 'Nessun valore inserito'});
       setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
       return;
     }
@@ -355,63 +297,48 @@ const EuringMatrix: React.FC = () => {
       values: values
     };
     
-    console.log('Updating lookup table via API:', lookupData);
-    
-    // Call lookup table update API
-    const lookupResult = await EuringAPI.updateFieldLookupTable(
-      modalEditData!.fieldName,
-      modalEditData!.version,
-      lookupData
-    );
-    
-    if (lookupResult.success) {
-      console.log('✅ Lookup table updated successfully:', lookupResult);
-      setSaveStatus({type: 'success', message: `✅ Valori salvati! ${values.length} valori aggiornati con descrizioni personalizzate.`});
-      setTimeout(() => setSaveStatus({type: null, message: ''}), 4000);
+    try {
+      // Call lookup table update API
+      const lookupResult = await EuringAPI.updateFieldLookupTable(
+        modalEditData!.fieldName,
+        modalEditData!.version,
+        lookupData
+      );
       
-      // Update local state immediately without closing modals
-      if (matrixData) {
-        const updatedMatrix = { ...matrixData };
-        const fieldIndex = updatedMatrix.field_matrix.findIndex(f => f.field_name === modalEditData!.fieldName);
-        
-        if (fieldIndex !== -1) {
-          const field = updatedMatrix.field_matrix[fieldIndex];
-          const versionInfo = field.versions[modalEditData!.version];
-          
-          if (versionInfo) {
-            // Update valid_values with just the codes
-            versionInfo.valid_values = values.map(v => v.code);
-            updatedMatrix.field_matrix = [...updatedMatrix.field_matrix];
-            updatedMatrix.field_matrix[fieldIndex] = { ...field };
-            
-            const freshMatrix = JSON.parse(JSON.stringify(updatedMatrix));
-            setMatrixData(freshMatrix);
-            setRefreshKey(prev => prev + 1);
+      if (lookupResult.success) {
+        setSaveStatus({type: 'success', message: `✅ Salvati ${values.length} valori per ${modalEditData!.fieldName}`});
+        setTimeout(() => setSaveStatus({type: null, message: ''}), 4000);
+
+        // Reload from server to verify persistence (consistent with regular field updates)
+        setTimeout(async () => {
+          await loadMatrixData(true);
+        }, 500);
+
+        // Update local state immediately
+        if (matrixData) {
+          const updatedMatrix = JSON.parse(JSON.stringify(matrixData));
+          const fieldIndex = updatedMatrix.field_matrix.findIndex((f: FieldRow) => f.field_name === modalEditData!.fieldName);
+
+          if (fieldIndex !== -1) {
+            const versionInfo = updatedMatrix.field_matrix[fieldIndex].versions[modalEditData!.version];
+            if (versionInfo) {
+              versionInfo.valid_values = values.map(v => v.code);
+              versionInfo.valid_values_count = values.length;
+              setMatrixData(updatedMatrix);
+              setRefreshKey(prev => prev + 1);
+            }
           }
         }
-      }
-      
-      // Update the edit value to show the saved values in the preferred format
-      if (hasColonFormat) {
+
+        // Update the edit value to show saved format
         setEditValue(values.map(v => `${v.code}:${v.meaning}`).join('\n'));
+        
       } else {
-        setEditValue(values.map(v => v.code).join(', '));
+        setSaveStatus({type: 'error', message: `Errore: ${lookupResult.error}`});
+        setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
       }
-      
-      // Update the descriptions cache
-      const cacheKey = `${modalEditData!.fieldName}_${modalEditData!.version}`;
-      const descriptions: Record<string, string> = {};
-      values.forEach(v => {
-        descriptions[v.code] = v.meaning;
-      });
-      setFieldDescriptions(prev => ({
-        ...prev,
-        [cacheKey]: descriptions
-      }));
-      
-    } else {
-      console.error('❌ Lookup table update failed:', lookupResult.error);
-      setSaveStatus({type: 'error', message: `Errore nell'aggiornamento lookup table: ${lookupResult.error}`});
+    } catch (error) {
+      setSaveStatus({type: 'error', message: `Errore di connessione: ${error}`});
       setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
     }
   };
@@ -428,90 +355,24 @@ const EuringMatrix: React.FC = () => {
     
     if (result.success) {
       console.log('✅ Backend save successful:', result);
-      setSaveStatus({type: 'success', message: `✅ Salvato! ${modalEditData!.property} di "${modalEditData!.fieldName}" aggiornato a: ${editValue}.`});
+      setSaveStatus({type: 'success', message: `✅ Campo ${modalEditData!.fieldName} - ${modalEditData!.property} salvato: ${editValue}`});
       setTimeout(() => setSaveStatus({type: null, message: ''}), 4000);
       
-      // Update local state with the saved value
-      if (matrixData) {
-        const updatedMatrix = { ...matrixData };
-        const fieldIndex = updatedMatrix.field_matrix.findIndex(f => f.field_name === modalEditData!.fieldName);
-        
-        console.log('🔍 Updating field:', modalEditData!.fieldName, 'at index:', fieldIndex);
-        
-        if (fieldIndex !== -1) {
-          const field = updatedMatrix.field_matrix[fieldIndex];
-          const versionInfo = field.versions[modalEditData!.version];
-          
-          console.log('📝 Current field info:', versionInfo);
-          
-          if (versionInfo) {
-            // Update the property with the new value
-            if (modalEditData!.property === 'semantic_domain') {
-              versionInfo.semantic_domain = editValue;
-            } else if (modalEditData!.property === 'length') {
-              versionInfo.length = parseInt(editValue);
-            } else if (modalEditData!.property === 'position') {
-              const newPosition = parseInt(editValue);
-              console.log('🎯 Updating position from', versionInfo.position, 'to', newPosition);
-              versionInfo.position = newPosition;
-            } else {
-              (versionInfo as any)[modalEditData!.property] = editValue;
-            }
-            
-            console.log('✨ Updated field info:', versionInfo);
-            console.log('🔍 Matrix data before update:', matrixData.field_matrix[fieldIndex]);
-            
-            // Update the field_matrix reference to ensure React detects the change
-            updatedMatrix.field_matrix = [...updatedMatrix.field_matrix];
-            updatedMatrix.field_matrix[fieldIndex] = { ...field };
-            
-            console.log('🔍 Matrix data after update:', updatedMatrix.field_matrix[fieldIndex]);
-          }
-        }
-        
-        console.log('💾 Setting updated matrix data');
-        
-        // Force React to recognize the change by creating a completely new object
-        const freshMatrix = JSON.parse(JSON.stringify(updatedMatrix));
-        setMatrixData(freshMatrix);
-        
-        // Force re-render with refresh key
-        setRefreshKey(prev => prev + 1);
-        
-        // Force re-render
-        setTimeout(() => {
-          console.log('🔄 Force refresh after save');
-          loadMatrixData(true); // Preserva la posizione di scroll
-        }, 100); // Reduced timeout for faster feedback
-      }
-      
-      // Close modal for regular field updates
+      // Close modal immediately
       setShowEditModal(false);
       setModalEditData(null);
       setEditValue('');
       
-      // Force immediate refresh to show changes
-      const currentScrollY = window.scrollY;
-      console.log('💾 Saving current scroll position:', currentScrollY);
-      
+      // Reload data from backend to show exactly what was saved
+      // No local state manipulation - what you see is what's in the backend
+      // Increased delay to 1000ms to ensure file write completes
       setTimeout(async () => {
-        console.log('🔄 Immediate refresh to show changes');
-        await loadMatrixData(true);
-        
-        // Double-check scroll restoration
-        setTimeout(() => {
-          if (window.scrollY !== currentScrollY) {
-            console.log('🔧 Final scroll correction to:', currentScrollY);
-            window.scrollTo({
-              top: currentScrollY,
-              behavior: 'instant'
-            });
-          }
-        }, 200);
-      }, 100);
+        console.log('🔄 Reloading matrix data from backend after 1000ms delay');
+        await loadMatrixData(true); // Preserve scroll position
+      }, 1000);
       
     } else {
-      setSaveStatus({type: 'error', message: `Errore: ${result.error}`});
+      setSaveStatus({type: 'error', message: `${'Errore nel salvataggio:'} ${result.error}`});
       setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
       console.error('Failed to save edit:', result.error);
       
@@ -532,8 +393,7 @@ const EuringMatrix: React.FC = () => {
     try {
       // Conferma dall'utente
       const confirmed = window.confirm(
-        `Vuoi aggiungere il campo "${fieldName}" alla versione ${version}?\n\n` +
-        `Questo creerà un nuovo campo con valori di default che potrai poi modificare.`
+        `Vuoi aggiungere il campo "${fieldName}" alla versione ${version}?`
       );
       
       if (!confirmed) return;
@@ -571,9 +431,7 @@ const EuringMatrix: React.FC = () => {
       
       // Chiedi all'utente di confermare o modificare la posizione
       const positionInput = window.prompt(
-        `Posizione per il campo "${fieldName}" nella versione ${version}:\n\n` +
-        `Posizione suggerita: ${suggestedPosition}\n` +
-        `(Inserisci un numero o premi OK per usare quella suggerita)`,
+        `Inserisci la posizione per il campo "${fieldName}" nella versione ${version} (suggerita: ${suggestedPosition})`,
         suggestedPosition.toString()
       );
       
@@ -587,7 +445,7 @@ const EuringMatrix: React.FC = () => {
         name: fieldName,
         data_type: 'string',
         length: 10,
-        description: `Campo ${fieldName} aggiunto manualmente alla versione ${version} (pos: ${finalPosition})`,
+        description: `Campo ${fieldName} aggiunto alla versione ${version} in posizione ${finalPosition}`,
         valid_values: [],
         semantic_domain: undefined
       };
@@ -600,7 +458,7 @@ const EuringMatrix: React.FC = () => {
         finalPosition,
         'string',
         10,
-        `Campo ${fieldName} aggiunto manualmente alla versione ${version} (pos: ${finalPosition})`
+        `Campo ${fieldName} aggiunto alla versione ${version} in posizione ${finalPosition}`
       );
       
       if (result.success) {
@@ -620,23 +478,24 @@ const EuringMatrix: React.FC = () => {
         
         setSaveStatus({
           type: 'success', 
-          message: `✅ Campo "${fieldName}" aggiunto realmente alla versione ${version} in posizione ${finalPosition}. Salvato nel backend SKOS!`
+          message: `✅ Campo ${fieldName} aggiunto alla versione ${version} in posizione ${finalPosition}`
         });
         setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
         
         // Ricarica i dati per confermare il salvataggio
+        // Aumentato delay a 2500ms per dare tempo al backend di scrivere il file
         setTimeout(() => {
-          console.log('🔄 Reloading data to confirm field addition');
+          console.log('🔄 Reloading data to confirm field addition after 2.5s delay');
           loadMatrixData(true);
-        }, 1000);
+        }, 2500);
         
       } else {
-        setSaveStatus({type: 'error', message: `Errore nell'aggiunta del campo: ${result.error}`});
+        setSaveStatus({type: 'error', message: `${'Errore aggiunta campo:'} ${result.error}`});
         setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
       }
       
     } catch (error) {
-      setSaveStatus({type: 'error', message: `Errore nell'aggiunta del campo: ${error}`});
+      setSaveStatus({type: 'error', message: `${'Errore aggiunta campo:'} ${error}`});
       setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
       console.error('Error adding field:', error);
     }
@@ -646,8 +505,7 @@ const EuringMatrix: React.FC = () => {
     try {
       // Conferma dall'utente
       const confirmed = window.confirm(
-        `Vuoi rimuovere il campo "${fieldName}" dalla versione ${version}?\n\n` +
-        `Questa azione non può essere annullata.`
+        `Vuoi rimuovere il campo "${fieldName}" dalla versione ${version}?`
       );
       
       if (!confirmed) return;
@@ -664,13 +522,13 @@ const EuringMatrix: React.FC = () => {
           field.versions[version] = null;
           setMatrixData(updatedMatrix);
           
-          setSaveStatus({type: 'success', message: `🗑️ Campo "${fieldName}" rimosso dalla versione ${version}.`});
+          setSaveStatus({type: 'success', message: `🗑️ Campo ${fieldName} rimosso dalla versione ${version}`});
           setTimeout(() => setSaveStatus({type: null, message: ''}), 3000);
         }
       }
       
     } catch (error) {
-      setSaveStatus({type: 'error', message: `Errore nella rimozione del campo: ${error}`});
+      setSaveStatus({type: 'error', message: `${'Errore rimozione campo:'} ${error}`});
       setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
       console.error('Error removing field:', error);
     }
@@ -710,7 +568,7 @@ const EuringMatrix: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Matrix loading error:', err);
-      setError(err.message || 'Errore di connessione');
+      setError(err.message || 'Errore di connessione al server');
     } finally {
       setLoading(false);
     }
@@ -719,8 +577,8 @@ const EuringMatrix: React.FC = () => {
   if (loading) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
-        <h2>📊 Matrice EURING</h2>
-        <p>Caricamento dati...</p>
+        <h2>📊 {'Matrice EURING'}</h2>
+        <p>{'Caricamento dati...'}</p>
       </div>
     );
   }
@@ -728,7 +586,7 @@ const EuringMatrix: React.FC = () => {
   if (error) {
     return (
       <div style={{ padding: '20px' }}>
-        <h2>📊 Matrice EURING</h2>
+        <h2>📊 {'Matrice EURING'}</h2>
         <div style={{ 
           backgroundColor: '#f8d7da', 
           color: '#721c24',
@@ -736,7 +594,7 @@ const EuringMatrix: React.FC = () => {
           borderRadius: '5px',
           margin: '10px 0'
         }}>
-          <strong>❌ Errore:</strong> {error}
+          <strong>❌ {'Errore:'}</strong> {error}
           <br />
           <button 
             onClick={() => loadMatrixData(false)} // Non preservare la posizione in caso di errore
@@ -750,7 +608,7 @@ const EuringMatrix: React.FC = () => {
               cursor: 'pointer'
             }}
           >
-            Riprova
+            {'Riprova'}
           </button>
         </div>
       </div>
@@ -760,8 +618,8 @@ const EuringMatrix: React.FC = () => {
   if (!matrixData) {
     return (
       <div style={{ padding: '20px' }}>
-        <h2>📊 Matrice EURING</h2>
-        <p>Nessun dato disponibile</p>
+        <h2>📊 {'Matrice EURING'}</h2>
+        <p>{'Nessun dato disponibile'}</p>
       </div>
     );
   }
@@ -770,27 +628,59 @@ const EuringMatrix: React.FC = () => {
     <div style={{ padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
-          <h2>📊 Matrice Modello EURING</h2>
-          <p>Vista comparativa di tutte le versioni EURING con allineamento alla versione {matrixData.reference_version} (ordine EPE)</p>
+          <h2>📊 Matrice Versioni EURING</h2>
+          <p>Confronto campi tra versioni EURING (riferimento: {matrixData.reference_version})</p>
+          
+          {/* User Info */}
+          {currentUser && (
+            <div style={{
+              backgroundColor: currentUser.role === 'super_admin' ? '#fff3cd' : '#d1ecf1',
+              border: `1px solid ${currentUser.role === 'super_admin' ? '#ffeaa7' : '#bee5eb'}`,
+              borderRadius: '6px',
+              padding: '10px',
+              marginTop: '10px',
+              fontSize: '13px'
+            }}>
+              <span style={{ fontWeight: 'bold' }}>
+                👤 {currentUser.full_name} ({currentUser.role === 'super_admin' ? 'Super Admin' : currentUser.role === 'admin' ? 'Admin' : currentUser.role === 'user' ? 'User' : 'Viewer'})
+              </span>
+              <span style={{ marginLeft: '10px', color: '#666' }}>
+                {currentUser.role === 'super_admin' && '✅ Modifica abilitata'}
+                {currentUser.role === 'admin' && '👁️ Solo lettura'}
+                {currentUser.role === 'user' && '👁️ Solo lettura'}
+                {currentUser.role === 'viewer' && `👁️ ${'Solo lettura'}`}
+              </span>
+            </div>
+          )}
         </div>
         
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button
             onClick={() => setEditMode(!editMode)}
+            disabled={!currentUser || currentUser.role !== 'super_admin'}
+            title={
+              !currentUser 
+                ? 'Login richiesto'
+                : currentUser.role !== 'super_admin'
+                ? 'Solo Super Admin'
+                : 'Super Admin abilitato'
+            }
             style={{
               padding: '10px 20px',
               backgroundColor: editMode ? '#dc3545' : '#28a745',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
-              cursor: 'pointer',
+              cursor: (!currentUser || currentUser.role !== 'super_admin') ? 'not-allowed' : 'pointer',
               fontWeight: 'bold',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px'
+              gap: '8px',
+              opacity: (!currentUser || currentUser.role !== 'super_admin') ? 0.6 : 1
             }}
           >
-            {editMode ? '🔒 Modalità Lettura' : '✏️ Modalità Editing'}
+            {editMode ? '✏️ ' + 'Modalità Modifica' : '🔒 ' + 'Sola Lettura'}
+            {currentUser?.role === 'super_admin' && ' 👑'}
           </button>
           
           <button
@@ -808,7 +698,7 @@ const EuringMatrix: React.FC = () => {
               gap: '8px'
             }}
           >
-            🔄 Ricarica Dati
+            🔄 {'Ricarica'}
           </button>
           
           {editMode && (
@@ -820,7 +710,7 @@ const EuringMatrix: React.FC = () => {
               fontSize: '0.9em',
               border: '1px solid #ffeaa7'
             }}>
-              💡 Clicca su una cella per modificarla
+              💡 {'Clicca sui valori per modificarli'}
             </div>
           )}
           
@@ -853,7 +743,7 @@ const EuringMatrix: React.FC = () => {
         border: '1px solid #e9ecef'
       }}>
         <div style={{ marginBottom: '20px' }}>
-          <h4 style={{ margin: '0 0 15px 0' }}>Versioni da visualizzare:</h4>
+          <h4 style={{ margin: '0 0 15px 0' }}>{'Versioni EURING'}</h4>
           <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
             {matrixData.versions_metadata.map(version => (
               <label 
@@ -884,7 +774,7 @@ const EuringMatrix: React.FC = () => {
                   {version.year}
                 </span>
                 <span style={{ fontSize: '0.9em', color: '#666' }}>
-                  ({version.total_fields} campi)
+                  ({version.total_fields} {'campi'})
                 </span>
               </label>
             ))}
@@ -904,8 +794,44 @@ const EuringMatrix: React.FC = () => {
               onChange={(e) => setShowEmptyFields(e.target.checked)}
               style={{ margin: 0 }}
             />
-            <span>Mostra campi vuoti (non presenti in nessuna versione selezionata)</span>
+            <span>{'Mostra campi vuoti'}</span>
           </label>
+        </div>
+
+        {/* View mode toggle */}
+        <div style={{ marginTop: '15px' }}>
+          <span style={{ fontWeight: 'bold', marginRight: '10px' }}>Visualizzazione:</span>
+          <div style={{ display: 'inline-flex', gap: '0', borderRadius: '6px', overflow: 'hidden', border: '1px solid #dee2e6' }}>
+            <button
+              onClick={() => setViewMode('table')}
+              style={{
+                padding: '6px 16px',
+                backgroundColor: viewMode === 'table' ? '#007bff' : '#fff',
+                color: viewMode === 'table' ? '#fff' : '#333',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.9em',
+                fontWeight: viewMode === 'table' ? 'bold' : 'normal',
+              }}
+            >
+              📋 Tabella campi
+            </button>
+            <button
+              onClick={() => setViewMode('positional')}
+              style={{
+                padding: '6px 16px',
+                backgroundColor: viewMode === 'positional' ? '#007bff' : '#fff',
+                color: viewMode === 'positional' ? '#fff' : '#333',
+                border: 'none',
+                borderLeft: '1px solid #dee2e6',
+                cursor: 'pointer',
+                fontSize: '0.9em',
+                fontWeight: viewMode === 'positional' ? 'bold' : 'normal',
+              }}
+            >
+              🎨 Mappa posizionale
+            </button>
+          </div>
         </div>
         
         {editMode && (
@@ -916,14 +842,14 @@ const EuringMatrix: React.FC = () => {
             border: '1px solid #bee5eb',
             marginTop: '15px'
           }}>
-            <h5 style={{ margin: '0 0 10px 0', color: '#0c5460' }}>🛠️ Modalità Editing Attiva</h5>
+            <h5 style={{ margin: '0 0 10px 0', color: '#0c5460' }}>🛠️ {'Modalità modifica attiva'}</h5>
             <div style={{ fontSize: '0.9em', color: '#0c5460' }}>
-              • Clicca su una cella per modificare descrizione, tipo di dato, lunghezza, posizione o dominio semantico<br/>
-              • Usa il pulsante "+ Aggiungi" per aggiungere un campo mancante a una versione (con posizione intelligente)<br/>
-              • Usa il pulsante 🗑️ per rimuovere un campo da una versione<br/>
-              • Le modifiche vengono salvate automaticamente nel sistema SKOS<br/>
-              • ⚠️ Attenzione alle posizioni: mantieni coerenza tra versioni per la compatibilità semantica<br/>
-              • Usa questa modalità per completare e correggere le definizioni semantiche
+              • {'Clicca sui valori per modificarli'}<br/>
+              • {'Usa + per aggiungere campi'}<br/>
+              • {'Usa 🗑️ per rimuovere campi'}<br/>
+              • {'Le modifiche vengono salvate automaticamente'}<br/>
+              • ⚠️ {'Attenzione: le modifiche sono permanenti'}<br/>
+              • {'Scopo: documentazione evoluzione EURING'}
             </div>
           </div>
         )}
@@ -939,17 +865,29 @@ const EuringMatrix: React.FC = () => {
       }}>
         <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
           <div>
-            <strong>Campi totali (riferimento):</strong> {matrixData.total_fields}
+            <strong>{'Totale campi:'}</strong> {matrixData.total_fields}
           </div>
           <div>
-            <strong>Campi visualizzati:</strong> {filteredFields.length}
+            <strong>{'Visualizzati:'}</strong> {filteredFields.length}
           </div>
           <div>
-            <strong>Versioni selezionate:</strong> {selectedVersions.length}
+            <strong>{'Versioni selezionate:'}</strong> {selectedVersions.length}
           </div>
         </div>
       </div>
 
+      {/* View content based on mode */}
+      {viewMode === 'positional' ? (
+        <PositionalMatrix
+          fieldMatrix={matrixData.field_matrix}
+          selectedVersions={selectedVersions}
+          editMode={editMode}
+          onEditProperty={(fieldName, version, property, currentValue) => {
+            startEditing(fieldName, version, property, currentValue);
+          }}
+        />
+      ) : (
+      <>
       {/* Tabella completa */}
       <div 
         key={`matrix-table-${refreshKey}`} // Force re-render when refreshKey changes
@@ -971,13 +909,14 @@ const EuringMatrix: React.FC = () => {
                 border: '1px solid #ddd',
                 textAlign: 'left',
                 fontWeight: 'bold',
-                width: '80px',
+                width: '50px',
                 position: 'sticky',
                 left: 0,
                 backgroundColor: '#f8f9fa',
-                zIndex: 10
+                zIndex: 110,
+                boxShadow: '2px 0 5px rgba(0,0,0,0.1)'
               }}>
-                Ord.
+                {'#'}
               </th>
               <th style={{ 
                 padding: '12px', 
@@ -986,11 +925,12 @@ const EuringMatrix: React.FC = () => {
                 fontWeight: 'bold',
                 width: '200px',
                 position: 'sticky',
-                left: '80px',
+                left: '50px',
                 backgroundColor: '#f8f9fa',
-                zIndex: 10
+                zIndex: 109,
+                boxShadow: '2px 0 5px rgba(0,0,0,0.1)'
               }}>
-                Campo
+                {'Campo'}
               </th>
               <th style={{ 
                 padding: '12px', 
@@ -999,7 +939,7 @@ const EuringMatrix: React.FC = () => {
                 fontWeight: 'bold',
                 width: '300px'
               }}>
-                Descrizione
+                {'Descrizione'}
               </th>
               {selectedVersions.map(year => (
                 <th 
@@ -1040,21 +980,64 @@ const EuringMatrix: React.FC = () => {
                   position: 'sticky',
                   left: 0,
                   backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8f9fa',
-                  zIndex: 5
+                  zIndex: 100,
+                  boxShadow: '2px 0 5px rgba(0,0,0,0.1)',
+                  fontSize: '0.85em',
+                  width: '50px'
                 }}>
-                  {fieldRow.epe_order || '-'}
+                  {index + 1}
                 </td>
                 <td style={{ 
                   padding: '10px', 
                   border: '1px solid #ddd',
                   fontWeight: 'bold',
                   position: 'sticky',
-                  left: '80px',
+                  left: '50px',
                   backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8f9fa',
-                  zIndex: 5
+                  zIndex: 99,
+                  boxShadow: '2px 0 5px rgba(0,0,0,0.1)'
                 }}>
                   <div>
-                    <div>{fieldRow.field_name}</div>
+                    <div 
+                      style={{
+                        cursor: editMode ? 'pointer' : 'default',
+                        padding: '2px',
+                        borderRadius: '2px',
+                        backgroundColor: editMode ? 'rgba(0,123,255,0.1)' : 'transparent'
+                      }}
+                      onClick={() => {
+                        console.log('🖱️ Field name clicked!', {
+                          editMode,
+                          selectedVersionsCount: selectedVersions.length,
+                          selectedVersions,
+                          fieldName: fieldRow.field_name
+                        });
+                        
+                        if (editMode && selectedVersions.length > 0) {
+                          // Edit name for first selected version
+                          const firstVersion = selectedVersions[0];
+                          const fieldInfo = getFieldValue(fieldRow, firstVersion);
+                          console.log('📋 Field info:', fieldInfo);
+                          
+                          if (fieldInfo) {
+                            // Use fieldInfo.name if available, otherwise use fieldRow.field_name
+                            const currentName = fieldInfo.name || fieldRow.field_name;
+                            console.log('✏️ Starting edit with name:', currentName);
+                            startEditing(fieldRow.field_name, firstVersion, 'name', currentName);
+                          } else {
+                            console.warn('⚠️ No field info found for version:', firstVersion);
+                          }
+                        } else {
+                          console.warn('⚠️ Cannot edit:', {
+                            editMode,
+                            selectedVersionsLength: selectedVersions.length
+                          });
+                        }
+                      }}
+                    >
+                      {fieldRow.field_name}
+                      {editMode && selectedVersions.length > 0 && <span style={{ marginLeft: '4px', color: '#007bff', fontSize: '0.8em' }}>✏️</span>}
+                    </div>
                     <div style={{ fontSize: '0.8em', color: '#666', fontWeight: 'normal' }}>
                       {fieldRow.semantic_meaning}
                     </div>
@@ -1062,7 +1045,8 @@ const EuringMatrix: React.FC = () => {
                 </td>
                 <td style={{ 
                   padding: '10px', 
-                  border: '1px solid #ddd'
+                  border: '1px solid #ddd',
+                  zIndex: 1
                 }}>
                   {fieldRow.description}
                 </td>
@@ -1075,7 +1059,8 @@ const EuringMatrix: React.FC = () => {
                         padding: '8px', 
                         border: '1px solid #ddd',
                         backgroundColor: fieldInfo ? `${getVersionColor(year)}10` : '#f8f8f8',
-                        position: 'relative'
+                        position: 'relative',
+                        zIndex: 1
                       }}
                     >
                       {fieldInfo ? (
@@ -1085,12 +1070,12 @@ const EuringMatrix: React.FC = () => {
                             color: getVersionColor(year),
                             marginBottom: '4px'
                           }}>
-                            ✓ Presente
+                            ✓ {'Presente'}
                           </div>
                           
                           {/* Campo Descrizione - Editabile */}
                           <div style={{ marginBottom: '4px' }}>
-                            <strong>Descrizione:</strong>
+                            <strong>{'Descrizione:'}</strong>
                             <div 
                               style={{ 
                                 color: '#666',
@@ -1110,7 +1095,7 @@ const EuringMatrix: React.FC = () => {
                           <div style={{ color: '#666', fontSize: '0.75em', marginTop: '4px' }}>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
                               <span>
-                                Pos: 
+                                {'Pos:'} 
                                 <span 
                                   style={{ 
                                     cursor: editMode ? 'pointer' : 'default',
@@ -1127,7 +1112,7 @@ const EuringMatrix: React.FC = () => {
                               
                               {/* Tipo di dato editabile */}
                               <span>
-                                Tipo: 
+                                {'Tipo:'} 
                                 <span 
                                   style={{ 
                                     cursor: editMode ? 'pointer' : 'default',
@@ -1144,7 +1129,7 @@ const EuringMatrix: React.FC = () => {
                               
                               {/* Lunghezza editabile */}
                               <span>
-                                Lung: 
+                                {'Lung:'} 
                                 <span 
                                   style={{ 
                                     cursor: editMode ? 'pointer' : 'default',
@@ -1173,7 +1158,7 @@ const EuringMatrix: React.FC = () => {
                                     marginLeft: '8px'
                                   }}
                                   onClick={() => removeFieldFromVersion(fieldRow.field_name, year)}
-                                  title="Rimuovi campo da questa versione"
+                                  title={'Rimuovi campo'}
                                 >
                                   🗑️
                                 </button>
@@ -1184,22 +1169,16 @@ const EuringMatrix: React.FC = () => {
                           {/* Valori Validi - Editabili */}
                           {fieldInfo.valid_values && fieldInfo.valid_values.length > 0 && (
                             <div style={{ marginTop: '4px' }}>
-                              <strong>Valori:</strong>
+                              <strong>{'Valori:'}</strong>
                               <FieldValuesDisplay
                                 fieldName={fieldRow.field_name}
                                 version={year}
                                 values={fieldInfo.valid_values}
+                                valuesCount={fieldInfo.valid_values_count}
                                 editMode={editMode}
                                 onEdit={async () => {
-                                  // Recupera i valori completi con descrizioni COMPLETE per l'editing
-                                  const valuesWithDescriptions = await getFieldValueWithDescription(
-                                    fieldRow.field_name, 
-                                    year, 
-                                    fieldInfo.valid_values,
-                                    false // NON troncare per l'editing
-                                  );
-                                  const editValue = valuesWithDescriptions.join('\n');
-                                  startEditing(fieldRow.field_name, year, 'valid_values', editValue);
+                                  // Load full values with descriptions for editing
+                                  startEditing(fieldRow.field_name, year, 'valid_values', '__LOADING__');
                                 }}
                               />
                             </div>
@@ -1220,7 +1199,7 @@ const EuringMatrix: React.FC = () => {
                                 }}
                                 onClick={() => startEditing(fieldRow.field_name, year, 'valid_values', '')}
                               >
-                                + Valori
+                                + {'Aggiungi valori'}
                               </button>
                             </div>
                           )}
@@ -1228,7 +1207,7 @@ const EuringMatrix: React.FC = () => {
                           {/* Dominio Semantico - Editabile */}
                           {fieldInfo.semantic_domain && (
                             <div style={{ marginTop: '4px' }}>
-                              <strong>Dominio:</strong>
+                              <strong>{'Dominio:'}</strong>
                               <div 
                                 style={{ 
                                   color: '#4CAF50',
@@ -1261,7 +1240,7 @@ const EuringMatrix: React.FC = () => {
                                 }}
                                 onClick={() => startEditing(fieldRow.field_name, year, 'semantic_domain', '')}
                               >
-                                + Dominio
+                                + {'Aggiungi dominio'}
                               </button>
                             </div>
                           )}
@@ -1272,7 +1251,7 @@ const EuringMatrix: React.FC = () => {
                           color: '#ccc',
                           fontStyle: 'italic'
                         }}>
-                          Non presente
+                          {'Non presente'}
                           {editMode && (
                             <div style={{ marginTop: '4px' }}>
                               <button
@@ -1289,7 +1268,7 @@ const EuringMatrix: React.FC = () => {
                                   addFieldToVersion(fieldRow.field_name, year);
                                 }}
                               >
-                                + Aggiungi
+                                + {'Aggiungi campo'}
                               </button>
                             </div>
                           )}
@@ -1312,7 +1291,7 @@ const EuringMatrix: React.FC = () => {
         margin: '20px 0',
         border: '1px solid #e9ecef'
       }}>
-        <h4 style={{ margin: '0 0 15px 0' }}>Legenda:</h4>
+        <h4 style={{ margin: '0 0 15px 0' }}>{'Legenda'}</h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ 
@@ -1321,7 +1300,7 @@ const EuringMatrix: React.FC = () => {
               backgroundColor: '#e8f5e8',
               border: '1px solid #4caf50'
             }}></div>
-            <span>Campo presente nella versione</span>
+            <span>{'Campo presente'}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ 
@@ -1330,24 +1309,16 @@ const EuringMatrix: React.FC = () => {
               backgroundColor: '#f8f8f8',
               border: '1px solid #ccc'
             }}></div>
-            <span>Campo non presente nella versione</span>
+            <span>{'Campo assente'}</span>
           </div>
-          <div><strong>Pos:</strong> Posizione nel formato</div>
-          <div><strong>Tipo:</strong> Tipo di dato</div>
-          <div><strong>Lung:</strong> Lunghezza campo</div>
-          <div><strong>Valori:</strong> Valori validi esempio</div>
+          <div><strong>Pos:</strong> {'Posizione nel record'}</div>
+          <div><strong>Tipo:</strong> {'Tipo di dato'}</div>
+          <div><strong>Lung:</strong> {'Lunghezza campo'}</div>
+          <div><strong>Valori:</strong> {'Valori ammessi'}</div>
         </div>
       </div>
-
-      <div style={{ 
-        backgroundColor: '#d4edda', 
-        color: '#155724',
-        padding: '15px', 
-        borderRadius: '5px',
-        margin: '20px 0'
-      }}>
-        <strong>🎉 Matrice EURING Completa!</strong> Tutte le funzionalità sono state implementate correttamente.
-      </div>
+      </>
+      )}
 
       {/* Modal di Editing Zoomato */}
       {showEditModal && modalEditData && (
@@ -1390,7 +1361,7 @@ const EuringMatrix: React.FC = () => {
                 alignItems: 'center',
                 gap: '10px'
               }}>
-                ✏️ Modifica Campo
+                ✏️ {'Modifica Campo'}
               </h3>
               <div style={{ 
                 fontSize: '1.1em', 
@@ -1399,9 +1370,9 @@ const EuringMatrix: React.FC = () => {
                 flexWrap: 'wrap',
                 gap: '15px'
               }}>
-                <span><strong>Campo:</strong> {modalEditData.fieldName}</span>
-                <span><strong>Versione:</strong> {modalEditData.version}</span>
-                <span><strong>Proprietà:</strong> {modalEditData.property}</span>
+                <span><strong>{'Campo:'}</strong> {modalEditData.fieldName}</span>
+                <span><strong>{'Versione:'}</strong> {modalEditData.version}</span>
+                <span><strong>{'Proprietà:'}</strong> {modalEditData.property}</span>
               </div>
             </div>
 
@@ -1414,18 +1385,18 @@ const EuringMatrix: React.FC = () => {
                 marginBottom: '25px',
                 border: '1px solid #e9ecef'
               }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#495057' }}>📋 Informazioni Campo</h4>
+                <h4 style={{ margin: '0 0 10px 0', color: '#495057' }}>📋 {'Informazioni campo'}</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', fontSize: '0.9em' }}>
-                  <div><strong>Posizione:</strong> {modalEditData.fieldInfo.position}</div>
-                  <div><strong>Tipo:</strong> {modalEditData.fieldInfo.data_type}</div>
-                  <div><strong>Lunghezza:</strong> {modalEditData.fieldInfo.length}</div>
+                  <div><strong>{'Posizione:'}</strong> {modalEditData.fieldInfo.position}</div>
+                  <div><strong>{'Tipo:'}</strong> {modalEditData.fieldInfo.data_type}</div>
+                  <div><strong>{'Lunghezza:'}</strong> {modalEditData.fieldInfo.length}</div>
                   {modalEditData.fieldInfo.semantic_domain && (
-                    <div><strong>Dominio:</strong> {EuringAPI.getDomainDisplayName(modalEditData.fieldInfo.semantic_domain)}</div>
+                    <div><strong>{'Dominio:'}</strong> {EuringAPI.getDomainDisplayName(modalEditData.fieldInfo.semantic_domain)}</div>
                   )}
                 </div>
                 {modalEditData.fieldInfo.description && (
                   <div style={{ marginTop: '10px' }}>
-                    <strong>Descrizione attuale:</strong> {modalEditData.fieldInfo.description}
+                    <strong>{'Valore attuale:'}</strong> {modalEditData.fieldInfo.description}
                   </div>
                 )}
               </div>
@@ -1440,44 +1411,169 @@ const EuringMatrix: React.FC = () => {
                 fontSize: '1.1em',
                 color: '#333'
               }}>
-                {modalEditData.property === 'description' && '📝 Nuova Descrizione:'}
-                {modalEditData.property === 'semantic_domain' && '🏷️ Dominio Semantico:'}
-                {modalEditData.property === 'data_type' && '🔧 Tipo di Dato:'}
-                {modalEditData.property === 'length' && '📏 Lunghezza:'}
-                {modalEditData.property === 'position' && '📍 Posizione nel Formato:'}
-                {modalEditData.property === 'valid_values' && '📋 Valori Validi:'}
+                {modalEditData.property === 'name' && `✏️ ${'Modifica nome campo'}`}
+                {modalEditData.property === 'description' && `📝 ${'Modifica descrizione'}`}
+                {modalEditData.property === 'semantic_domain' && `🏷️ ${'Modifica dominio semantico'}`}
+                {modalEditData.property === 'data_type' && `🔧 ${'Modifica tipo dato'}`}
+                {modalEditData.property === 'length' && `📏 ${'Modifica lunghezza'}`}
+                {modalEditData.property === 'position' && `📍 ${'Modifica posizione'}`}
+                {modalEditData.property === 'valid_values' && `📋 ${'Modifica valori ammessi'}`}
               </label>
               
               {modalEditData.property === 'valid_values' ? (
                 <div>
+                  {/* Summary */}
+                  <div style={{
+                    backgroundColor: '#e8f4fd',
+                    padding: '10px 12px',
+                    borderRadius: '6px',
+                    marginBottom: '12px',
+                    fontSize: '0.9em',
+                    color: '#0c5460'
+                  }}>
+                    📊 {editValue.split('\n').filter(l => l.trim().length > 0).length} valori attualmente definiti
+                  </div>
+                  
                   <textarea
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
                     style={{
                       width: '100%',
                       padding: '12px',
-                      fontSize: '1.1em',
+                      fontSize: '1em',
                       border: '2px solid #007bff',
                       borderRadius: '8px',
-                      minHeight: '200px',
+                      minHeight: '300px',
+                      maxHeight: '50vh',
                       resize: 'vertical',
-                      fontFamily: 'monospace'
+                      fontFamily: 'monospace',
+                      lineHeight: '1.5'
                     }}
                     autoFocus
                     autoComplete="off"
                     data-lpignore="true"
                     data-form-type="other"
-                    placeholder="Inserisci i valori nel formato CODICE:DESCRIZIONE (una per riga)&#10;&#10;Esempio:&#10;A0:Metal ring only&#10;B0:Metal ring + colour ring(s)&#10;C0:Metal ring + colour mark(s)"
+                    placeholder="Inserisci i valori nel formato CODICE:DESCRIZIONE (uno per riga)&#10;&#10;Esempio:&#10;ABT:Albania (Tirana)&#10;AUW:Austria (Wien (Vienna))&#10;BGS:Bulgaria (Sofia)"
                   />
+                  
+                  {/* Action buttons for valid_values */}
                   <div style={{
-                    fontSize: '0.9em',
-                    color: '#666',
+                    display: 'flex',
+                    gap: '8px',
                     marginTop: '8px',
+                    flexWrap: 'wrap'
+                  }}>
+                    <button
+                      onClick={() => {
+                        // Sort values alphabetically by code
+                        const lines = editValue.split('\n').filter(l => l.trim().length > 0);
+                        lines.sort((a, b) => a.localeCompare(b));
+                        setEditValue(lines.join('\n'));
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#6c757d',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '0.85em',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🔤 Ordina A-Z
+                    </button>
+                    <button
+                      onClick={() => {
+                        // Remove duplicates
+                        const lines = editValue.split('\n').filter(l => l.trim().length > 0);
+                        const seen = new Set<string>();
+                        const unique = lines.filter(line => {
+                          const code = line.split(':')[0]?.trim();
+                          if (code && !seen.has(code)) {
+                            seen.add(code);
+                            return true;
+                          }
+                          return false;
+                        });
+                        const removed = lines.length - unique.length;
+                        setEditValue(unique.join('\n'));
+                        if (removed > 0) {
+                          setSaveStatus({type: 'success', message: `Rimossi ${removed} duplicati`});
+                          setTimeout(() => setSaveStatus({type: null, message: ''}), 3000);
+                        }
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#6c757d',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '0.85em',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🧹 Rimuovi duplicati
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm('Vuoi cancellare tutti i valori?')) {
+                          setEditValue('');
+                        }
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#dc3545',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '0.85em',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🗑️ Cancella tutto
+                    </button>
+                  </div>
+                  
+                  <div style={{
+                    fontSize: '0.85em',
+                    color: '#666',
+                    marginTop: '10px',
                     padding: '8px',
                     backgroundColor: '#f8f9fa',
                     borderRadius: '4px'
                   }}>
-                    💡 <strong>Formato semplice:</strong> Una riga per ogni valore nel formato "CODICE:DESCRIZIONE"
+                    💡 <strong>Formato:</strong> CODICE:DESCRIZIONE (uno per riga)<br/>
+                    Puoi incollare direttamente una lista di valori.
+                  </div>
+                </div>
+              ) : modalEditData.property === 'name' ? (
+                <div>
+                  <input
+                    type="text"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    placeholder="Nome campo (es. latitude_sign)"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      fontSize: '1.1em',
+                      border: '2px solid #007bff',
+                      borderRadius: '8px'
+                    }}
+                    autoFocus
+                    autoComplete="off"
+                    data-lpignore="true"
+                  />
+                  <div style={{
+                    fontSize: '0.85em',
+                    color: '#666',
+                    marginTop: '10px',
+                    padding: '8px',
+                    backgroundColor: '#fff3cd',
+                    borderRadius: '4px',
+                    border: '1px solid #ffc107'
+                  }}>
+                    ⚠️ <strong>Attenzione:</strong> Modificare il nome del campo può influenzare le conversioni e i parser. Usa nomi descrittivi in snake_case (es. latitude_sign, ring_number).
                   </div>
                 </div>
               ) : modalEditData.property === 'semantic_domain' ? (
@@ -1496,14 +1592,14 @@ const EuringMatrix: React.FC = () => {
                   autoComplete="off"
                   data-lpignore="true"
                 >
-                  <option value="">Seleziona dominio...</option>
-                  <option value="identification_marking">🏷️ Identification & Marking</option>
-                  <option value="species">🐦 Species Classification</option>
-                  <option value="demographics">👥 Demographics</option>
-                  <option value="temporal">⏰ Temporal Information</option>
-                  <option value="spatial">🌍 Spatial Information</option>
-                  <option value="biometrics">📏 Biometric Measurements</option>
-                  <option value="methodology">🔬 Methodology & Conditions</option>
+                  <option value="">{'Seleziona dominio...'}</option>
+                  <option value="identification_marking">🏷️ {'Identificazione'}</option>
+                  <option value="species">🐦 {'Specie'}</option>
+                  <option value="demographics">👥 {'Demografia'}</option>
+                  <option value="temporal">⏰ {'Temporale'}</option>
+                  <option value="spatial">🌍 {'Spaziale'}</option>
+                  <option value="biometrics">📏 {'Biometria'}</option>
+                  <option value="methodology">🔬 {'Metodologia'}</option>
                 </select>
               ) : modalEditData.property === 'data_type' ? (
                 <select
@@ -1521,11 +1617,11 @@ const EuringMatrix: React.FC = () => {
                   autoComplete="off"
                   data-lpignore="true"
                 >
-                  <option value="string">📝 String</option>
-                  <option value="integer">🔢 Integer</option>
-                  <option value="float">🔢 Float</option>
-                  <option value="date">📅 Date</option>
-                  <option value="code">🏷️ Code</option>
+                  <option value="string">📝 {'Stringa'}</option>
+                  <option value="integer">🔢 {'Intero'}</option>
+                  <option value="float">🔢 {'Decimale'}</option>
+                  <option value="date">📅 {'Data'}</option>
+                  <option value="code">🏷️ {'Codice'}</option>
                 </select>
               ) : modalEditData.property === 'length' || modalEditData.property === 'position' ? (
                 <input
@@ -1545,56 +1641,8 @@ const EuringMatrix: React.FC = () => {
                   data-form-type="other"
                   min={modalEditData.property === 'position' ? "0" : "1"}
                   max={modalEditData.property === 'position' ? "100" : "100"}
-                  placeholder={modalEditData.property === 'position' ? "Inserisci la posizione nel formato (0-100)" : "Inserisci la lunghezza (1-100)"}
+                  placeholder={modalEditData.property === 'position' ? 'Inserisci posizione' : 'Inserisci lunghezza'}
                 />
-              ) : modalEditData.property === 'valid_values' ? (
-                <div>
-                  {/* Avviso speciale per valid_values */}
-                  <div style={{
-                    backgroundColor: '#e8f4fd',
-                    color: '#0c5460',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    marginBottom: '15px',
-                    border: '1px solid #bee5eb',
-                    fontSize: '0.9em'
-                  }}>
-                    💡 <strong>Editing Valori Predefiniti:</strong> I valori vengono salvati immediatamente tramite lookup table API. 
-                    Puoi salvare più volte per testare diverse combinazioni. Clicca "Chiudi" quando hai finito.
-                  </div>
-                  
-                  <textarea
-                    value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      fontSize: '1.1em',
-                      border: '2px solid #007bff',
-                      borderRadius: '8px',
-                      minHeight: '200px',
-                      resize: 'vertical',
-                      fontFamily: 'monospace'
-                    }}
-                    autoFocus
-                    autoComplete="off"
-                    data-lpignore="true"
-                    data-form-type="other"
-                    placeholder="Formato: CODICE:DESCRIZIONE (una per riga)&#10;Esempio:&#10;A0:Metal ring only&#10;B0:Metal ring + colour ring(s)&#10;C0:Metal ring + colour mark(s)&#10;&#10;Oppure solo codici separati da virgola:&#10;A0,B0,C0"
-                  />
-                  <div style={{
-                    fontSize: '0.9em',
-                    color: '#666',
-                    marginTop: '8px',
-                    padding: '8px',
-                    backgroundColor: '#f8f9fa',
-                    borderRadius: '4px'
-                  }}>
-                    💡 <strong>Due formati supportati:</strong><br/>
-                    • <strong>Codice + Descrizione:</strong> Una per riga nel formato "CODICE:DESCRIZIONE"<br/>
-                    • <strong>Solo codici:</strong> Separati da virgola "A0,B0,C0" (descrizioni automatiche)
-                  </div>
-                </div>
               ) : (
                 <textarea
                   value={editValue}
@@ -1612,7 +1660,7 @@ const EuringMatrix: React.FC = () => {
                   autoComplete="off"
                   data-lpignore="true"
                   data-form-type="other"
-                  placeholder="Inserisci la nuova descrizione del campo..."
+                  placeholder={'Inserisci descrizione...'}
                 />
               )}
             </div>
@@ -1628,8 +1676,8 @@ const EuringMatrix: React.FC = () => {
             }}>
               <div style={{ fontSize: '0.9em', color: '#666' }}>
                 {modalEditData?.property === 'valid_values' 
-                  ? '💡 Salva per aggiornare i valori, poi chiudi quando hai finito'
-                  : '💡 Ctrl+Enter per salvare, Esc per annullare'
+                  ? `💡 ${'Ctrl+Enter per salvare, Esc per chiudere'}`
+                  : `💡 ${'Ctrl+Enter per salvare, Esc per annullare'}`
                 }
               </div>
               <div style={{ display: 'flex', gap: '15px' }}>
@@ -1648,7 +1696,7 @@ const EuringMatrix: React.FC = () => {
                     gap: '8px'
                   }}
                 >
-                  {modalEditData?.property === 'valid_values' ? '❌ Chiudi' : '❌ Annulla'}
+                  {modalEditData?.property === 'valid_values' ? `❌ ${'Chiudi'}` : `❌ ${'Annulla'}`}
                 </button>
                 <button
                   onClick={saveEdit}
@@ -1665,7 +1713,7 @@ const EuringMatrix: React.FC = () => {
                     gap: '8px'
                   }}
                 >
-                  {modalEditData?.property === 'valid_values' ? '💾 Salva Valori' : '✅ Salva Modifiche'}
+                  {modalEditData?.property === 'valid_values' ? `💾 ${'Salva valori'}` : `✅ ${'Salva'}`}
                 </button>
               </div>
             </div>

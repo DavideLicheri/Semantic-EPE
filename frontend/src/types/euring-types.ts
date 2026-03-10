@@ -1,5 +1,5 @@
 /**
- * TypeScript interfaces for EURING Code Recognition System Frontend
+ * TypeScript interfaces for ECES (EURING Code Evolution System) Frontend
  */
 
 export enum TransformationType {
