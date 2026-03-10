@@ -380,7 +380,7 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
         {/* Matrix */}
         <div style={{ flex: panelOpen ? '0 0 55%' : '1', maxWidth: panelOpen ? '55%' : '100%', minWidth: 0, overflow: 'auto' }}>
           <PositionalMatrix
-            fieldMatrix={matrixData.field_matrix}
+            fieldMatrix={matrixData.field_matrix ?? []}
             selectedVersions={selectedVersions}
             editMode={canEdit}
             onEditProperty={canEdit ? handleEditProperty : undefined}

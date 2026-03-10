@@ -741,8 +741,8 @@ async def get_euring_versions_matrix():
                         }
                         break
                     # Tertiary match: special cases for scheme-related fields
-                    elif (epe_field_name == 'scheme' and 
-                          ('scheme' in field.name.lower() or 'scheme' in field.semantic_meaning.lower())):
+                    elif (epe_field_name == 'scheme' and
+                          ('scheme' in field.name.lower() or 'scheme' in (field.semantic_meaning or '').lower())):
                         field_info = {
                             "position": field.position,
                             "name": field.name,
