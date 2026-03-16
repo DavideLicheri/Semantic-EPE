@@ -234,26 +234,29 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
     try {
       const orig = editState.fieldInfo;
       const row = matrixData?.field_matrix.find(r => r.field_name === editState.fieldName);
-      const saves: Promise<void>[] = [];
+      const saves: { label: string; promise: Promise<void> }[] = [];
 
       if (editState.description !== (orig.description || ''))
-        saves.push(saveProperty('description', editState.description));
+        saves.push({ label: 'description', promise: saveProperty('description', editState.description) });
       if (editState.dataType !== (orig.data_type || ''))
-        saves.push(saveProperty('data_type', editState.dataType));
+        saves.push({ label: 'data_type', promise: saveProperty('data_type', editState.dataType) });
       if (editState.semanticDomain !== (orig.semantic_domain || ''))
-        saves.push(saveProperty('semantic_domain', editState.semanticDomain));
+        saves.push({ label: 'semantic_domain', promise: saveProperty('semantic_domain', editState.semanticDomain) });
       if (editState.canonicalName !== (orig.canonical_name || ''))
-        saves.push(saveProperty('canonical_name', editState.canonicalName));
+        saves.push({ label: 'canonical_name', promise: saveProperty('canonical_name', editState.canonicalName) });
       if (editState.position !== orig.position)
-        saves.push(saveProperty('position', String(editState.position)));
+        saves.push({ label: 'position', promise: saveProperty('position', String(editState.position)) });
       if (editState.length !== orig.length)
-        saves.push(saveProperty('length', String(editState.length)));
+        saves.push({ label: 'length', promise: saveProperty('length', String(editState.length)) });
       if (row && editState.semanticMeaning !== (row.semantic_meaning || ''))
-        saves.push(saveProperty('semantic_meaning', editState.semanticMeaning));
+        saves.push({ label: 'semantic_meaning', promise: saveProperty('semantic_meaning', editState.semanticMeaning) });
 
-      await Promise.all(saves);
+      const results = await Promise.allSettled(saves.map(s => s.promise));
+      const failures = results
+        .map((r, i) => r.status === 'rejected' ? `${saves[i].label}: ${(r.reason as Error)?.message}` : null)
+        .filter(Boolean);
 
-      // Save lookup values
+      // Save lookup values (only if no blocking errors)
       if (editState.lookupLoaded && editState.lookupValues.length > 0) {
         const lookupData = {
           name: `${editState.fieldName} Values`,
@@ -263,10 +266,15 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
         await EuringAPI.updateFieldLookupTable(editState.fieldName, editState.version, lookupData);
       }
 
-      showStatus('success', `✅ Campo "${editState.fieldName}" salvato`);
       await loadMatrix();
       // Update editState to reflect new saved values
       setEditState(prev => prev ? { ...prev, fieldInfo: { ...prev.fieldInfo, ...{ description: prev.description, data_type: prev.dataType, semantic_domain: prev.semanticDomain as any, canonical_name: prev.canonicalName, position: prev.position, length: prev.length } } } : prev);
+
+      if (failures.length > 0) {
+        showStatus('error', `⚠ Salvato parzialmente. Errori: ${failures.join('; ')}`);
+      } else {
+        showStatus('success', `✅ Campo "${editState.fieldName}" salvato`);
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Errore nel salvataggio';
       showStatus('error', `Errore: ${msg}`);

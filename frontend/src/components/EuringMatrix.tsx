@@ -1041,6 +1041,11 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                     <div style={{ fontSize: '0.8em', color: '#666', fontWeight: 'normal' }}>
                       {fieldRow.semantic_meaning}
                     </div>
+                    {(fieldRow as any).canonical_name && (
+                      <div style={{ fontSize: '0.75em', color: '#0062cc', fontWeight: 'normal', marginTop: '2px' }}>
+                        🔗 {(fieldRow as any).canonical_name}
+                      </div>
+                    )}
                   </div>
                 </td>
                 <td style={{ 
