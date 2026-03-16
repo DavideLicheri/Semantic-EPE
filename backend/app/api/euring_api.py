@@ -700,6 +700,7 @@ async def get_euring_versions_matrix():
                 "field_name": ref_field_name,
                 "description": ref_description,
                 "semantic_meaning": ref_semantic,
+                "canonical_name": ref_field.canonical_name if ref_field else None,
                 "epe_order": epe_field_order.index(epe_field_name) + 1,
                 "versions": {}
             }
@@ -719,6 +720,7 @@ async def get_euring_versions_matrix():
                         field_info = {
                             "position": field.position,
                             "name": field.name,
+                            "canonical_name": field.canonical_name,
                             "data_type": field.data_type,
                             "length": field.length,
                             "description": field.description,
@@ -732,6 +734,7 @@ async def get_euring_versions_matrix():
                         field_info = {
                             "position": field.position,
                             "name": field.name,
+                            "canonical_name": field.canonical_name,
                             "data_type": field.data_type,
                             "length": field.length,
                             "description": field.description,
@@ -746,6 +749,7 @@ async def get_euring_versions_matrix():
                         field_info = {
                             "position": field.position,
                             "name": field.name,
+                            "canonical_name": field.canonical_name,
                             "data_type": field.data_type,
                             "length": field.length,
                             "description": field.description,
@@ -776,6 +780,7 @@ async def get_euring_versions_matrix():
                         "field_name": field.name,
                         "description": field.description,
                         "semantic_meaning": field.semantic_meaning,
+                        "canonical_name": field.canonical_name,
                         "epe_order": 999,  # Put additional fields at the end
                         "versions": {}
                     }
@@ -790,6 +795,7 @@ async def get_euring_versions_matrix():
                                 field_info = {
                                     "position": check_field.position,
                                     "name": check_field.name,
+                                    "canonical_name": check_field.canonical_name,
                                     "data_type": check_field.data_type,
                                     "length": check_field.length,
                                     "description": check_field.description,
@@ -876,11 +882,11 @@ async def update_matrix_field(
         # Validate input
         if not request.field_name or not request.field_name.strip():
             raise HTTPException(status_code=400, detail="Field name cannot be empty")
-        
+
         valid_versions = ['1966', '1979', '2000', '2020']
         if request.version not in valid_versions:
             raise HTTPException(status_code=400, detail=f"Invalid version: {request.version}")
-        
+
         valid_properties = ['name', 'description', 'semantic_domain', 'data_type', 'length', 'semantic_meaning', 'position', 'canonical_name']
         if request.property not in valid_properties:
             raise HTTPException(status_code=400, detail=f"Invalid property: {request.property}. Valid: {valid_properties}")
@@ -909,13 +915,16 @@ async def update_matrix_field(
         
         # Update the field property
         if request.property == 'semantic_domain':
-            try:
-                from ..models.euring_models import SemanticDomain
-                semantic_domain = SemanticDomain(request.value.lower())
-                field_to_update.semantic_domain = semantic_domain
-            except ValueError:
-                valid_domains = [d.value for d in SemanticDomain]
-                raise HTTPException(status_code=400, detail=f"Invalid semantic domain: {request.value}. Valid: {valid_domains}")
+            from ..models.euring_models import SemanticDomain
+            if not request.value or request.value.strip() == '':
+                field_to_update.semantic_domain = None
+            else:
+                try:
+                    semantic_domain = SemanticDomain(request.value.lower())
+                    field_to_update.semantic_domain = semantic_domain
+                except ValueError:
+                    valid_domains = [d.value for d in SemanticDomain]
+                    raise HTTPException(status_code=400, detail=f"Invalid semantic domain: {request.value}. Valid: {valid_domains}")
         
         elif request.property == 'length':
             try:
