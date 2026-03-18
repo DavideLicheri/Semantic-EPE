@@ -160,16 +160,30 @@
     {
       "position": 73,
       "name": "national_spare_columns",
-      "canonical_name": null,
+      "canonical_name": "campi di riserva (nazionali)",
       "data_type": "string",
       "length": 8,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "These spare columns are intended for special studies: e.g. finer geographical divisions, weights and measurements of birds, comllicated calculations",
-      "semantic_domain": null,
+      "description": "These spare columns are intended for special studies: e.g. finer geographical divisions, weights and measurements of birds, complicated calculations",
+      "semantic_domain": "biometrics",
       "semantic_meaning": null,
       "evolution_notes": [
-        "Field added manually on 2026-03-09T17:07:20.953020"
+        "Field added manually on 2026-03-09T17:07:20.953020",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:12.825Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:12.826Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:16.095Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:16.095Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:24.924Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:24.925Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:26.125Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:26.125Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:26.351Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:26.351Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:26.966Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:26.966Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T20:53:40.997Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T20:54:16.639Z"
       ]
     }
   ],
