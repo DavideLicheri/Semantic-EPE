@@ -1142,12 +1142,14 @@ async def delete_field_from_version(
         if not version_obj:
             raise HTTPException(status_code=404, detail=f"Version {request.version} not found")
 
-        original_count = len(version_obj.field_definitions)
-        version_obj.field_definitions = [
-            f for f in version_obj.field_definitions if f.name != request.field_name
-        ]
-        if len(version_obj.field_definitions) == original_count:
+        # Use cross-version name resolution (same as UPDATE endpoint)
+        field_to_delete = lookup_table_service._find_field_in_version(version_obj, request.field_name)
+        if not field_to_delete:
             raise HTTPException(status_code=404, detail=f"Field '{request.field_name}' not found in version {request.version}")
+
+        version_obj.field_definitions = [
+            f for f in version_obj.field_definitions if f.name != field_to_delete.name
+        ]
 
         await skos_manager.update_version(version_obj)
         await skos_manager.reload_version_model()
@@ -1159,7 +1161,7 @@ async def delete_field_from_version(
             version=request.version,
             property="field_removed",
             old_value=request.field_name,
-            new_value=None,
+            new_value="",
             processing_time_ms=processing_time
         )
     except HTTPException:
