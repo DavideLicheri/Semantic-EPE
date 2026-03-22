@@ -7,6 +7,7 @@
     {
       "position": 5,
       "name": "scheme_code",
+      "canonical_name": null,
       "data_type": "string",
       "length": 4,
       "valid_values": null,
@@ -24,6 +25,7 @@
     {
       "position": 2,
       "name": "ring_prefix",
+      "canonical_name": null,
       "data_type": "integer",
       "length": 3,
       "valid_values": null,
@@ -38,6 +40,7 @@
     {
       "position": 3,
       "name": "separator",
+      "canonical_name": null,
       "data_type": "string",
       "length": 3,
       "valid_values": [
@@ -52,6 +55,7 @@
     {
       "position": 4,
       "name": "ring_number",
+      "canonical_name": null,
       "data_type": "numeric",
       "length": 7,
       "valid_values": null,
@@ -64,6 +68,7 @@
     {
       "position": 5,
       "name": "ring_suffix",
+      "canonical_name": null,
       "data_type": "alphanumeric",
       "length": 2,
       "valid_values": null,
@@ -76,6 +81,7 @@
     {
       "position": 6,
       "name": "date_first",
+      "canonical_name": null,
       "data_type": "numeric",
       "length": 5,
       "valid_values": null,
@@ -88,6 +94,7 @@
     {
       "position": 7,
       "name": "date_current",
+      "canonical_name": null,
       "data_type": "numeric",
       "length": 5,
       "valid_values": null,
@@ -100,6 +107,7 @@
     {
       "position": 8,
       "name": "status_code",
+      "canonical_name": null,
       "data_type": "alphanumeric",
       "length": 1,
       "valid_values": null,
@@ -112,6 +120,7 @@
     {
       "position": 9,
       "name": "age_code",
+      "canonical_name": null,
       "data_type": "numeric",
       "length": 1,
       "valid_values": [
@@ -135,6 +144,7 @@
     {
       "position": 10,
       "name": "location_code",
+      "canonical_name": null,
       "data_type": "alphanumeric",
       "length": 5,
       "valid_values": null,
@@ -147,6 +157,7 @@
     {
       "position": 11,
       "name": "accuracy_code",
+      "canonical_name": null,
       "data_type": "alphanumeric",
       "length": 2,
       "valid_values": null,
@@ -159,6 +170,7 @@
     {
       "position": 12,
       "name": "empty_fields_1",
+      "canonical_name": null,
       "data_type": "string",
       "length": 5,
       "valid_values": [
@@ -173,6 +185,7 @@
     {
       "position": 13,
       "name": "measurement_1",
+      "canonical_name": null,
       "data_type": "numeric",
       "length": 4,
       "valid_values": null,
@@ -185,6 +198,7 @@
     {
       "position": 14,
       "name": "measurement_2",
+      "canonical_name": null,
       "data_type": "numeric",
       "length": 3,
       "valid_values": null,
@@ -197,6 +211,7 @@
     {
       "position": 15,
       "name": "measurement_3",
+      "canonical_name": null,
       "data_type": "numeric",
       "length": 3,
       "valid_values": null,
@@ -209,6 +224,7 @@
     {
       "position": 16,
       "name": "measurement_4",
+      "canonical_name": null,
       "data_type": "numeric",
       "length": 3,
       "valid_values": null,
@@ -221,6 +237,7 @@
     {
       "position": 17,
       "name": "region_code",
+      "canonical_name": null,
       "data_type": "alphanumeric",
       "length": 4,
       "valid_values": null,
@@ -233,6 +250,7 @@
     {
       "position": 18,
       "name": "latitude_sign",
+      "canonical_name": null,
       "data_type": "string",
       "length": 1,
       "valid_values": [
@@ -248,6 +266,7 @@
     {
       "position": 19,
       "name": "latitude_value",
+      "canonical_name": null,
       "data_type": "numeric",
       "length": 6,
       "valid_values": null,
@@ -260,6 +279,7 @@
     {
       "position": 20,
       "name": "longitude_sign",
+      "canonical_name": null,
       "data_type": "string",
       "length": 1,
       "valid_values": [
@@ -275,6 +295,7 @@
     {
       "position": 21,
       "name": "longitude_value",
+      "canonical_name": null,
       "data_type": "numeric",
       "length": 6,
       "valid_values": null,
@@ -285,20 +306,9 @@
       "evolution_notes": null
     },
     {
-      "position": 22,
-      "name": "additional_codes",
-      "data_type": "numeric",
-      "length": 12,
-      "valid_values": null,
-      "valid_values_descriptions": null,
-      "description": "Additional identification codes",
-      "semantic_domain": "identification_marking",
-      "semantic_meaning": "Additional species or measurement codes",
-      "evolution_notes": null
-    },
-    {
       "position": 23,
       "name": "empty_fields_2",
+      "canonical_name": null,
       "data_type": "string",
       "length": 3,
       "valid_values": [
@@ -313,6 +323,7 @@
     {
       "position": 24,
       "name": "final_code",
+      "canonical_name": null,
       "data_type": "numeric",
       "length": 5,
       "valid_values": null,
@@ -321,6 +332,66 @@
       "semantic_domain": "identification_marking",
       "semantic_meaning": "Record validation or checksum code",
       "evolution_notes": null
+    },
+    {
+      "position": 151,
+      "name": "biometrics",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 50,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "Reserved columns: wing length, primary length, weight, tarsus, fat, skull ossification, moult, tail length, tail difference, bill length, bill depth, head and bill, toe, claws, etc.",
+      "semantic_domain": "biometrics",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-20T19:39:33.930204"
+      ]
+    },
+    {
+      "position": 90,
+      "name": "elapsed time",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 5,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "calculated as the elapsed time between the current record and the first record (= ringing data). The elapsed time is given in days (00000-99999)",
+      "semantic_domain": "temporal",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-20T19:41:45.269189"
+      ]
+    },
+    {
+      "position": 87,
+      "name": "direction",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 3,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "Calculated by computer as the direction between the current record and the first record (= ringing data). the direction is given in degrees (000-359)",
+      "semantic_domain": "spatial",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-20T19:43:18.666775"
+      ]
+    },
+    {
+      "position": 82,
+      "name": "distance",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 5,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "Calculated by computer as the distance between the current record and the first record (= ringing data). The distance is given in kilometres (00000-99999)",
+      "semantic_domain": "spatial",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-20T19:48:23.551962"
+      ]
     }
   ],
   "validation_rules": [

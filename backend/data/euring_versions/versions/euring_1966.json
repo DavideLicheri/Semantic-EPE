@@ -5,171 +5,263 @@
   "description": "First version of the EURING code system established in 1966 - space-separated format with 11 fields",
   "field_definitions": [
     {
-      "position": 1,
-      "name": "species_code",
-      "canonical_name": null,
-      "data_type": "numeric",
-      "length": 4,
-      "valid_values": null,
-      "valid_values_descriptions": null,
-      "description": "Species identification code (4 digits)",
-      "semantic_domain": "species",
-      "semantic_meaning": "EURING species code",
-      "evolution_notes": null
-    },
-    {
-      "position": 2,
-      "name": "ring_number",
-      "canonical_name": null,
-      "data_type": "alphanumeric",
-      "length": 7,
-      "valid_values": null,
-      "valid_values_descriptions": null,
-      "description": "Ring number assigned to the bird (2 letters + 5 digits)",
-      "semantic_domain": "identification_marking",
-      "semantic_meaning": "Unique ring identifier",
-      "evolution_notes": null
-    },
-    {
-      "position": 3,
-      "name": "age_code",
-      "canonical_name": null,
-      "data_type": "numeric",
-      "length": 1,
-      "valid_values": [
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9"
-      ],
-      "valid_values_descriptions": null,
-      "description": "Age classification code (1 digit)",
-      "semantic_domain": "demographics",
-      "semantic_meaning": "Bird age category",
-      "evolution_notes": null
-    },
-    {
-      "position": 4,
-      "name": "date_code",
-      "canonical_name": null,
-      "data_type": "numeric",
-      "length": 8,
-      "valid_values": null,
-      "valid_values_descriptions": null,
-      "description": "Date of capture/observation in DDMMYYYY format",
-      "semantic_domain": "temporal",
-      "semantic_meaning": "Capture date",
-      "evolution_notes": null
-    },
-    {
-      "position": 5,
-      "name": "latitude",
-      "canonical_name": null,
-      "data_type": "coordinate",
-      "length": 5,
-      "valid_values": null,
-      "valid_values_descriptions": null,
-      "description": "Latitude in degrees and minutes with direction (DDMMN/S)",
-      "semantic_domain": "spatial",
-      "semantic_meaning": "Geographic latitude",
-      "evolution_notes": null
-    },
-    {
-      "position": 6,
-      "name": "longitude",
-      "canonical_name": null,
-      "data_type": "coordinate",
-      "length": 6,
-      "valid_values": null,
-      "valid_values_descriptions": null,
-      "description": "Longitude in degrees and minutes with direction (DDDMME/W)",
-      "semantic_domain": "spatial",
-      "semantic_meaning": "Geographic longitude",
-      "evolution_notes": null
-    },
-    {
-      "position": 7,
-      "name": "condition_code",
-      "canonical_name": null,
-      "data_type": "numeric",
-      "length": 2,
-      "valid_values": null,
-      "valid_values_descriptions": null,
-      "description": "Condition or circumstances code",
-      "semantic_domain": "methodology",
-      "semantic_meaning": "Bird condition at capture",
-      "evolution_notes": null
-    },
-    {
-      "position": 8,
-      "name": "method_code",
-      "canonical_name": null,
-      "data_type": "numeric",
-      "length": 1,
-      "valid_values": null,
-      "valid_values_descriptions": null,
-      "description": "Capture or observation method code",
-      "semantic_domain": "methodology",
-      "semantic_meaning": "Method used for capture/observation",
-      "evolution_notes": null
-    },
-    {
-      "position": 9,
-      "name": "wing_length",
-      "canonical_name": null,
-      "data_type": "numeric",
-      "length": 3,
-      "valid_values": null,
-      "valid_values_descriptions": null,
-      "description": "Wing length measurement (mm)",
-      "semantic_domain": "biometrics",
-      "semantic_meaning": "Biometric measurement - wing length",
-      "evolution_notes": null
-    },
-    {
-      "position": 10,
-      "name": "weight",
-      "canonical_name": null,
-      "data_type": "numeric",
-      "length": 4,
-      "valid_values": null,
-      "valid_values_descriptions": null,
-      "description": "Body weight measurement (0.1g units)",
-      "semantic_domain": "biometrics",
-      "semantic_meaning": "Biometric measurement - body weight",
-      "evolution_notes": null
-    },
-    {
-      "position": 11,
-      "name": "bill_length",
-      "canonical_name": null,
-      "data_type": "numeric",
-      "length": 4,
-      "valid_values": null,
-      "valid_values_descriptions": null,
-      "description": "Bill length measurement (0.1mm units)",
-      "semantic_domain": "biometrics",
-      "semantic_meaning": "Biometric measurement - bill length",
-      "evolution_notes": null
-    },
-    {
       "position": 73,
       "name": "national_spare_columns",
-      "canonical_name": null,
+      "canonical_name": "campi di riserva (nazionali)",
       "data_type": "string",
       "length": 8,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "These spare columns are intended for special studies: e.g. finer geographical divisions, weights and measurements of birds, comllicated calculations",
-      "semantic_domain": null,
+      "description": "These spare columns are intended for special studies: e.g. finer geographical divisions, weights and measurements of birds, complicated calculations",
+      "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
-        "Field added manually on 2026-03-09T17:07:20.953020"
+        "Field added manually on 2026-03-09T17:07:20.953020",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:12.825Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:12.826Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:16.095Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:16.095Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:24.924Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:24.925Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:26.125Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:26.125Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:26.351Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:26.351Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:26.966Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T18:46:26.966Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T20:53:40.997Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-16T20:54:16.639Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-18T18:30:01.731Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-18T18:30:48.297Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-18T18:35:57.053Z"
+      ]
+    },
+    {
+      "position": 65,
+      "name": "International_spare_columns",
+      "canonical_name": "campi di riserva (internazionali)",
+      "data_type": "string",
+      "length": 8,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "These spare columns are intended for special studies: e.g. finer geographical divisions, weights and measurements of birds, complicated calculations",
+      "semantic_domain": "methodology",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-18T19:47:42.827603",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-18T18:48:32.570Z",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-18T18:49:32.429Z"
+      ]
+    },
+    {
+      "position": 60,
+      "name": "direction",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 3,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "The 360 units are numbered clockwise, 000 (=360) pointing to the North",
+      "semantic_domain": "spatial",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-18T19:57:01.047339",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-03-18T18:59:06.619Z"
+      ]
+    },
+    {
+      "position": 53,
+      "name": "elapsed time",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 4,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "Calculate the number of days and multiply this number by 0.274",
+      "semantic_domain": "temporal",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-20T17:38:12.219617"
+      ]
+    },
+    {
+      "position": 50,
+      "name": "finding details",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 3,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "The circumnstances in which birds are recovered vary greatly and it is impossible to list them all. They involve very different kinds of information",
+      "semantic_domain": "methodology",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-20T17:41:11.504839"
+      ]
+    },
+    {
+      "position": 44,
+      "name": "coordinates recoveries",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 6,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "The geographical co-ordinates of place of recovery given as the usual Greenwich co-ordinates",
+      "semantic_domain": "spatial",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-20T17:47:06.594784"
+      ]
+    },
+    {
+      "position": 29,
+      "name": "coordinates ringing",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 6,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "The geographical co-ordinates of place of ringing given as the usual Greenwich co-ordinates",
+      "semantic_domain": "spatial",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-20T17:47:54.036367"
+      ]
+    },
+    {
+      "position": 40,
+      "name": "accuracy of date and place recovery",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 1,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "accuracy of recovery place: overpunch 1_2 to be used in combination with the other punches and to be indicated by crossing out the appropriate inset square. Accuracy of recovery date: punches 0-9 and 1_1",
+      "semantic_domain": "temporal",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-20T17:54:29.478705"
+      ]
+    },
+    {
+      "position": 25,
+      "name": "accuracy if date and place ringing",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 1,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "accuracy of ringing place: overpunch 1_2 to be used in combination with the other punches and to be indicated by crossing out the appropriate inset square. Accuracy of ringing date: punches 0-9 and 1_1",
+      "semantic_domain": "temporal",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-20T17:55:16.517797"
+      ]
+    },
+    {
+      "position": 35,
+      "name": "date of finding",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 5,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "day (35,36) month (37) year (38, 39) of recovery",
+      "semantic_domain": "temporal",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-20T18:03:06.632889"
+      ]
+    },
+    {
+      "position": 20,
+      "name": "date of ringing",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 5,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "day (20, 21) month (22) year (23, 24) of recovery",
+      "semantic_domain": "temporal",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-20T18:04:01.719278"
+      ]
+    },
+    {
+      "position": 19,
+      "name": "status",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 1,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "status della cattura",
+      "semantic_domain": "demographics",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-20T18:06:28.901381"
+      ]
+    },
+    {
+      "position": 18,
+      "name": "age (when ringed) & plumage",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 1,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "plumage: overpunch 1_1 is a special indications on moult (to be moulting or in eclipse plumage)\noverpunche 1_2 is a bird still in immature or partly immature plumage\n\nage: punches 0-9",
+      "semantic_domain": "demographics",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-20T18:10:15.517400"
+      ]
+    },
+    {
+      "position": 17,
+      "name": "sex; number of young in nest",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 1,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "Sex: 1_1 male; 1_2 female; no punch sex unknown\n\nNumber of young in brood: punches 0-9",
+      "semantic_domain": "demographics",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-20T18:12:31.212409"
+      ]
+    },
+    {
+      "position": 63,
+      "name": "speed",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 2,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "It is no use calculating speeds when the elapsed time is of the order of one year or more, since, during this time, the bird has been in the winter or breeding area: therefore speeds need be calculated only when the elapsed time is less than 0.5 year (code number 0050)",
+      "semantic_domain": "temporal",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-21T23:23:48.744411"
+      ]
+    },
+    {
+      "position": 57,
+      "name": "distance",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 3,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "code number 000 means 0-10 km; code number 001 means 11-20 km; etc",
+      "semantic_domain": "spatial",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-03-21T23:23:48.773567"
       ]
     }
   ],
