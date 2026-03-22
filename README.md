@@ -1,4 +1,4 @@
-# ECES — Sistema Evoluzione Codici EURING
+# ECES — EURING Code Evolution System
 
 **ISPRA - DG SINA**
 
