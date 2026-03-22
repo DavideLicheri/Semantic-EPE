@@ -2,6 +2,12 @@
 
 **ISPRA - DG SINA**
 
+[EURING](https://www.euring.org) (European Union for Bird Ringing) è l'organizzazione scientifica che coordina l'inanellamento degli uccelli selvatici in Europa e oltre, raccogliendo e armonizzando i dati provenienti da oltre 40 paesi. Per lo scambio standardizzato di queste informazioni, EURING ha definito nel tempo un codice posizionale — il **codice EURING** — che ha subito diverse revisioni (1966, 1979, 2000, 2020), ciascuna con struttura, lunghezza e semantica dei campi proprie.
+
+ECES nasce per gestire questa evoluzione: permette di confrontare le versioni del codice, mantenere una mappatura semantica cross-versione (EPE ASP) e modificare le definizioni dei campi in modo controllato e persistente.
+
+---
+
 Sistema web completo per la gestione semantica delle versioni del codice EURING (1966, 1979, 2000, 2020). Permette di visualizzare, editare e confrontare la matrice posizionale dei campi EURING, con supporto alla mappatura semantica cross-versione (EPE ASP).
 
 ---
