@@ -105,6 +105,7 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
   const [editState, setEditState] = useState<EditState | null>(null);
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   const [saving, setSaving] = useState(false);
+  const savingRef = React.useRef(false);
   const [showAddField, setShowAddField] = useState(false);
   const [newField, setNewField] = useState({ name: '', position: 1, length: 1, dataType: 'string', description: '', version: '2000' });
 
@@ -305,7 +306,8 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
   };
 
   const handleDeleteField = async () => {
-    if (!confirmDelete || !canEdit) return;
+    if (!confirmDelete || !canEdit || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       const result = await EuringAPI.deleteFieldFromVersion(confirmDelete.fieldName, confirmDelete.version);
@@ -318,6 +320,7 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
       const msg = e instanceof Error ? e.message : 'Errore';
       showStatus('error', `Errore: ${msg}`);
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
