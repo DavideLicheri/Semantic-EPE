@@ -681,8 +681,9 @@ async def get_euring_versions_matrix():
             expected_semantic = epe_to_semantic_mapping.get(epe_field_name)
             
             for field in reference_version.field_definitions:
-                if (field.semantic_meaning == expected_semantic or 
-                    field.name == epe_field_name):
+                if (field.semantic_meaning == expected_semantic or
+                    field.name == epe_field_name or
+                    field.name == epe_field_name.replace('_', ' ')):
                     ref_field = field
                     break
             
@@ -714,9 +715,9 @@ async def get_euring_versions_matrix():
                 expected_semantic = epe_to_semantic_mapping.get(epe_field_name)
                 
                 for field in version.field_definitions:
-                    # Primary match: exact semantic meaning
-                    if (field.semantic_meaning == expected_semantic or 
-                        field.semantic_meaning == ref_semantic):
+                    # Primary match: exact semantic meaning (guard against None matching any field)
+                    if (field.semantic_meaning == expected_semantic or
+                        (ref_semantic is not None and field.semantic_meaning == ref_semantic)):
                         field_info = {
                             "position": field.position,
                             "name": field.name,
@@ -730,7 +731,8 @@ async def get_euring_versions_matrix():
                         }
                         break
                     # Secondary match: field name
-                    elif (field.name == epe_field_name or field.name == ref_field_name):
+                    elif (field.name == epe_field_name or field.name == ref_field_name or
+                          field.name == epe_field_name.replace('_', ' ')):
                         field_info = {
                             "position": field.position,
                             "name": field.name,
