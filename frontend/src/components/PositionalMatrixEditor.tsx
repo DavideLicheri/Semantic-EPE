@@ -55,6 +55,11 @@ interface EditState {
 
 const VERSIONS = ['1966', '1979', '2000', '2020'];
 
+// Versioni pipe-delimited: 'position' = indice del campo (1-based), 'length' non applicabile.
+// Il passaggio da lunghezza fissa a delimitatore è avvenuto nel codice 2020 e non tornerà indietro.
+const PIPE_DELIMITED_VERSIONS = ['2020'];
+const isPipeDelimited = (v: string) => PIPE_DELIMITED_VERSIONS.includes(v);
+
 const SEMANTIC_DOMAINS = [
   { value: '', label: '— nessuno —' },
   { value: 'identification_marking', label: 'Identificazione / Marcatura' },
@@ -144,14 +149,26 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
   // ── Conflict detection (client-side) ────────────────────────────────────────
 
   const checkConflicts = (version: string, excludeFieldName: string, pos: number, len: number): string[] => {
-    if (!matrixData || pos < 1 || len < 1) return [];
-    const range = new Set(Array.from({ length: len }, (_, i) => pos + i));
+    if (!matrixData || pos < 1) return [];
     const conflicts: string[] = [];
-    for (const row of matrixData.field_matrix) {
-      const info = row.versions[version];
-      if (!info || info.name === excludeFieldName) continue;
-      for (let p = info.position; p < info.position + info.length; p++) {
-        if (range.has(p)) { conflicts.push(info.name); break; }
+
+    if (isPipeDelimited(version)) {
+      // Pipe-delimited: controlla solo duplicato di indice (pos = indice campo)
+      for (const row of matrixData.field_matrix) {
+        const info = row.versions[version];
+        if (!info || info.name === excludeFieldName) continue;
+        if (info.position === pos) { conflicts.push(info.name); }
+      }
+    } else {
+      // Fixed-width: controlla overlap di range caratteri
+      if (len < 1) return [];
+      const range = new Set(Array.from({ length: len }, (_, i) => pos + i));
+      for (const row of matrixData.field_matrix) {
+        const info = row.versions[version];
+        if (!info || info.name === excludeFieldName) continue;
+        for (let p = info.position; p < info.position + info.length; p++) {
+          if (range.has(p)) { conflicts.push(info.name); break; }
+        }
       }
     }
     return conflicts;
@@ -464,12 +481,12 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
 
               {/* Position + length */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <FormField label="Posizione">
+                <FormField label={isPipeDelimited(editState.version) ? 'Indice campo (1 = primo)' : 'Posizione'}>
                   <input type="number" min={1} value={editState.position}
                     onChange={e => setEditState(p => p ? { ...p, position: Math.max(1, parseInt(e.target.value) || 1) } : p)}
                     style={inputStyle} />
                 </FormField>
-                <FormField label="Lunghezza">
+                <FormField label={isPipeDelimited(editState.version) ? 'Lunghezza max (car.)' : 'Lunghezza'}>
                   <input type="number" min={1} value={editState.length}
                     onChange={e => setEditState(p => p ? { ...p, length: Math.max(1, parseInt(e.target.value) || 1) } : p)}
                     style={inputStyle} />
@@ -477,15 +494,17 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
               </div>
               {positionConflicts.length > 0 && (
                 <div style={{ padding: '8px 12px', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '6px', color: '#856404', fontSize: '0.85em' }}>
-                  ⚠ Conflitto posizione con: {positionConflicts.join(', ')}
+                  {isPipeDelimited(editState.version)
+                    ? `⚠ Indice ${editState.position} già usato da: ${positionConflicts.join(', ')}`
+                    : `⚠ Conflitto posizione con: ${positionConflicts.join(', ')}`}
                 </div>
               )}
-              {editState && editState.length > 100 && (
+              {editState && !isPipeDelimited(editState.version) && editState.length > 100 && (
                 <div style={{ padding: '8px 12px', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '6px', color: '#856404', fontSize: '0.85em' }}>
                   ⚠ Lunghezza insolitamente grande ({editState.length} caratteri) — verifica che sia corretto
                 </div>
               )}
-              {editState && (editState.position + editState.length - 1) > 300 && (
+              {editState && !isPipeDelimited(editState.version) && (editState.position + editState.length - 1) > 300 && (
                 <div style={{ padding: '8px 12px', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '6px', color: '#856404', fontSize: '0.85em' }}>
                   ⚠ Il campo supera la posizione 300 — verifica posizione e lunghezza
                 </div>
@@ -605,12 +624,12 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
               </FormField>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <FormField label="Posizione">
+                <FormField label={isPipeDelimited(newField.version) ? 'Indice campo (1 = primo)' : 'Posizione'}>
                   <input type="number" min={1} value={newField.position}
                     onChange={e => setNewField(p => ({ ...p, position: Math.max(1, parseInt(e.target.value) || 1) }))}
                     style={inputStyle} />
                 </FormField>
-                <FormField label="Lunghezza">
+                <FormField label={isPipeDelimited(newField.version) ? 'Lunghezza max (car.)' : 'Lunghezza'}>
                   <input type="number" min={1} value={newField.length}
                     onChange={e => setNewField(p => ({ ...p, length: Math.max(1, parseInt(e.target.value) || 1) }))}
                     style={inputStyle} />
@@ -619,20 +638,24 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
 
               {newFieldConflicts.length > 0 && (
                 <div style={{ padding: '8px 12px', backgroundColor: '#f8d7da', border: '1px solid #f5c6cb', borderRadius: '6px', color: '#721c24', fontSize: '0.85em' }}>
-                  ⚠ Posizioni {newField.position}–{newField.position + newField.length - 1} già occupate da: {newFieldConflicts.join(', ')}
+                  {isPipeDelimited(newField.version)
+                    ? `⚠ Indice ${newField.position} già usato da: ${newFieldConflicts.join(', ')}`
+                    : `⚠ Posizioni ${newField.position}–${newField.position + newField.length - 1} già occupate da: ${newFieldConflicts.join(', ')}`}
                 </div>
               )}
               {newFieldConflicts.length === 0 && newField.name && (
                 <div style={{ padding: '6px 12px', backgroundColor: '#d4edda', border: '1px solid #c3e6cb', borderRadius: '6px', color: '#155724', fontSize: '0.85em' }}>
-                  ✓ Posizioni {newField.position}–{newField.position + newField.length - 1} libere
+                  {isPipeDelimited(newField.version)
+                    ? `✓ Indice ${newField.position} libero`
+                    : `✓ Posizioni ${newField.position}–${newField.position + newField.length - 1} libere`}
                 </div>
               )}
-              {newField.length > 100 && (
+              {!isPipeDelimited(newField.version) && newField.length > 100 && (
                 <div style={{ padding: '8px 12px', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '6px', color: '#856404', fontSize: '0.85em' }}>
                   ⚠ Lunghezza insolitamente grande ({newField.length} caratteri) — verifica che sia corretto
                 </div>
               )}
-              {(newField.position + newField.length - 1) > 300 && (
+              {!isPipeDelimited(newField.version) && (newField.position + newField.length - 1) > 300 && (
                 <div style={{ padding: '8px 12px', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '6px', color: '#856404', fontSize: '0.85em' }}>
                   ⚠ Il campo supera la posizione 300 — verifica posizione e lunghezza
                 </div>

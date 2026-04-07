@@ -29,6 +29,11 @@ interface PositionalMatrixProps {
   onEditProperty?: EditPropertyCallback;
 }
 
+// Versioni che usano formato pipe-delimited (campo separato da '|').
+// In queste versioni 'position' = indice del campo (1-based), 'length' non è applicabile.
+const PIPE_DELIMITED_VERSIONS = ['2020'];
+const isPipeDelimited = (v: string) => PIPE_DELIMITED_VERSIONS.includes(v);
+
 const FIELD_COLORS = [
   '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
   '#1abc9c', '#e67e22', '#34495e', '#16a085', '#c0392b',
@@ -84,14 +89,23 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
       const charMap: Array<{ charPos: number; fieldName: string; fieldInfo: FieldInfo; colorIndex: number } | null> = [];
       
       for (const { fieldName, fieldInfo } of fields) {
-        const start = fieldInfo.position;
-        const end = start + fieldInfo.length - 1;
-        while (charMap.length <= end) charMap.push(null);
         const colorIndex = fields.indexOf(fields.find(f => f.fieldName === fieldName)!) % FIELD_COLORS.length;
-        for (let i = start; i <= end; i++) {
-          charMap[i] = { charPos: i, fieldName, fieldInfo, colorIndex };
+        if (isPipeDelimited(version)) {
+          // Pipe-delimited: ogni campo occupa 1 sola riga (il suo indice),
+          // la lunghezza è solo metadato sul contenuto, non sposta l'indice successivo.
+          const idx = fieldInfo.position;
+          while (charMap.length <= idx) charMap.push(null);
+          charMap[idx] = { charPos: idx, fieldName, fieldInfo, colorIndex };
+          if (idx > maxLength) maxLength = idx;
+        } else {
+          const start = fieldInfo.position;
+          const end = start + fieldInfo.length - 1;
+          while (charMap.length <= end) charMap.push(null);
+          for (let i = start; i <= end; i++) {
+            charMap[i] = { charPos: i, fieldName, fieldInfo, colorIndex };
+          }
+          if (end > maxLength) maxLength = end;
         }
-        if (end > maxLength) maxLength = end;
       }
       data[version] = charMap;
     }
@@ -229,7 +243,9 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
             <input type="checkbox" checked={showFieldNames} onChange={(e) => setShowFieldNames(e.target.checked)} />
             Mostra nomi campi
           </label>
-          <span style={{ color: '#666', fontSize: '0.9em' }}>Max: {maxLength} car.</span>
+          <span style={{ color: '#666', fontSize: '0.9em' }}>
+            Max: {maxLength} {selectedVersions.every(isPipeDelimited) ? 'campi' : selectedVersions.some(isPipeDelimited) ? 'pos / campi' : 'car.'}
+          </span>
           {selectedField && (
             <button onClick={() => setSelectedFieldKey(null)} style={{
               padding: '4px 10px', backgroundColor: '#dc3545', color: 'white',
@@ -247,7 +263,9 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
                   padding: '6px 10px', border: '1px solid #ddd', backgroundColor: '#f8f9fa',
                   position: 'sticky', left: 0, zIndex: 10, fontSize: '0.8em', fontWeight: 'bold',
                   minWidth: '50px', textAlign: 'center',
-                }}>Pos</th>
+                }}>
+                  {selectedVersions.every(isPipeDelimited) ? '#' : selectedVersions.some(isPipeDelimited) ? 'Pos/#' : 'Pos'}
+                </th>
                 {selectedVersions.map((year, idx) => (
                   <React.Fragment key={year}>
                     <th style={{
@@ -304,7 +322,7 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
                             onClick={() => handleFieldSelect(cell.fieldName, year)}
                             title={`${cell.fieldName}: ${cell.fieldInfo.description}`}
                           >
-                            {cell.fieldInfo.position === charPos && showFieldNames ? cell.fieldInfo.name : ''}
+                            {(isPipeDelimited(year) || cell.fieldInfo.position === charPos) && showFieldNames ? cell.fieldInfo.name : ''}
                           </td>
                         )}
                         
@@ -354,7 +372,10 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
                         display: 'inline-block', width: '12px', height: '12px',
                         backgroundColor: item.color, borderRadius: '2px', flexShrink: 0,
                       }} />
-                      <span style={{ color: '#333' }}>{item.position}-{item.position + item.length - 1}</span>
+                      {isPipeDelimited(year)
+                        ? <span style={{ color: '#333' }}>#{item.position}</span>
+                        : <span style={{ color: '#333' }}>{item.position}-{item.position + item.length - 1}</span>
+                      }
                       <span style={{ color: '#666' }}>{item.fieldName}</span>
                     </div>
                   );
@@ -375,11 +396,12 @@ const FieldPropertiesGrid: React.FC<{
   editMode: boolean;
   onEditProperty?: EditPropertyCallback;
 }> = ({ field, editMode, onEditProperty }) => {
+  const pipeDelimited = isPipeDelimited(field.version);
   const properties = [
     { key: 'description', label: 'Descrizione', value: field.fieldInfo.description || '' },
     { key: 'data_type', label: 'Tipo dato', value: field.fieldInfo.data_type || '' },
-    { key: 'length', label: 'Lunghezza', value: String(field.fieldInfo.length || '') },
-    { key: 'position', label: 'Posizione', value: String(field.fieldInfo.position || '') },
+    { key: 'length', label: pipeDelimited ? 'Lunghezza max (car.)' : 'Lunghezza', value: String(field.fieldInfo.length || '') },
+    { key: 'position', label: pipeDelimited ? 'Indice campo' : 'Posizione', value: String(field.fieldInfo.position || '') },
     { key: 'semantic_domain', label: 'Dominio semantico', value: field.fieldInfo.semantic_domain || '' },
     { key: 'valid_values', label: 'Valori validi', value: Array.isArray(field.fieldInfo.valid_values) ? field.fieldInfo.valid_values.join(', ') : '' },
   ];

@@ -11,13 +11,11 @@ class Euring2020Parser:
     """Parser for EURING 2020 format strings"""
     
     def __init__(self):
-        self.field_names = [
-            'species_code', 'ring_number', 'metal_ring_info', 'other_marks_info',
-            'age_code', 'sex_code', 'date_code', 'time_code', 'latitude_decimal',
-            'longitude_decimal', 'condition_code', 'method_code', 'accuracy_code',
-            'status_info', 'verification_code', 'wing_length', 'weight',
-            'bill_length', 'tarsus_length', 'fat_score', 'muscle_score', 'moult_code'
-        ]
+        # I campi del codice EURING 2020 vengono definiti dinamicamente tramite
+        # la matrice dei campi (euring_2020.json) e non sono hardcoded qui.
+        # Il formato è pipe-delimited: ogni campo è separato da '|' e identificato
+        # dal suo indice posizionale, non da una lunghezza fissa.
+        self.field_names: list = []
     
     def parse(self, euring_string: str) -> Dict[str, Any]:
         """Parse EURING 2020 string into structured data"""

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>ECES — Architecture Overview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0f1419; color: #e7e9ea; padding: 40px; }
+  h1 { text-align: center; font-size: 1.8em; letter-spacing: 2px; margin-bottom: 6px; color: #fff; }
+  .subtitle { text-align: center; font-size: 0.85em; color: #71767b; margin-bottom: 40px; letter-spacing: 1px; }
+  .diagram { display: grid; grid-template-columns: 1fr; gap: 0; max-width: 960px; margin: 0 auto; position: relative; }
+
+  /* Layer styling */
+  .layer { border: 1px solid; border-radius: 12px; padding: 20px; position: relative; }
+  .layer-label {
+    position: absolute; top: -10px; left: 20px;
+    background: #0f1419; padding: 0 10px;
+    font-size: 0.7em; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  }
+
+  /* Connector arrows */
+  .connector { text-align: center; padding: 8px 0; color: #536471; font-size: 1.2em; letter-spacing: 3px; }
+  .connector-label { font-size: 0.65em; color: #536471; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* Frontend layer */
+  .frontend { border-color: #1d9bf0; background: #1d9bf010; }
+  .frontend .layer-label { color: #1d9bf0; }
+
+  /* API layer */
+  .api-layer { border-color: #ffd166; background: #ffd16610; }
+  .api-layer .layer-label { color: #ffd166; }
+
+  /* Backend layer */
+  .backend { border-color: #00ba7c; background: #00ba7c10; }
+  .backend .layer-label { color: #00ba7c; }
+
+  /* Data layer */
+  .data-layer { border-color: #f4212e; background: #f4212e10; }
+  .data-layer .layer-label { color: #f4212e; }
+
+  /* Auth layer (side) */
+  .auth-layer { border-color: #7856ff; background: #7856ff10; }
+  .auth-layer .layer-label { color: #7856ff; }
+
+  /* Tech boxes */
+  .tech-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  .tech {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 6px; font-size: 0.78em; font-weight: 600;
+    background: #1a2028; border: 1px solid #2f3336;
+  }
+  .tech .ver { font-weight: 400; color: #71767b; font-size: 0.9em; }
+  .tech.primary { border-color: #1d9bf050; color: #8ecdf7; }
+  .tech.green { border-color: #00ba7c50; color: #7ee8b8; }
+  .tech.yellow { border-color: #ffd16650; color: #ffe6a0; }
+  .tech.red { border-color: #f4212e50; color: #f7868b; }
+  .tech.purple { border-color: #7856ff50; color: #b8a4ff; }
+
+  /* Service grid */
+  .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .service {
+    padding: 8px 10px; border-radius: 6px; font-size: 0.72em;
+    background: #1a2028; border: 1px solid #2f3336; text-align: center;
+  }
+  .service .svc-name { font-weight: 700; color: #7ee8b8; display: block; margin-bottom: 2px; }
+  .service .svc-desc { color: #71767b; font-size: 0.9em; }
+
+  /* Parsers row */
+  .parsers { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .parser-badge {
+    padding: 4px 10px; border-radius: 12px; font-size: 0.7em; font-weight: 700;
+    background: #2f3336; color: #aab8c2;
+  }
+  .parser-badge.pipe { background: #7856ff30; color: #b8a4ff; border: 1px solid #7856ff40; }
+  .parser-badge.fixed { background: #00ba7c20; color: #7ee8b8; border: 1px solid #00ba7c40; }
+
+  /* Side panels layout */
+  .main-grid { display: grid; grid-template-columns: 1fr 200px; gap: 14px; max-width: 960px; margin: 0 auto; }
+  .main-col { display: flex; flex-direction: column; gap: 0; }
+  .side-col { display: flex; flex-direction: column; gap: 14px; padding-top: 0; }
+
+  /* Formats table */
+  .formats { margin-top: 30px; max-width: 960px; margin-left: auto; margin-right: auto; }
+  .formats h3 { font-size: 0.8em; color: #71767b; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .format-row { display: flex; gap: 8px; margin-bottom: 6px; align-items: center; }
+  .format-year { width: 50px; font-weight: 700; font-size: 0.85em; color: #e7e9ea; }
+  .format-bar { flex: 1; height: 22px; border-radius: 4px; display: flex; align-items: center; padding: 0 10px; font-size: 0.7em; font-weight: 600; }
+  .format-bar.fixed { background: linear-gradient(90deg, #00ba7c40, #00ba7c15); border: 1px solid #00ba7c40; color: #7ee8b8; }
+  .format-bar.pipe { background: linear-gradient(90deg, #7856ff40, #7856ff15); border: 1px solid #7856ff40; color: #b8a4ff; }
+  .format-bar.space { background: linear-gradient(90deg, #1d9bf040, #1d9bf015); border: 1px solid #1d9bf040; color: #8ecdf7; }
+
+  /* Roles */
+  .roles { display: flex; flex-direction: column; gap: 6px; }
+  .role { padding: 6px 10px; border-radius: 6px; font-size: 0.72em; background: #1a2028; border: 1px solid #2f3336; }
+  .role-name { font-weight: 700; color: #b8a4ff; }
+  .role-perm { color: #71767b; }
+</style>
+</head>
+<body>
+
+<h1>ECES</h1>
+<div class="subtitle">EURING Code Evolution System &nbsp;·&nbsp; ISPRA – DG SINA</div>
+
+<div class="main-grid">
+<div class="main-col">
+
+  <!-- FRONTEND -->
+  <div class="layer frontend">
+    <span class="layer-label">Frontend</span>
+    <div class="tech-row">
+      <span class="tech primary">React <span class="ver">18.2</span></span>
+      <span class="tech primary">TypeScript <span class="ver">5.0</span></span>
+      <span class="tech primary">Vite <span class="ver">4.4</span></span>
+      <span class="tech primary">Axios</span>
+      <span class="tech primary">Recharts</span>
+      <span class="tech primary">i18n <span class="ver">IT / EN</span></span>
+    </div>
+    <div class="tech-row" style="margin-top:6px;">
+      <span class="tech" style="border-color:#536471;color:#aab8c2;">PositionalMatrix</span>
+      <span class="tech" style="border-color:#536471;color:#aab8c2;">EuringMatrix</span>
+      <span class="tech" style="border-color:#536471;color:#aab8c2;">Editor Campi</span>
+      <span class="tech" style="border-color:#536471;color:#aab8c2;">Domini Semantici</span>
+      <span class="tech" style="border-color:#536471;color:#aab8c2;">Analytics</span>
+    </div>
+  </div>
+
+  <!-- Connector -->
+  <div class="connector">
+    ↕<br>
+    <span class="connector-label">HTTP / JSON &nbsp;·&nbsp; Bearer JWT</span>
+  </div>
+
+  <!-- API -->
+  <div class="layer api-layer">
+    <span class="layer-label">API REST</span>
+    <div class="tech-row">
+      <span class="tech yellow">FastAPI <span class="ver">0.104</span></span>
+      <span class="tech yellow">Uvicorn <span class="ver">ASGI</span></span>
+      <span class="tech yellow">OpenAPI <span class="ver">/docs</span></span>
+      <span class="tech yellow">CORS</span>
+    </div>
+    <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+      <span class="tech" style="font-size:0.68em; color:#ffe6a0; border-color:#ffd16630;">/recognize</span>
+      <span class="tech" style="font-size:0.68em; color:#ffe6a0; border-color:#ffd16630;">/convert</span>
+      <span class="tech" style="font-size:0.68em; color:#ffe6a0; border-color:#ffd16630;">/parse</span>
+      <span class="tech" style="font-size:0.68em; color:#ffe6a0; border-color:#ffd16630;">/batch/*</span>
+      <span class="tech" style="font-size:0.68em; color:#ffe6a0; border-color:#ffd16630;">/versions/matrix</span>
+      <span class="tech" style="font-size:0.68em; color:#ffe6a0; border-color:#ffd16630;">/domains/*</span>
+      <span class="tech" style="font-size:0.68em; color:#ffe6a0; border-color:#ffd16630;">/field/add|remove</span>
+    </div>
+  </div>
+
+  <!-- Connector -->
+  <div class="connector">
+    ↕<br>
+    <span class="connector-label">Service Layer</span>
+  </div>
+
+  <!-- BACKEND SERVICES -->
+  <div class="layer backend">
+    <span class="layer-label">Backend &nbsp;·&nbsp; Python 3.10</span>
+    <div class="services-grid">
+      <div class="service"><span class="svc-name">RecognitionEngine</span><span class="svc-desc">Riconoscimento versione</span></div>
+      <div class="service"><span class="svc-name">SemanticConverter</span><span class="svc-desc">Conversione cross-versione</span></div>
+      <div class="service"><span class="svc-name">SKOSManager</span><span class="svc-desc">Ontologie e cache</span></div>
+      <div class="service"><span class="svc-name">DomainAnalyzer</span><span class="svc-desc">Evoluzione domini</span></div>
+      <div class="service"><span class="svc-name">FieldTranslator</span><span class="svc-desc">Traduzione campi IT/EN</span></div>
+      <div class="service"><span class="svc-name">LookupService</span><span class="svc-desc">Tabelle valori validi</span></div>
+    </div>
+    <div style="margin-top:12px; font-size:0.7em; color:#71767b; text-transform:uppercase; letter-spacing:1px; font-weight:600;">Parser per versione</div>
+    <div class="parsers">
+      <span class="parser-badge fixed">1966 · spazi</span>
+      <span class="parser-badge fixed">1979 · fisso 78c</span>
+      <span class="parser-badge fixed">2000 · fisso 96c</span>
+      <span class="parser-badge fixed">2000-EPE · compatibile</span>
+      <span class="parser-badge pipe">2020 · pipe |</span>
+    </div>
+  </div>
+
+  <!-- Connector -->
+  <div class="connector">
+    ↕<br>
+    <span class="connector-label">File System / Database</span>
+  </div>
+
+  <!-- DATA -->
+  <div class="layer data-layer">
+    <span class="layer-label">Dati & Persistenza</span>
+    <div class="tech-row">
+      <span class="tech red">JSON <span class="ver">versioni EURING</span></span>
+      <span class="tech red">JSON <span class="ver">lookup tables</span></span>
+      <span class="tech red">JSON <span class="ver">domain evolutions</span></span>
+    </div>
+    <div class="tech-row" style="margin-top:6px;">
+      <span class="tech red">SQLite <span class="ver">sviluppo</span></span>
+      <span class="tech red">PostgreSQL <span class="ver">14 · produzione</span></span>
+      <span class="tech red">SQLAlchemy <span class="ver">2.0 ORM</span></span>
+    </div>
+  </div>
+
+</div>
+
+<!-- SIDE COLUMN -->
+<div class="side-col">
+
+  <!-- AUTH -->
+  <div class="layer auth-layer" style="flex:0;">
+    <span class="layer-label">Auth</span>
+    <div style="display:flex; flex-direction:column; gap:5px; margin-top:4px;">
+      <span class="tech purple" style="font-size:0.72em;">JWT <span class="ver">HS256</span></span>
+      <span class="tech purple" style="font-size:0.72em;">bcrypt</span>
+      <span class="tech purple" style="font-size:0.72em;">8h expiry</span>
+    </div>
+    <div class="roles" style="margin-top:12px;">
+      <div class="role"><span class="role-name">super_admin</span><br><span class="role-perm">gestione completa</span></div>
+      <div class="role"><span class="role-name">matrix_editor</span><br><span class="role-perm">modifica campi</span></div>
+      <div class="role"><span class="role-name">user</span><br><span class="role-perm">riconoscimento, conversione</span></div>
+    </div>
+  </div>
+
+  <!-- DEPLOY -->
+  <div class="layer" style="border-color:#536471; background:#53647110; flex:0;">
+    <span class="layer-label" style="color:#536471;">Deploy</span>
+    <div style="display:flex; flex-direction:column; gap:5px; margin-top:4px;">
+      <span class="tech" style="font-size:0.72em; color:#aab8c2;">Docker</span>
+      <span class="tech" style="font-size:0.72em; color:#aab8c2;">Compose</span>
+      <span class="tech" style="font-size:0.72em; color:#aab8c2;">Git / GitHub</span>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- FORMATS TIMELINE -->
+<div class="formats">
+  <h3>Evoluzione formati EURING</h3>
+  <div class="format-row">
+    <span class="format-year">1966</span>
+    <div class="format-bar space">Campi separati da spazi · ~55 car. · 11 campi</div>
+  </div>
+  <div class="format-row">
+    <span class="format-year">1979</span>
+    <div class="format-bar fixed">Lunghezza fissa · 78 car. · concatenato</div>
+  </div>
+  <div class="format-row">
+    <span class="format-year">2000</span>
+    <div class="format-bar fixed">Lunghezza fissa · 96 car. · alfanumerico</div>
+  </div>
+  <div class="format-row">
+    <span class="format-year">2020</span>
+    <div class="format-bar pipe">Pipe-delimited "|" · lunghezza variabile · decimali</div>
+  </div>
+</div>
+
+</body>
+</html>
