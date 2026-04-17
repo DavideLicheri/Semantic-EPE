@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import EuringAPI from '../services/api';
+import { useTranslation } from '../hooks/useTranslation';
 import { DomainInfo, DomainEvolutionData, DomainDocumentationResponse } from '../types/euring-types';
 import { DomainFieldsResponse, DomainCompatibilityResponse } from '../types/api-types';
 import DomainEvolutionTimeline from './DomainEvolutionTimeline';
@@ -12,6 +13,7 @@ interface DomainPanelProps {
 }
 
 const DomainPanel: React.FC<DomainPanelProps> = () => {
+  const { t } = useTranslation();
   const [domains, setDomains] = useState<DomainInfo[]>([]);
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
   const [domainEvolution, setDomainEvolution] = useState<DomainEvolutionData | null>(null);
@@ -162,7 +164,7 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
       <div className="domain-panel">
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p>Caricamento domini semantici...</p>
+          <p>{t('domains.loading')}</p>
         </div>
       </div>
     );
@@ -172,10 +174,10 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
     return (
       <div className="domain-panel">
         <div className="error-container">
-          <h3>❌ Errore</h3>
+          <h3>{t('domains.error.title')}</h3>
           <p>{error}</p>
           <button onClick={loadDomains} className="retry-button">
-            Riprova
+            {t('domains.error.retry')}
           </button>
         </div>
       </div>
@@ -185,10 +187,8 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
   return (
     <div className="domain-panel">
       <div className="domain-header">
-        <h2>🔍 Analisi Domini Semantici EURING</h2>
-        <p className="domain-subtitle">
-          Esplora l'evoluzione storica dei 7 domini semantici del codice EURING
-        </p>
+        <h2>{t('domains.title')}</h2>
+        <p className="domain-subtitle">{t('domains.subtitle')}</p>
       </div>
 
       {!selectedDomain ? (
@@ -213,16 +213,16 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                 
                 <div className="domain-stats">
                   <div className="stat-item">
-                    <span className="stat-label">Campi Totali:</span>
+                    <span className="stat-label">{t('domains.stats.total_fields')}</span>
                     <span className="stat-value">{domain.statistics.total_fields}</span>
                   </div>
                   <div className="stat-item">
-                    <span className="stat-label">Copertura:</span>
+                    <span className="stat-label">{t('domains.stats.coverage')}</span>
                     <span className="stat-value">{domain.statistics.coverage_percentage}%</span>
                   </div>
                   <div className="stat-item">
-                    <span className="stat-label">Complessità:</span>
-                    <span 
+                    <span className="stat-label">{t('domains.stats.complexity')}</span>
+                    <span
                       className="stat-value complexity-badge"
                       style={{ backgroundColor: getComplexityColor(domain.complexity) }}
                     >
@@ -230,8 +230,8 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                     </span>
                   </div>
                   <div className="stat-item">
-                    <span className="stat-label">Stabilità:</span>
-                    <span 
+                    <span className="stat-label">{t('domains.stats.stability')}</span>
+                    <span
                       className="stat-value stability-badge"
                       style={{ backgroundColor: getStabilityColor(domain.stability_score) }}
                     >
@@ -242,10 +242,10 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
 
                 <div className="domain-features">
                   {domain.has_evolution_data && (
-                    <span className="feature-badge evolution">📈 Evoluzione</span>
+                    <span className="feature-badge evolution">{t('domains.badge.evolution')}</span>
                   )}
                   <span className="feature-badge versions">
-                    📋 {domain.statistics.versions_present}/{domain.statistics.total_versions} Versioni
+                    📋 {domain.statistics.versions_present}/{domain.statistics.total_versions} {t('domains.badge.versions')}
                   </span>
                 </div>
               </div>
@@ -256,11 +256,11 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
         // Domain Detail View
         <div className="domain-detail">
           <div className="domain-detail-header">
-            <button 
+            <button
               className="back-button"
               onClick={() => setSelectedDomain(null)}
             >
-              ← Torna ai Domini
+              {t('domains.back_button')}
             </button>
             
             <div className="selected-domain-info">
@@ -276,43 +276,43 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
               className={`nav-button ${activeView === 'overview' ? 'active' : ''}`}
               onClick={() => handleViewChange('overview')}
             >
-              📊 Panoramica
+              {t('domains.nav.overview')}
             </button>
             <button
               className={`nav-button ${activeView === 'evolution' ? 'active' : ''}`}
               onClick={() => handleViewChange('evolution')}
             >
-              📈 Evoluzione
+              {t('domains.nav.evolution')}
             </button>
             <button
               className={`nav-button ${activeView === 'charts' ? 'active' : ''}`}
               onClick={() => handleViewChange('charts')}
             >
-              📊 Grafici
+              {t('domains.nav.charts')}
             </button>
             <button
               className={`nav-button ${activeView === 'analysis' ? 'active' : ''}`}
               onClick={() => handleViewChange('analysis')}
             >
-              🔍 Analisi Campi
+              {t('domains.nav.analysis')}
             </button>
             <button
               className={`nav-button ${activeView === 'compatibility' ? 'active' : ''}`}
               onClick={() => handleViewChange('compatibility')}
             >
-              ⚖️ Compatibilità
+              {t('domains.nav.compatibility')}
             </button>
             <button
               className={`nav-button ${activeView === 'export' ? 'active' : ''}`}
               onClick={() => handleViewChange('export')}
             >
-              📤 Esporta
+              {t('domains.nav.export')}
             </button>
             <button
               className={`nav-button ${activeView === 'documentation' ? 'active' : ''}`}
               onClick={() => handleViewChange('documentation')}
             >
-              📚 Documentazione
+              {t('domains.nav.documentation')}
             </button>
           </div>
 
@@ -320,17 +320,17 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
             {evolutionLoading ? (
               <div className="loading-container">
                 <div className="loading-spinner"></div>
-                <p>Caricamento dati del dominio...</p>
+                <p>{t('domains.loading_domain')}</p>
               </div>
             ) : error ? (
               <div className="error-container">
-                <h4>❌ Errore nel caricamento</h4>
+                <h4>{t('domains.error.loading')}</h4>
                 <p>{error}</p>
-                <button 
+                <button
                   onClick={() => loadDomainData(selectedDomain)}
                   className="retry-button"
                 >
-                  Riprova
+                  {t('domains.error.retry')}
                 </button>
               </div>
             ) : (
@@ -341,31 +341,31 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                       <div className="overview-content">
                         <div className="overview-stats">
                           <div className="stat-card">
-                            <h4>📊 Statistiche Generali</h4>
+                            <h4>{t('domains.overview.general_stats')}</h4>
                             <div className="stat-grid">
                               <div className="stat-item">
                                 <span className="stat-number">
                                   {domains.find(d => d.domain === selectedDomain)?.statistics.total_fields}
                                 </span>
-                                <span className="stat-label">Campi Totali</span>
+                                <span className="stat-label">{t('domains.overview.total_fields')}</span>
                               </div>
                               <div className="stat-item">
                                 <span className="stat-number">
                                   {domains.find(d => d.domain === selectedDomain)?.statistics.versions_present}
                                 </span>
-                                <span className="stat-label">Versioni Presenti</span>
+                                <span className="stat-label">{t('domains.overview.versions_present')}</span>
                               </div>
                               <div className="stat-item">
                                 <span className="stat-number">
                                   {domains.find(d => d.domain === selectedDomain)?.statistics.coverage_percentage}%
                                 </span>
-                                <span className="stat-label">Copertura</span>
+                                <span className="stat-label">{t('domains.overview.coverage')}</span>
                               </div>
                             </div>
                           </div>
 
                           <div className="stat-card">
-                            <h4>📋 Distribuzione per Versione</h4>
+                            <h4>{t('domains.overview.version_distribution')}</h4>
                             <div className="version-distribution">
                               {Object.entries(
                                 domains.find(d => d.domain === selectedDomain)?.statistics.field_counts_by_version || {}
@@ -390,25 +390,25 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                         </div>
 
                         <div className="overview-description">
-                          <h4>📝 Descrizione del Dominio</h4>
+                          <h4>{t('domains.overview.description_title')}</h4>
                           <p>{domains.find(d => d.domain === selectedDomain)?.description}</p>
                           
                           <div className="domain-properties">
                             <div className="property-item">
-                              <span className="property-label">Complessità:</span>
-                              <span 
+                              <span className="property-label">{t('domains.overview.complexity')}</span>
+                              <span
                                 className="property-value complexity-badge"
-                                style={{ 
+                                style={{
                                   backgroundColor: getComplexityColor(
                                     domains.find(d => d.domain === selectedDomain)?.complexity || 'medium'
-                                  ) 
+                                  )
                                 }}
                               >
                                 {domains.find(d => d.domain === selectedDomain)?.complexity}
                               </span>
                             </div>
                             <div className="property-item">
-                              <span className="property-label">Stabilità:</span>
+                              <span className="property-label">{t('domains.overview.stability')}</span>
                               <span 
                                 className="property-value stability-badge"
                                 style={{ 
@@ -445,14 +445,14 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                 {activeView === 'documentation' && domainDocumentation && (
                   <div className="domain-documentation">
                     <div className="doc-section">
-                      <h4>📚 Informazioni del Dominio</h4>
+                      <h4>{t('domains.doc.title')}</h4>
                       <div className="doc-content">
                         <h5>{domainDocumentation.domain_info.name}</h5>
-                        <p><strong>Scopo:</strong> {domainDocumentation.domain_info.purpose}</p>
-                        <p><strong>Descrizione:</strong> {domainDocumentation.domain_info.description}</p>
-                        
+                        <p><strong>{t('domains.doc.purpose')}</strong> {domainDocumentation.domain_info.purpose}</p>
+                        <p><strong>{t('domains.doc.description_label')}</strong> {domainDocumentation.domain_info.description}</p>
+
                         <div className="key-concepts">
-                          <h6>🔑 Concetti Chiave:</h6>
+                          <h6>{t('domains.doc.key_concepts')}</h6>
                           <div className="concept-tags">
                             {domainDocumentation.domain_info.key_concepts.map(concept => (
                               <span key={concept} className="concept-tag">{concept}</span>
@@ -463,30 +463,30 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                     </div>
 
                     <div className="doc-section">
-                      <h4>📊 Statistiche Documentazione</h4>
+                      <h4>{t('domains.doc.stats_title')}</h4>
                       <div className="doc-stats">
                         <div className="doc-stat">
                           <span className="doc-stat-number">{domainDocumentation.statistics.total_versions}</span>
-                          <span className="doc-stat-label">Versioni Totali</span>
+                          <span className="doc-stat-label">{t('domains.doc.total_versions')}</span>
                         </div>
                         <div className="doc-stat">
                           <span className="doc-stat-number">{domainDocumentation.statistics.versions_with_domain}</span>
-                          <span className="doc-stat-label">Versioni con Dominio</span>
+                          <span className="doc-stat-label">{t('domains.doc.versions_with_domain')}</span>
                         </div>
                         <div className="doc-stat">
                           <span className="doc-stat-number">{domainDocumentation.statistics.total_fields_across_versions}</span>
-                          <span className="doc-stat-label">Campi Totali</span>
+                          <span className="doc-stat-label">{t('domains.doc.total_fields')}</span>
                         </div>
                         <div className="doc-stat">
                           <span className="doc-stat-number">{domainDocumentation.statistics.evolution_entries}</span>
-                          <span className="doc-stat-label">Voci Evoluzione</span>
+                          <span className="doc-stat-label">{t('domains.doc.evolution_entries')}</span>
                         </div>
                       </div>
                     </div>
 
                     {domainDocumentation.usage_guidelines.length > 0 && (
                       <div className="doc-section">
-                        <h4>💡 Linee Guida d'Uso</h4>
+                        <h4>{t('domains.doc.guidelines_title')}</h4>
                         <ul className="usage-guidelines">
                           {domainDocumentation.usage_guidelines.map((guideline, index) => (
                             <li key={index}>{guideline}</li>
@@ -497,7 +497,7 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
 
                     {domainDocumentation.related_domains.length > 0 && (
                       <div className="doc-section">
-                        <h4>🔗 Domini Correlati</h4>
+                        <h4>{t('domains.doc.related_title')}</h4>
                         <div className="related-domains">
                           {domainDocumentation.related_domains.map(relatedDomain => (
                             <button
@@ -517,8 +517,8 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                 {activeView === 'analysis' && domainFields && (
                   <div className="domain-analysis">
                     <div className="analysis-header">
-                      <h4>🔍 Analisi Semantica dei Campi</h4>
-                      <p>Raggruppamento e analisi dei campi per relazioni semantiche</p>
+                      <h4>{t('domains.analysis.title')}</h4>
+                      <p>{t('domains.analysis.subtitle')}</p>
                     </div>
 
                     {domainFields.semantic_analysis && (
@@ -526,19 +526,19 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                         <div className="summary-stats">
                           <div className="summary-stat">
                             <span className="stat-number">{domainFields.semantic_analysis.total_fields}</span>
-                            <span className="stat-label">Campi Totali</span>
+                            <span className="stat-label">{t('domains.analysis.total_fields')}</span>
                           </div>
                           <div className="summary-stat">
                             <span className="stat-number">{domainFields.semantic_analysis.total_groups}</span>
-                            <span className="stat-label">Gruppi Semantici</span>
+                            <span className="stat-label">{t('domains.analysis.total_groups')}</span>
                           </div>
                           <div className="summary-stat">
                             <span className="stat-number">{domainFields.semantic_analysis.versions_analyzed}</span>
-                            <span className="stat-label">Versioni Analizzate</span>
+                            <span className="stat-label">{t('domains.analysis.versions_analyzed')}</span>
                           </div>
                           <div className="summary-stat">
                             <span className="stat-number">{domainFields.semantic_analysis.grouping_statistics.average_group_size.toFixed(1)}</span>
-                            <span className="stat-label">Dimensione Media Gruppo</span>
+                            <span className="stat-label">{t('domains.analysis.avg_group_size')}</span>
                           </div>
                         </div>
                       </div>
@@ -546,27 +546,27 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
 
                     {domainFields.field_groups && domainFields.field_groups.length > 0 && (
                       <div className="field-groups">
-                        <h5>📋 Gruppi Semantici</h5>
+                        <h5>{t('domains.analysis.groups_title')}</h5>
                         {domainFields.field_groups.map((group) => (
                           <div key={group.group_id} className="field-group">
                             <div className="group-header">
                               <h6>{group.group_name}</h6>
                               <div className="group-metrics">
                                 <span className="cohesion-score" style={{
-                                  backgroundColor: group.cohesion_score > 0.7 ? '#4CAF50' : 
+                                  backgroundColor: group.cohesion_score > 0.7 ? '#4CAF50' :
                                                  group.cohesion_score > 0.5 ? '#FF9800' : '#F44336'
                                 }}>
-                                  Coesione: {(group.cohesion_score * 100).toFixed(0)}%
+                                  {t('domains.analysis.cohesion')} {(group.cohesion_score * 100).toFixed(0)}%
                                 </span>
-                                <span className="field-count">{group.fields.length} campi</span>
+                                <span className="field-count">{group.fields.length} {t('domains.analysis.fields_label')}</span>
                               </div>
                             </div>
                             
                             <div className="group-content">
-                              <p className="semantic-theme"><strong>Tema:</strong> {group.semantic_theme}</p>
-                              
+                              <p className="semantic-theme"><strong>{t('domains.analysis.theme')}</strong> {group.semantic_theme}</p>
+
                               <div className="group-fields">
-                                <strong>Campi:</strong>
+                                <strong>{t('domains.analysis.fields')}</strong>
                                 <div className="field-tags">
                                   {group.fields.map(field => (
                                     <span key={field} className="field-tag">{field}</span>
@@ -576,7 +576,7 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
 
                               {group.relationships.length > 0 && (
                                 <div className="group-relationships">
-                                  <strong>Relazioni Semantiche:</strong>
+                                  <strong>{t('domains.analysis.relationships')}</strong>
                                   <div className="relationships-list">
                                     {group.relationships.map((rel, relIndex) => (
                                       <div key={relIndex} className="relationship">
@@ -604,13 +604,13 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                 {activeView === 'compatibility' && (
                   <div className="domain-compatibility">
                     <div className="compatibility-header">
-                      <h4>⚖️ Valutazione Compatibilità</h4>
-                      <p>Analisi della compatibilità di conversione tra versioni per questo dominio</p>
+                      <h4>{t('domains.compatibility.title_section')}</h4>
+                      <p>{t('domains.compatibility.subtitle')}</p>
                     </div>
 
                     <div className="version-selector">
                       <div className="version-select-group">
-                        <label>Versione di Origine:</label>
+                        <label>{t('domains.compatibility.source')}</label>
                         <select 
                           value={compatibilityVersions.fromVersion}
                           onChange={(e) => {
@@ -628,7 +628,7 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                       <div className="version-arrow">→</div>
                       
                       <div className="version-select-group">
-                        <label>Versione di Destinazione:</label>
+                        <label>{t('domains.compatibility.target')}</label>
                         <select 
                           value={compatibilityVersions.toVersion}
                           onChange={(e) => {
@@ -648,7 +648,7 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                         onClick={() => selectedDomain && loadDomainData(selectedDomain)}
                         disabled={evolutionLoading}
                       >
-                        {evolutionLoading ? 'Analizzando...' : 'Analizza Compatibilità'}
+                        {evolutionLoading ? t('domains.compatibility.analyzing') : t('domains.compatibility.analyze')}
                       </button>
                     </div>
 
@@ -656,7 +656,7 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                       <div className="compatibility-results">
                         <div className="compatibility-summary">
                           <div className="summary-card">
-                            <h5>📊 Riepilogo Compatibilità</h5>
+                            <h5>{t('domains.compatibility.summary')}</h5>
                             <div className="compatibility-level" style={{
                               backgroundColor: domainCompatibility.compatibility_data.summary.overall_compatibility === 'FULL' ? '#4CAF50' :
                                              domainCompatibility.compatibility_data.summary.overall_compatibility === 'PARTIAL' ? '#FF9800' :
@@ -667,24 +667,24 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                             
                             <div className="compatibility-metrics">
                               <div className="metric">
-                                <span className="metric-label">Conversione con Perdite:</span>
+                                <span className="metric-label">{t('domains.compatibility.lossy')}</span>
                                 <span className={`metric-value ${domainCompatibility.compatibility_data.summary.is_lossy_conversion ? 'warning' : 'success'}`}>
-                                  {domainCompatibility.compatibility_data.summary.is_lossy_conversion ? 'Sì' : 'No'}
+                                  {domainCompatibility.compatibility_data.summary.is_lossy_conversion ? t('domains.compatibility.yes') : 'No'}
                                 </span>
                               </div>
                               <div className="metric">
-                                <span className="metric-label">Avvisi Totali:</span>
+                                <span className="metric-label">{t('domains.compatibility.total_warnings')}</span>
                                 <span className="metric-value">{domainCompatibility.compatibility_data.summary.total_warnings}</span>
                               </div>
                               <div className="metric">
-                                <span className="metric-label">Campi Compatibili:</span>
+                                <span className="metric-label">{t('domains.compatibility.compatible_fields')}</span>
                                 <span className="metric-value">{domainCompatibility.compatibility_data.summary.field_compatibility_count}</span>
                               </div>
                             </div>
 
                             {domainCompatibility.compatibility_data.summary.loss_types.length > 0 && (
                               <div className="loss-types">
-                                <strong>Tipi di Perdita:</strong>
+                                <strong>{t('domains.compatibility.loss_types')}</strong>
                                 <div className="loss-type-tags">
                                   {domainCompatibility.compatibility_data.summary.loss_types.map(lossType => (
                                     <span key={lossType} className="loss-type-tag">{lossType}</span>
@@ -699,7 +699,7 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                           <div className="detailed-analysis">
                             {domainCompatibility.compatibility_data.detailed_analysis.conversion_warnings.length > 0 && (
                               <div className="analysis-section">
-                                <h5>⚠️ Avvisi di Conversione</h5>
+                                <h5>{t('domains.compatibility.conv_warnings')}</h5>
                                 <ul className="warning-list">
                                   {domainCompatibility.compatibility_data.detailed_analysis.conversion_warnings.map((warning, index) => (
                                     <li key={index} className="warning-item">{warning}</li>
@@ -710,7 +710,7 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
 
                             {domainCompatibility.compatibility_data.detailed_analysis.conversion_notes.length > 0 && (
                               <div className="analysis-section">
-                                <h5>📝 Note di Conversione</h5>
+                                <h5>{t('domains.compatibility.conv_notes')}</h5>
                                 <ul className="notes-list">
                                   {domainCompatibility.compatibility_data.detailed_analysis.conversion_notes.map((note, index) => (
                                     <li key={index} className="note-item">{note}</li>
@@ -721,12 +721,12 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
 
                             {domainCompatibility.compatibility_data.detailed_analysis.loss_details.length > 0 && (
                               <div className="analysis-section">
-                                <h5>🔍 Dettagli Perdite</h5>
+                                <h5>{t('domains.compatibility.loss_details')}</h5>
                                 <div className="loss-details">
                                   {domainCompatibility.compatibility_data.detailed_analysis.loss_details.map((loss, index) => (
                                     <div key={index} className="loss-detail">
-                                      <strong>Tipo:</strong> {loss.type || 'Non specificato'}<br/>
-                                      <strong>Descrizione:</strong> {loss.description || 'Nessuna descrizione disponibile'}
+                                      <strong>{t('domains.compatibility.loss_type')}</strong> {loss.type || t('domains.compatibility.not_specified')}<br/>
+                                      <strong>{t('domains.compatibility.loss_description')}</strong> {loss.description || t('domains.compatibility.no_description')}
                                     </div>
                                   ))}
                                 </div>
@@ -742,13 +742,13 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                 {activeView === 'export' && (
                   <div className="domain-export">
                     <div className="export-header">
-                      <h4>📤 Esportazione Dati Dominio</h4>
-                      <p>Genera report strutturati con i dati di evoluzione, analisi e compatibilità</p>
+                      <h4>{t('domains.export.title')}</h4>
+                      <p>{t('domains.export.subtitle')}</p>
                     </div>
 
                     <div className="export-options">
                       <div className="export-format">
-                        <label>Formato di Esportazione:</label>
+                        <label>{t('domains.export.format')}</label>
                         <select 
                           value={exportOptions.format}
                           onChange={(e) => setExportOptions(prev => ({ ...prev, format: e.target.value }))}
@@ -760,33 +760,33 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                       </div>
 
                       <div className="export-content">
-                        <h5>Contenuto da Includere:</h5>
+                        <h5>{t('domains.export.content_title')}</h5>
                         <div className="export-checkboxes">
                           <label className="export-checkbox">
-                            <input 
+                            <input
                               type="checkbox"
                               checked={exportOptions.includeEvolution}
                               onChange={(e) => setExportOptions(prev => ({ ...prev, includeEvolution: e.target.checked }))}
                             />
-                            <span>📈 Dati di Evoluzione</span>
+                            <span>{t('domains.export.evolution')}</span>
                           </label>
-                          
+
                           <label className="export-checkbox">
-                            <input 
+                            <input
                               type="checkbox"
                               checked={exportOptions.includeFieldAnalysis}
                               onChange={(e) => setExportOptions(prev => ({ ...prev, includeFieldAnalysis: e.target.checked }))}
                             />
-                            <span>🔍 Analisi dei Campi</span>
+                            <span>{t('domains.export.field_analysis')}</span>
                           </label>
-                          
+
                           <label className="export-checkbox">
-                            <input 
+                            <input
                               type="checkbox"
                               checked={exportOptions.includeCompatibility}
                               onChange={(e) => setExportOptions(prev => ({ ...prev, includeCompatibility: e.target.checked }))}
                             />
-                            <span>⚖️ Dati di Compatibilità</span>
+                            <span>{t('domains.export.compatibility')}</span>
                           </label>
                         </div>
                       </div>
@@ -829,34 +829,34 @@ const DomainPanel: React.FC<DomainPanelProps> = () => {
                         }}
                         disabled={evolutionLoading || !selectedDomain}
                       >
-                        {evolutionLoading ? 'Esportando...' : `Esporta ${exportOptions.format.toUpperCase()}`}
+                        {evolutionLoading ? t('domains.export.exporting') : `${t('domains.export.button_prefix')} ${exportOptions.format.toUpperCase()}`}
                       </button>
                     </div>
 
                     <div className="export-preview">
-                      <h5>📋 Anteprima Contenuto</h5>
+                      <h5>{t('domains.export.preview_title')}</h5>
                       <div className="preview-sections">
                         {exportOptions.includeEvolution && (
                           <div className="preview-section">
                             <span className="section-icon">📈</span>
-                            <span className="section-name">Evoluzione Storica</span>
-                            <span className="section-description">Timeline dei cambiamenti e matrici di compatibilità</span>
+                            <span className="section-name">{t('domains.export.evolution_name')}</span>
+                            <span className="section-description">{t('domains.export.evolution_desc')}</span>
                           </div>
                         )}
-                        
+
                         {exportOptions.includeFieldAnalysis && (
                           <div className="preview-section">
                             <span className="section-icon">🔍</span>
-                            <span className="section-name">Analisi Semantica</span>
-                            <span className="section-description">Raggruppamenti di campi e relazioni semantiche</span>
+                            <span className="section-name">{t('domains.export.analysis_name')}</span>
+                            <span className="section-description">{t('domains.export.analysis_desc')}</span>
                           </div>
                         )}
-                        
+
                         {exportOptions.includeCompatibility && (
                           <div className="preview-section">
                             <span className="section-icon">⚖️</span>
-                            <span className="section-name">Compatibilità</span>
-                            <span className="section-description">Valutazioni di compatibilità tra versioni</span>
+                            <span className="section-name">{t('domains.export.compatibility_name')}</span>
+                            <span className="section-description">{t('domains.export.compatibility_desc')}</span>
                           </div>
                         )}
                       </div>

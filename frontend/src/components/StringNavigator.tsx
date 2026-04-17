@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import EuringAPI from '../services/api';
 import { SemanticDomain, getDomainInfo } from '../utils/semanticDomains';
+import { useTranslation } from '../hooks/useTranslation';
+import { i18n } from '../i18n';
 import './StringNavigator.css';
 
 interface ParsedString {
@@ -16,6 +18,7 @@ interface ParsedString {
 }
 
 const StringNavigator: React.FC = () => {
+  const { t } = useTranslation();
   const [strings, setStrings] = useState<ParsedString[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +36,7 @@ const StringNavigator: React.FC = () => {
 
   const handleSingleSubmit = async () => {
     if (!inputText.trim()) {
-      setError('Inserisci una stringa EURING');
+      setError(t('navigator.error.empty_single'));
       return;
     }
 
@@ -41,18 +44,18 @@ const StringNavigator: React.FC = () => {
     setError(null);
 
     try {
-      const response = await EuringAPI.parseEuringStringsBatch([inputText.trim()], 'it');
-      
+      const response = await EuringAPI.parseEuringStringsBatch([inputText.trim()], i18n.getLanguage());
+
       if (response.success && response.results.length > 0) {
         setStrings(response.results);
         setCurrentIndex(0);
         setCurrentPage(0);
         setInputText('');
       } else {
-        setError(response.error || 'Errore nel parsing della stringa');
+        setError(response.error || t('navigator.error.parse_failed'));
       }
     } catch (err: any) {
-      setError(err.message || 'Errore di parsing');
+      setError(err.message || t('navigator.error.generic'));
     } finally {
       setLoading(false);
     }
@@ -60,7 +63,7 @@ const StringNavigator: React.FC = () => {
 
   const handleBatchSubmit = async () => {
     if (!inputText.trim()) {
-      setError('Inserisci le stringhe EURING (una per riga)');
+      setError(t('navigator.error.empty_batch'));
       return;
     }
 
@@ -70,22 +73,22 @@ const StringNavigator: React.FC = () => {
     try {
       const stringList = EuringAPI.parseEuringStrings(inputText);
       if (stringList.length === 0) {
-        setError('Nessuna stringa valida trovata');
+        setError(t('navigator.error.no_valid'));
         return;
       }
 
-      const response = await EuringAPI.parseEuringStringsBatch(stringList, 'it');
-      
+      const response = await EuringAPI.parseEuringStringsBatch(stringList, i18n.getLanguage());
+
       if (response.success && response.results.length > 0) {
         setStrings(response.results);
         setCurrentIndex(0);
         setCurrentPage(0);
         setInputText('');
       } else {
-        setError(response.error || 'Errore nel parsing delle stringhe');
+        setError(response.error || t('navigator.error.batch_parse_failed'));
       }
     } catch (err: any) {
-      setError(err.message || 'Errore di parsing');
+      setError(err.message || t('navigator.error.generic'));
     } finally {
       setLoading(false);
     }
@@ -101,23 +104,23 @@ const StringNavigator: React.FC = () => {
     try {
       const text = await file.text();
       const stringList = EuringAPI.parseEuringStrings(text);
-      
+
       if (stringList.length === 0) {
-        setError('Nessuna stringa EURING valida trovata nel file');
+        setError(t('navigator.error.file_no_valid'));
         return;
       }
 
-      const response = await EuringAPI.parseEuringStringsBatch(stringList, 'it');
-      
+      const response = await EuringAPI.parseEuringStringsBatch(stringList, i18n.getLanguage());
+
       if (response.success && response.results.length > 0) {
         setStrings(response.results);
         setCurrentIndex(0);
         setCurrentPage(0);
       } else {
-        setError(response.error || 'Errore nel parsing del file');
+        setError(response.error || t('navigator.error.file_parse_failed'));
       }
     } catch (err: any) {
-      setError(err.message || 'Errore nella lettura del file');
+      setError(err.message || t('navigator.error.file_read_failed'));
     } finally {
       setLoading(false);
     }
@@ -208,11 +211,10 @@ const StringNavigator: React.FC = () => {
       return { domain: info.name, icon: info.icon, color: info.color };
     }
     
-    // Default fallback - use a neutral domain
-    return { 
-      domain: 'Altro', 
-      icon: '📊', 
-      color: '#95A5A6' 
+    return {
+      domain: t('navigator.other_domain'),
+      icon: '📊',
+      color: '#95A5A6'
     };
   };
 
@@ -362,8 +364,8 @@ const StringNavigator: React.FC = () => {
   return (
     <div className="string-navigator">
       <div className="navigator-header">
-        <h2>Navigator Stringhe EURING</h2>
-        <p>Analizza singole stringhe, batch di testo o file</p>
+        <h2>{t('navigator.title')}</h2>
+        <p>{t('navigator.subtitle')}</p>
       </div>
 
       <div className="input-section">
@@ -372,7 +374,7 @@ const StringNavigator: React.FC = () => {
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Inserisci stringa EURING singola o multiple stringhe (una per riga)..."
+              placeholder={t('navigator.placeholder')}
               className="string-input"
               disabled={loading}
               rows={3}
@@ -383,14 +385,14 @@ const StringNavigator: React.FC = () => {
                 disabled={loading || !inputText.trim()}
                 className="parse-button"
               >
-                {loading ? 'Analizzando...' : 'Analizza Singola'}
+                {loading ? t('navigator.loading') : t('navigator.button.single')}
               </button>
               <button
                 onClick={handleBatchSubmit}
                 disabled={loading || !inputText.trim()}
                 className="parse-button batch"
               >
-                {loading ? 'Analizzando...' : 'Analizza Batch'}
+                {loading ? t('navigator.loading') : t('navigator.button.batch')}
               </button>
             </div>
           </div>
@@ -410,17 +412,17 @@ const StringNavigator: React.FC = () => {
             disabled={loading}
             className="file-button"
           >
-            📁 Carica File (.txt, .csv)
+            {t('navigator.button.file')}
           </button>
         </div>
 
         {strings.length > 0 && (
           <div className="action-buttons">
             <button onClick={handleClear} className="clear-button">
-              Cancella Risultati
+              {t('navigator.button.clear')}
             </button>
             <span className="results-count">
-              {strings.length} string{strings.length !== 1 ? 'he caricate' : 'a caricata'}
+              {strings.length} {strings.length !== 1 ? t('navigator.count_suffix') : t('navigator.count_one_suffix')}
             </span>
           </div>
         )}
@@ -467,7 +469,7 @@ const StringNavigator: React.FC = () => {
                           fontWeight: '700',
                           whiteSpace: 'nowrap',
                           fontSize: '16px'
-                        }}>📍 STRINGA EURING:</span>
+                        }}>{t('navigator.euring_label')}</span>
                         <span style={{
                           fontFamily: 'Monaco, Menlo, Ubuntu Mono, monospace',
                           fontSize: '14px',
@@ -524,7 +526,7 @@ const StringNavigator: React.FC = () => {
                             }}
                           >
                             <span style={{ fontSize: '16px' }}>←</span>
-                            Precedente
+                            {t('navigator.nav.previous')}
                           </button>
 
                           {/* Indicatore di Posizione */}
@@ -540,7 +542,7 @@ const StringNavigator: React.FC = () => {
                             fontWeight: '600',
                             color: '#007bff'
                           }}>
-                            <span style={{ fontSize: '14px', color: '#6c757d' }}>Stringa</span>
+                            <span style={{ fontSize: '14px', color: '#6c757d' }}>{t('navigator.nav.string')}</span>
                             <span style={{ 
                               fontSize: '20px', 
                               color: '#007bff',
@@ -580,7 +582,7 @@ const StringNavigator: React.FC = () => {
                               }
                             }}
                           >
-                            Successiva
+                            {t('navigator.nav.next')}
                             <span style={{ fontSize: '16px' }}>→</span>
                           </button>
                         </div>
@@ -598,8 +600,8 @@ const StringNavigator: React.FC = () => {
                           margin: '0 0 15px 0',
                           color: '#2c3e50',
                           fontSize: '18px'
-                        }}>📊 Campi Analizzati</h4>
-                        
+                        }}>{t('navigator.fields_title')}</h4>
+
                         {/* Header delle colonne */}
                         <div style={{
                           display: 'flex',
@@ -613,9 +615,9 @@ const StringNavigator: React.FC = () => {
                           gap: '12px',
                           alignItems: 'center'
                         }}>
-                          <div style={{ minWidth: '60px', textAlign: 'center' }}>Dominio</div>
-                          <div style={{ width: '35%', minWidth: '200px' }}>Campo</div>
-                          <div style={{ flex: '1' }}>Valore</div>
+                          <div style={{ minWidth: '60px', textAlign: 'center' }}>{t('navigator.table.domain')}</div>
+                          <div style={{ width: '35%', minWidth: '200px' }}>{t('navigator.table.field')}</div>
+                          <div style={{ flex: '1' }}>{t('navigator.table.value')}</div>
                         </div>
                         <div style={{
                           display: 'flex',
@@ -704,9 +706,9 @@ const StringNavigator: React.FC = () => {
                   </>
                 ) : (
                   <div className="error-display">
-                    <h4>Errore di Parsing</h4>
-                    <p><strong>Stringa:</strong> {currentString.euring_string}</p>
-                    <p><strong>Errore:</strong> {currentString.error}</p>
+                    <h4>{t('navigator.parse_error')}</h4>
+                    <p><strong>{t('navigator.parse_error.string')}</strong> {currentString.euring_string}</p>
+                    <p><strong>{t('navigator.parse_error.error')}</strong> {currentString.error}</p>
                   </div>
                 )}
               </div>
@@ -717,7 +719,7 @@ const StringNavigator: React.FC = () => {
           {strings.length > 1 && (
             <div className="string-navigation">
               <div className="navigation-header">
-                <h3>Navigazione Stringhe ({strings.length} caricate)</h3>
+                <h3>{t('navigator.title')} ({strings.length} {strings.length !== 1 ? t('navigator.count_suffix') : t('navigator.count_one_suffix')})</h3>
                 {totalPages > 1 && (
                   <div style={{
                     display: 'flex',
@@ -726,7 +728,7 @@ const StringNavigator: React.FC = () => {
                     marginTop: '10px'
                   }}>
                     <span style={{ fontSize: '14px', color: '#6c757d' }}>
-                      Pagina {currentPage + 1} di {totalPages} (stringhe {startIndex + 1}-{endIndex})
+                      {t('navigator.nav.page')} {currentPage + 1} / {totalPages} ({startIndex + 1}-{endIndex})
                     </span>
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button
@@ -742,7 +744,7 @@ const StringNavigator: React.FC = () => {
                           cursor: currentPage === 0 ? 'not-allowed' : 'pointer'
                         }}
                       >
-                        ← 50 Prec.
+                        {t('navigator.nav.prev50')}
                       </button>
                       <button
                         onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
@@ -757,7 +759,7 @@ const StringNavigator: React.FC = () => {
                           cursor: currentPage === totalPages - 1 ? 'not-allowed' : 'pointer'
                         }}
                       >
-                        50 Succ. →
+                        {t('navigator.nav.next50')}
                       </button>
                     </div>
                   </div>
@@ -788,17 +790,16 @@ const StringNavigator: React.FC = () => {
                   
                   if (info.giorno !== 'N/A' && info.mese !== 'N/A' && info.anno !== 'N/A') {
                     if (buttonText) buttonText += ' ';
-                    buttonText += `catturato il ${info.giorno}/${info.mese}/${info.anno}`;
+                    buttonText += `${t('navigator.captured_on')} ${info.giorno}/${info.mese}/${info.anno}`;
                   }
-                  
+
                   if (info.latitudine !== 'N/A' && info.longitudine !== 'N/A') {
                     if (buttonText) buttonText += ' ';
-                    buttonText += `nelle coordinate ${info.latitudine}|${info.longitudine}`;
+                    buttonText += `${t('navigator.at_coordinates')} ${info.latitudine}|${info.longitudine}`;
                   }
-                  
-                  // Fallback se non abbiamo nessuna informazione utile
+
                   if (buttonText === '') {
-                    buttonText = `Stringa ${globalIndex + 1}`;
+                    buttonText = `${t('navigator.string_label')} ${globalIndex + 1}`;
                   }
                   
                   return (
@@ -853,7 +854,7 @@ const StringNavigator: React.FC = () => {
                       }}
                     >
                       <span style={{ fontSize: '16px' }}>←</span>
-                      50 Precedenti
+                      {t('navigator.nav.prev50_btn')}
                     </button>
 
                     <div style={{
@@ -868,12 +869,12 @@ const StringNavigator: React.FC = () => {
                       fontWeight: '600',
                       color: '#28a745'
                     }}>
-                      <span style={{ fontSize: '14px', color: '#6c757d' }}>Pagina</span>
+                      <span style={{ fontSize: '14px', color: '#6c757d' }}>{t('navigator.nav.page')}</span>
                       <span style={{ fontSize: '18px', minWidth: '80px', textAlign: 'center' }}>
                         {currentPage + 1} / {totalPages}
                       </span>
                       <span style={{ fontSize: '12px', color: '#6c757d' }}>
-                        ({startIndex + 1}-{endIndex} di {strings.length})
+                        ({startIndex + 1}-{endIndex} / {strings.length})
                       </span>
                     </div>
 
@@ -881,7 +882,6 @@ const StringNavigator: React.FC = () => {
                       onClick={() => {
                         const newPage = Math.min(totalPages - 1, currentPage + 1);
                         setCurrentPage(newPage);
-                        // Set current index to first item of new page
                         setCurrentIndex(newPage * BUTTONS_PER_PAGE);
                       }}
                       disabled={currentPage === totalPages - 1}
@@ -900,7 +900,7 @@ const StringNavigator: React.FC = () => {
                         transition: 'all 0.2s ease'
                       }}
                     >
-                      50 Successivi
+                      {t('navigator.nav.next50_btn')}
                       <span style={{ fontSize: '16px' }}>→</span>
                     </button>
                   </div>
