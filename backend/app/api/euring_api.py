@@ -852,16 +852,34 @@ async def get_euring_versions_matrix():
         }
 
 
+PIPE_DELIMITED_VERSIONS = {'1966', '2020'}  # versioni con separatore; il 1966 usa spazi, 2020 usa |
+
 def _check_position_conflict(version_obj, field_name: str, new_pos: int, new_length: int) -> list:
-    """Return list of field names that conflict with the given position range."""
-    new_range = set(range(new_pos, new_pos + new_length))
+    """Return list of field names that conflict with the given position/index.
+
+    Per versioni pipe-delimited (2020+): position = indice campo (1-based),
+    la lunghezza è solo metadato del contenuto → conflitto solo su indice duplicato.
+    Per versioni fixed-width (1979, 2000): conflitto su overlap di range caratteri.
+    """
+    version_year = str(getattr(version_obj, 'year', ''))
     conflicts = []
-    for field in version_obj.field_definitions:
-        if field.name == field_name:
-            continue
-        existing_range = set(range(field.position, field.position + field.length))
-        if new_range & existing_range:
-            conflicts.append(field.name)
+
+    if version_year in ('2020',):
+        # Pipe-delimited: controlla solo duplicato di indice
+        for field in version_obj.field_definitions:
+            if field.name == field_name:
+                continue
+            if field.position == new_pos:
+                conflicts.append(field.name)
+    else:
+        # Fixed-width: controlla overlap di range caratteri
+        new_range = set(range(new_pos, new_pos + new_length))
+        for field in version_obj.field_definitions:
+            if field.name == field_name:
+                continue
+            existing_range = set(range(field.position, field.position + field.length))
+            if new_range & existing_range:
+                conflicts.append(field.name)
     return conflicts
 
 
