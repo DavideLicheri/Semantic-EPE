@@ -3,6 +3,8 @@
  */
 import React, { useState, useEffect } from 'react';
 import { User } from '../services/auth';
+import { useTranslation } from '../hooks/useTranslation';
+import { i18n } from '../i18n';
 import './UserManagement.css';
 
 interface UserManagementProps {
@@ -14,6 +16,8 @@ interface UserWithActions extends User {
 }
 
 export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
+  const { t } = useTranslation();
+  const locale = i18n.getLanguage() === 'it' ? 'it-IT' : 'en-GB';
   const [users, setUsers] = useState<UserWithActions[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,8 +29,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
     return (
       <div className="user-management-container">
         <div className="access-denied">
-          <h2>🚫 Accesso Negato</h2>
-          <p>Solo il Super Admin può accedere alla gestione utenti.</p>
+          <h2>{t('mgmt.access_denied')}</h2>
+          <p>{t('mgmt.access_denied_text')}</p>
         </div>
       </div>
     );
@@ -40,7 +44,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
     try {
       setLoading(true);
       const token = localStorage.getItem('eces_token');
-      
+
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/auth/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -51,10 +55,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
         const data = await response.json();
         setUsers(data.users);
       } else {
-        setError('Errore nel caricamento degli utenti');
+        setError(t('mgmt.error.load'));
       }
     } catch (err) {
-      setError('Errore di connessione');
+      setError(t('mgmt.error.connection'));
     } finally {
       setLoading(false);
     }
@@ -62,13 +66,12 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
 
   const updateUserRole = async (username: string, newRole: string) => {
     try {
-      // Set updating state
-      setUsers(prev => prev.map(user => 
+      setUsers(prev => prev.map(user =>
         user.username === username ? { ...user, isUpdating: true } : user
       ));
 
       const token = localStorage.getItem('eces_token');
-      
+
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/auth/users/role`, {
         method: 'PUT',
         headers: {
@@ -83,21 +86,19 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
 
       if (response.ok) {
         const updatedUser = await response.json();
-        setUsers(prev => prev.map(user => 
+        setUsers(prev => prev.map(user =>
           user.username === username ? { ...updatedUser, isUpdating: false } : user
         ));
       } else {
         const errorData = await response.json();
-        setError(errorData.detail || 'Errore nell\'aggiornamento del ruolo');
-        // Reset updating state
-        setUsers(prev => prev.map(user => 
+        setError(errorData.detail || t('mgmt.error.role_update'));
+        setUsers(prev => prev.map(user =>
           user.username === username ? { ...user, isUpdating: false } : user
         ));
       }
     } catch (err) {
-      setError('Errore di connessione');
-      // Reset updating state
-      setUsers(prev => prev.map(user => 
+      setError(t('mgmt.error.connection'));
+      setUsers(prev => prev.map(user =>
         user.username === username ? { ...user, isUpdating: false } : user
       ));
     }
@@ -105,13 +106,13 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
 
   const toggleUserStatus = async (username: string, activate: boolean) => {
     try {
-      setUsers(prev => prev.map(user => 
+      setUsers(prev => prev.map(user =>
         user.username === username ? { ...user, isUpdating: true } : user
       ));
 
       const token = localStorage.getItem('eces_token');
       const action = activate ? 'activate' : 'deactivate';
-      
+
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/auth/users/${username}/${action}`, {
         method: 'PUT',
         headers: {
@@ -121,19 +122,19 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
 
       if (response.ok) {
         const updatedUser = await response.json();
-        setUsers(prev => prev.map(user => 
+        setUsers(prev => prev.map(user =>
           user.username === username ? { ...updatedUser, isUpdating: false } : user
         ));
       } else {
         const errorData = await response.json();
-        setError(errorData.detail || 'Errore nell\'aggiornamento dello stato');
-        setUsers(prev => prev.map(user => 
+        setError(errorData.detail || t('mgmt.error.status_update'));
+        setUsers(prev => prev.map(user =>
           user.username === username ? { ...user, isUpdating: false } : user
         ));
       }
     } catch (err) {
-      setError('Errore di connessione');
-      setUsers(prev => prev.map(user => 
+      setError(t('mgmt.error.connection'));
+      setUsers(prev => prev.map(user =>
         user.username === username ? { ...user, isUpdating: false } : user
       ));
     }
@@ -172,7 +173,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
       <div className="user-management-container">
         <div className="loading-state">
           <div className="spinner"></div>
-          <p>Caricamento utenti...</p>
+          <p>{t('mgmt.loading')}</p>
         </div>
       </div>
     );
@@ -181,8 +182,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
   return (
     <div className="user-management-container">
       <div className="user-management-header">
-        <h1>👥 Gestione Utenti</h1>
-        <p>Amministrazione utenti e permessi del sistema</p>
+        <h1>{t('mgmt.title')}</h1>
+        <p>{t('mgmt.subtitle')}</p>
       </div>
 
       {error && (
@@ -196,38 +197,38 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
         <div className="search-box">
           <input
             type="text"
-            placeholder="🔍 Cerca..."
+            placeholder={t('mgmt.search_placeholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
         <div className="filter-tabs">
-          <button 
+          <button
             className={filter === 'all' ? 'active' : ''}
             onClick={() => setFilter('all')}
           >
-            Tutti ({users.length})
+            {t('mgmt.filter.all')} ({users.length})
           </button>
-          <button 
+          <button
             className={filter === 'super_admin' ? 'active' : ''}
             onClick={() => setFilter('super_admin')}
           >
             Super Admin
           </button>
-          <button 
+          <button
             className={filter === 'admin' ? 'active' : ''}
             onClick={() => setFilter('admin')}
           >
             Admin
           </button>
-          <button 
+          <button
             className={filter === 'user' ? 'active' : ''}
             onClick={() => setFilter('user')}
           >
             User
           </button>
-          <button 
+          <button
             className={filter === 'viewer' ? 'active' : ''}
             onClick={() => setFilter('viewer')}
           >
@@ -235,12 +236,12 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
           </button>
         </div>
 
-        <button 
+        <button
           onClick={loadUsers}
           className="refresh-button"
           disabled={loading}
         >
-          🔄 Aggiorna
+          {t('mgmt.refresh')}
         </button>
       </div>
 
@@ -256,33 +257,33 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
                   <p className="department">{user.department}</p>
                 )}
               </div>
-              
+
               <div className="user-status">
-                <div 
+                <div
                   className="role-badge"
                   style={{ backgroundColor: getRoleColor(user.role) }}
                 >
                   {getRoleIcon(user.role)} {user.role.replace('_', ' ').toUpperCase()}
                 </div>
-                
+
                 <div className={`status-indicator ${user.is_active ? 'active' : 'inactive'}`}>
-                  {user.is_active ? '🟢 Attivo' : '🔴 Disattivato'}
+                  {user.is_active ? t('mgmt.status.active') : t('mgmt.status.inactive')}
                 </div>
               </div>
             </div>
 
             <div className="user-card-body">
               <div className="user-dates">
-                <p><strong>Registrato:</strong> {new Date(user.created_at).toLocaleDateString('it-IT')}</p>
+                <p><strong>{t('mgmt.registered')}</strong> {new Date(user.created_at).toLocaleDateString(locale)}</p>
                 {user.last_login && (
-                  <p><strong>Ultimo accesso:</strong> {new Date(user.last_login).toLocaleDateString('it-IT')}</p>
+                  <p><strong>{t('mgmt.last_login')}</strong> {new Date(user.last_login).toLocaleDateString(locale)}</p>
                 )}
               </div>
 
               {user.username !== currentUser.username && (
                 <div className="user-actions">
                   <div className="role-selector">
-                    <label>Ruolo:</label>
+                    <label>{t('mgmt.role_label')}</label>
                     <select
                       value={user.role}
                       onChange={(e) => updateUserRole(user.username, e.target.value)}
@@ -304,7 +305,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
                         disabled={user.isUpdating}
                         className="deactivate-button"
                       >
-                        {user.isUpdating ? '⏳' : '🚫'} Disattiva
+                        {user.isUpdating ? '⏳' : '🚫'} {t('mgmt.deactivate')}
                       </button>
                     ) : (
                       <button
@@ -312,7 +313,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
                         disabled={user.isUpdating}
                         className="activate-button"
                       >
-                        {user.isUpdating ? '⏳' : '✅'} Attiva
+                        {user.isUpdating ? '⏳' : '✅'} {t('mgmt.activate')}
                       </button>
                     )}
                   </div>
@@ -321,7 +322,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
 
               {user.username === currentUser.username && (
                 <div className="current-user-badge">
-                  ⭐ Il tuo account
+                  {t('mgmt.your_account')}
                 </div>
               )}
             </div>
@@ -331,13 +332,13 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
 
       {filteredUsers.length === 0 && (
         <div className="no-users">
-          <p>Nessun utente trovato con i filtri selezionati.</p>
+          <p>{t('mgmt.no_users')}</p>
         </div>
       )}
 
       <div className="user-management-footer">
-        <p>Totale utenti: {users.length} | Filtrati: {filteredUsers.length}</p>
-        <p>Le modifiche ai ruoli inviano automaticamente una notifica email all'utente.</p>
+        <p>{t('mgmt.footer.total')} {users.length} | {t('mgmt.footer.filtered')} {filteredUsers.length}</p>
+        <p>{t('mgmt.footer.role_notification')}</p>
       </div>
     </div>
   );

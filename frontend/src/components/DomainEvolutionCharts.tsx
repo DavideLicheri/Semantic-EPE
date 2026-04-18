@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DomainEvolutionEntry } from '../types/euring-types';
 import EuringAPI from '../services/api';
+import { useTranslation } from '../hooks/useTranslation';
 import './DomainEvolutionCharts.css';
 
 interface DomainEvolutionChartsProps {
@@ -21,6 +22,7 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
   domain,
   evolutionEntries
 }) => {
+  const { t } = useTranslation();
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [activeChart, setActiveChart] = useState<'changes' | 'cumulative' | 'intensity'>('changes');
 
@@ -31,23 +33,20 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
   const generateChartData = () => {
     if (!evolutionEntries.length) return;
 
-    // Sort entries by year
     const sortedEntries = [...evolutionEntries].sort((a, b) => a.year - b.year);
-    
+
     const years = sortedEntries.map(entry => entry.year);
     const fieldsAdded = sortedEntries.map(entry => entry.fields_added.length);
     const fieldsRemoved = sortedEntries.map(entry => entry.fields_removed.length);
     const fieldsModified = sortedEntries.map(entry => entry.fields_modified.length);
-    
-    // Calculate cumulative fields (approximation)
+
     let cumulativeCount = 0;
     const cumulativeFields = sortedEntries.map(entry => {
       cumulativeCount += entry.fields_added.length - entry.fields_removed.length;
       return Math.max(0, cumulativeCount);
     });
-    
-    // Calculate change intensity (total changes per version)
-    const changeIntensity = sortedEntries.map(entry => 
+
+    const changeIntensity = sortedEntries.map(entry =>
       entry.fields_added.length + entry.fields_removed.length + entry.fields_modified.length
     );
 
@@ -64,7 +63,7 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
   const getMaxValue = (data: number[]) => Math.max(...data, 1);
 
   const getBarHeight = (value: number, maxValue: number) => {
-    return Math.max((value / maxValue) * 100, 2); // Minimum 2% height for visibility
+    return Math.max((value / maxValue) * 100, 2);
   };
 
   const getIntensityColor = (intensity: number, maxIntensity: number) => {
@@ -78,7 +77,7 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
 
   const calculateTotalChanges = () => {
     if (!chartData) return { added: 0, removed: 0, modified: 0 };
-    
+
     return {
       added: chartData.fieldsAdded.reduce((sum, val) => sum + val, 0),
       removed: chartData.fieldsRemoved.reduce((sum, val) => sum + val, 0),
@@ -88,10 +87,10 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
 
   const getMostActiveYear = () => {
     if (!chartData) return null;
-    
+
     const maxIntensity = Math.max(...chartData.changeIntensity);
     const maxIndex = chartData.changeIntensity.indexOf(maxIntensity);
-    
+
     return {
       year: chartData.years[maxIndex],
       changes: maxIntensity
@@ -100,12 +99,12 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
 
   const getStabilityPeriods = () => {
     if (!chartData) return [];
-    
+
     const periods = [];
     let currentPeriodStart = 0;
-    
+
     for (let i = 1; i < chartData.changeIntensity.length; i++) {
-      if (chartData.changeIntensity[i] > 2) { // Threshold for "significant change"
+      if (chartData.changeIntensity[i] > 2) {
         if (i - currentPeriodStart > 1) {
           periods.push({
             start: chartData.years[currentPeriodStart],
@@ -116,7 +115,7 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
         currentPeriodStart = i;
       }
     }
-    
+
     return periods.filter(period => period.duration > 0);
   };
 
@@ -125,7 +124,7 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
       <div className="evolution-charts">
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p>Generazione grafici...</p>
+          <p>{t('charts.loading')}</p>
         </div>
       </div>
     );
@@ -139,30 +138,30 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
     <div className="evolution-charts">
       <div className="charts-header">
         <div className="charts-title">
-          <h4>📊 Analisi Grafica - {EuringAPI.getDomainDisplayName(domain)}</h4>
+          <h4>{t('charts.title')} - {EuringAPI.getDomainDisplayName(domain)}</h4>
           <p className="charts-subtitle">
-            Visualizzazione dell'evoluzione attraverso {chartData.years.length} versioni EURING
+            {t('charts.subtitle_prefix')} {chartData.years.length} {t('charts.subtitle_suffix')}
           </p>
         </div>
-        
+
         <div className="chart-navigation">
           <button
             className={`chart-nav-button ${activeChart === 'changes' ? 'active' : ''}`}
             onClick={() => setActiveChart('changes')}
           >
-            📈 Cambiamenti
+            {t('charts.nav.changes')}
           </button>
           <button
             className={`chart-nav-button ${activeChart === 'cumulative' ? 'active' : ''}`}
             onClick={() => setActiveChart('cumulative')}
           >
-            📊 Cumulativo
+            {t('charts.nav.cumulative')}
           </button>
           <button
             className={`chart-nav-button ${activeChart === 'intensity' ? 'active' : ''}`}
             onClick={() => setActiveChart('intensity')}
           >
-            🔥 Intensità
+            {t('charts.nav.intensity')}
           </button>
         </div>
       </div>
@@ -172,10 +171,10 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
           <div className="changes-chart">
             <div className="chart-container">
               <div className="chart-title">
-                <h5>Cambiamenti per Versione</h5>
-                <p>Distribuzione di aggiunte, rimozioni e modifiche</p>
+                <h5>{t('charts.changes.title')}</h5>
+                <p>{t('charts.changes.subtitle')}</p>
               </div>
-              
+
               <div className="stacked-bar-chart">
                 <div className="chart-y-axis">
                   {[...Array(6)].map((_, i) => {
@@ -192,7 +191,7 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
                     );
                   })}
                 </div>
-                
+
                 <div className="chart-bars">
                   {chartData.years.map((year, index) => {
                     const maxVal = getMaxValue([
@@ -200,28 +199,28 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
                       ...chartData.fieldsRemoved,
                       ...chartData.fieldsModified
                     ]);
-                    
+
                     const addedHeight = getBarHeight(chartData.fieldsAdded[index], maxVal);
                     const removedHeight = getBarHeight(chartData.fieldsRemoved[index], maxVal);
                     const modifiedHeight = getBarHeight(chartData.fieldsModified[index], maxVal);
-                    
+
                     return (
                       <div key={year} className="bar-group">
                         <div className="stacked-bar">
-                          <div 
+                          <div
                             className="bar-segment added"
                             style={{ height: `${addedHeight}%` }}
-                            title={`${chartData.fieldsAdded[index]} campi aggiunti`}
+                            title={`${chartData.fieldsAdded[index]} ${t('charts.fields_added_tooltip')}`}
                           ></div>
-                          <div 
+                          <div
                             className="bar-segment modified"
                             style={{ height: `${modifiedHeight}%` }}
-                            title={`${chartData.fieldsModified[index]} campi modificati`}
+                            title={`${chartData.fieldsModified[index]} ${t('charts.fields_modified_tooltip')}`}
                           ></div>
-                          <div 
+                          <div
                             className="bar-segment removed"
                             style={{ height: `${removedHeight}%` }}
-                            title={`${chartData.fieldsRemoved[index]} campi rimossi`}
+                            title={`${chartData.fieldsRemoved[index]} ${t('charts.fields_removed_tooltip')}`}
                           ></div>
                         </div>
                         <div className="bar-label">{year}</div>
@@ -230,19 +229,19 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
                   })}
                 </div>
               </div>
-              
+
               <div className="chart-legend">
                 <div className="legend-item">
                   <span className="legend-color added"></span>
-                  <span>Campi Aggiunti</span>
+                  <span>{t('charts.legend.added')}</span>
                 </div>
                 <div className="legend-item">
                   <span className="legend-color modified"></span>
-                  <span>Campi Modificati</span>
+                  <span>{t('charts.legend.modified')}</span>
                 </div>
                 <div className="legend-item">
                   <span className="legend-color removed"></span>
-                  <span>Campi Rimossi</span>
+                  <span>{t('charts.legend.removed')}</span>
                 </div>
               </div>
             </div>
@@ -253,10 +252,10 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
           <div className="cumulative-chart">
             <div className="chart-container">
               <div className="chart-title">
-                <h5>Crescita Cumulativa dei Campi</h5>
-                <p>Evoluzione del numero totale di campi nel tempo</p>
+                <h5>{t('charts.cumulative.title')}</h5>
+                <p>{t('charts.cumulative.subtitle')}</p>
               </div>
-              
+
               <div className="line-chart">
                 <div className="chart-y-axis">
                   {[...Array(6)].map((_, i) => {
@@ -269,7 +268,7 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
                     );
                   })}
                 </div>
-                
+
                 <div className="chart-area">
                   <svg className="line-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
                     <defs>
@@ -278,8 +277,7 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
                         <stop offset="100%" stopColor="#3498db" stopOpacity="0.1"/>
                       </linearGradient>
                     </defs>
-                    
-                    {/* Area fill */}
+
                     <path
                       d={`M 0 100 ${chartData.cumulativeFields.map((value, index) => {
                         const x = (index / (chartData.cumulativeFields.length - 1)) * 100;
@@ -288,8 +286,7 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
                       }).join(' ')} L 100 100 Z`}
                       fill="url(#areaGradient)"
                     />
-                    
-                    {/* Line */}
+
                     <path
                       d={`M ${chartData.cumulativeFields.map((value, index) => {
                         const x = (index / (chartData.cumulativeFields.length - 1)) * 100;
@@ -300,8 +297,7 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
                       strokeWidth="2"
                       fill="none"
                     />
-                    
-                    {/* Data points */}
+
                     {chartData.cumulativeFields.map((value, index) => {
                       const x = (index / (chartData.cumulativeFields.length - 1)) * 100;
                       const y = 100 - (value / getMaxValue(chartData.cumulativeFields)) * 100;
@@ -318,7 +314,7 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
                       );
                     })}
                   </svg>
-                  
+
                   <div className="chart-x-axis">
                     {chartData.years.map(year => (
                       <div key={year} className="x-axis-label">{year}</div>
@@ -334,10 +330,10 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
           <div className="intensity-chart">
             <div className="chart-container">
               <div className="chart-title">
-                <h5>Intensità dei Cambiamenti</h5>
-                <p>Numero totale di modifiche per versione</p>
+                <h5>{t('charts.intensity.title')}</h5>
+                <p>{t('charts.intensity.subtitle')}</p>
               </div>
-              
+
               <div className="heatmap-chart">
                 <div className="heatmap-bars">
                   {chartData.years.map((year, index) => {
@@ -345,16 +341,16 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
                     const maxIntensity = getMaxValue(chartData.changeIntensity);
                     const color = getIntensityColor(intensity, maxIntensity);
                     const height = getBarHeight(intensity, maxIntensity);
-                    
+
                     return (
                       <div key={year} className="intensity-bar-group">
-                        <div 
+                        <div
                           className="intensity-bar"
-                          style={{ 
+                          style={{
                             height: `${height}%`,
                             backgroundColor: color
                           }}
-                          title={`${intensity} cambiamenti totali nel ${year}`}
+                          title={`${intensity} ${t('charts.changes_total_in')} ${year}`}
                         >
                           <span className="intensity-value">{intensity}</span>
                         </div>
@@ -363,9 +359,9 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
                     );
                   })}
                 </div>
-                
+
                 <div className="intensity-scale">
-                  <div className="scale-label">Bassa</div>
+                  <div className="scale-label">{t('charts.intensity.low')}</div>
                   <div className="scale-gradient">
                     <div className="scale-color" style={{ backgroundColor: '#95a5a6' }}></div>
                     <div className="scale-color" style={{ backgroundColor: '#27ae60' }}></div>
@@ -373,7 +369,7 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
                     <div className="scale-color" style={{ backgroundColor: '#f39c12' }}></div>
                     <div className="scale-color" style={{ backgroundColor: '#e74c3c' }}></div>
                   </div>
-                  <div className="scale-label">Alta</div>
+                  <div className="scale-label">{t('charts.intensity.high')}</div>
                 </div>
               </div>
             </div>
@@ -382,26 +378,26 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
       </div>
 
       <div className="charts-insights">
-        <h5>📋 Insights Analitici</h5>
-        
+        <h5>{t('charts.insights.title')}</h5>
+
         <div className="insights-grid">
           <div className="insight-card">
             <div className="insight-header">
               <span className="insight-icon">📊</span>
-              <h6>Cambiamenti Totali</h6>
+              <h6>{t('charts.insights.total_changes')}</h6>
             </div>
             <div className="insight-stats">
               <div className="insight-stat">
                 <span className="stat-value added">{totalChanges.added}</span>
-                <span className="stat-label">Aggiunti</span>
+                <span className="stat-label">{t('charts.insights.added')}</span>
               </div>
               <div className="insight-stat">
                 <span className="stat-value modified">{totalChanges.modified}</span>
-                <span className="stat-label">Modificati</span>
+                <span className="stat-label">{t('charts.insights.modified')}</span>
               </div>
               <div className="insight-stat">
                 <span className="stat-value removed">{totalChanges.removed}</span>
-                <span className="stat-label">Rimossi</span>
+                <span className="stat-label">{t('charts.insights.removed')}</span>
               </div>
             </div>
           </div>
@@ -410,11 +406,11 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
             <div className="insight-card">
               <div className="insight-header">
                 <span className="insight-icon">🔥</span>
-                <h6>Anno Più Attivo</h6>
+                <h6>{t('charts.insights.most_active')}</h6>
               </div>
               <div className="insight-content">
                 <div className="active-year">{mostActiveYear.year}</div>
-                <div className="active-changes">{mostActiveYear.changes} cambiamenti</div>
+                <div className="active-changes">{mostActiveYear.changes} {t('charts.insights.changes')}</div>
               </div>
             </div>
           )}
@@ -422,24 +418,24 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
           <div className="insight-card">
             <div className="insight-header">
               <span className="insight-icon">📈</span>
-              <h6>Trend Evolutivo</h6>
+              <h6>{t('charts.insights.trend')}</h6>
             </div>
             <div className="insight-content">
               <div className="trend-indicator">
                 {totalChanges.added > totalChanges.removed ? (
-                  <span className="trend-up">📈 Crescita</span>
+                  <span className="trend-up">{t('charts.insights.growing')}</span>
                 ) : totalChanges.added < totalChanges.removed ? (
-                  <span className="trend-down">📉 Riduzione</span>
+                  <span className="trend-down">{t('charts.insights.shrinking')}</span>
                 ) : (
-                  <span className="trend-stable">➡️ Stabile</span>
+                  <span className="trend-stable">{t('charts.insights.stable')}</span>
                 )}
               </div>
               <div className="trend-description">
-                {totalChanges.added > totalChanges.removed 
-                  ? 'Il dominio è in espansione'
+                {totalChanges.added > totalChanges.removed
+                  ? t('charts.insights.growing_desc')
                   : totalChanges.added < totalChanges.removed
-                  ? 'Il dominio si sta semplificando'
-                  : 'Il dominio è relativamente stabile'
+                  ? t('charts.insights.shrinking_desc')
+                  : t('charts.insights.stable_desc')
                 }
               </div>
             </div>
@@ -449,7 +445,7 @@ const DomainEvolutionCharts: React.FC<DomainEvolutionChartsProps> = ({
             <div className="insight-card">
               <div className="insight-header">
                 <span className="insight-icon">⚖️</span>
-                <h6>Periodi di Stabilità</h6>
+                <h6>{t('charts.insights.stability')}</h6>
               </div>
               <div className="insight-content">
                 {stabilityPeriods.slice(0, 2).map((period, index) => (

@@ -2,6 +2,7 @@
  * Registration Component for ECES
  */
 import React, { useState } from 'react';
+import { useTranslation } from '../hooks/useTranslation';
 import './Register.css';
 
 interface RegistrationData {
@@ -18,6 +19,7 @@ interface RegisterProps {
 }
 
 export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<RegistrationData>({
     username: '',
     email: '',
@@ -37,13 +39,13 @@ export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
-      setError('Le password non coincidono');
+      setError(t('register.error.password_mismatch'));
       setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('La password deve essere di almeno 6 caratteri');
+      setError(t('register.error.password_short'));
       setLoading(false);
       return;
     }
@@ -68,10 +70,10 @@ export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
       if (result.success) {
         setSuccess(true);
       } else {
-        setError(result.message || 'Errore durante la registrazione');
+        setError(result.message || t('register.error.generic'));
       }
     } catch (err) {
-      setError('Errore di connessione. Riprova più tardi.');
+      setError(t('register.error.connection'));
     } finally {
       setLoading(false);
     }
@@ -89,32 +91,32 @@ export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
       <div className="register-container">
         <div className="register-card">
           <div className="register-header">
-            <img 
-              src="/src/assets/images/epeLogo.jpg" 
-              alt="EPE Logo" 
+            <img
+              src="/src/assets/images/epeLogo.jpg"
+              alt="EPE Logo"
               className="register-logo"
             />
-            <h1>Registrazione Completata!</h1>
-            <h2>ECES - EURING Code Evolution System</h2>
+            <h1>{t('register.success.title')}</h1>
+            <h2>{t('register.success.subtitle')}</h2>
           </div>
 
           <div className="success-message">
             <div className="success-icon">✅</div>
-            <h3>Benvenuto nel sistema ECES!</h3>
-            <p>La tua registrazione è stata completata con successo.</p>
-            <p>Hai accesso in <strong>sola lettura</strong> al sistema.</p>
-            <p>L'amministratore è stato notificato e potrà modificare i tuoi permessi se necessario.</p>
+            <h3>{t('register.success.welcome')}</h3>
+            <p>{t('register.success.completed')}</p>
+            <p>{t('register.success.readonly')}</p>
+            <p>{t('register.success.admin_notified')}</p>
           </div>
 
-          <button 
+          <button
             onClick={onBackToLogin}
             className="back-to-login-button"
           >
-            Accedi al Sistema
+            {t('register.success.login_button')}
           </button>
 
           <div className="register-footer">
-            <p>🔒 Sistema interno ISPRA - DG SINA</p>
+            <p>{t('register.success.footer')}</p>
           </div>
         </div>
       </div>
@@ -125,19 +127,19 @@ export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
     <div className="register-container">
       <div className="register-card">
         <div className="register-header">
-          <img 
-            src="/src/assets/images/epeLogo.jpg" 
-            alt="EPE Logo" 
+          <img
+            src="/src/assets/images/epeLogo.jpg"
+            alt="EPE Logo"
             className="register-logo"
           />
-          <h1>Registrazione</h1>
-          <h2>ECES - EURING Code Evolution System</h2>
-          <p className="register-subtitle">ISPRA - DG SINA</p>
+          <h1>{t('register.form.title')}</h1>
+          <h2>{t('register.success.subtitle')}</h2>
+          <p className="register-subtitle">{t('register.form.subtitle')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="register-form">
           <div className="form-group">
-            <label htmlFor="full_name">Nome Completo *</label>
+            <label htmlFor="full_name">{t('register.fullname.label')}</label>
             <input
               type="text"
               id="full_name"
@@ -146,12 +148,12 @@ export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
               onChange={handleChange}
               required
               disabled={loading}
-              placeholder="Il tuo nome e cognome"
+              placeholder={t('register.fullname.placeholder')}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email ISPRA *</label>
+            <label htmlFor="email">{t('register.email_ispra.label')}</label>
             <input
               type="email"
               id="email"
@@ -160,12 +162,12 @@ export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
               onChange={handleChange}
               required
               disabled={loading}
-              placeholder="nome.cognome@isprambiente.it"
+              placeholder={t('register.email_ispra.placeholder')}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="username">Username *</label>
+            <label htmlFor="username">{t('register.username.label')}</label>
             <input
               type="text"
               id="username"
@@ -174,14 +176,14 @@ export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
               onChange={handleChange}
               required
               disabled={loading}
-              placeholder="Il tuo username (senza spazi)"
+              placeholder={t('register.username.placeholder')}
               pattern="[a-zA-Z0-9_-]+"
-              title="Solo lettere, numeri, underscore e trattini"
+              title={t('register.username.title')}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="department">Dipartimento</label>
+            <label htmlFor="department">{t('register.department.label')}</label>
             <select
               id="department"
               name="department"
@@ -189,7 +191,7 @@ export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
               onChange={handleChange}
               disabled={loading}
             >
-              <option value="">Seleziona dipartimento</option>
+              <option value="">{t('register.department.select')}</option>
               <option value="ISPRA - DG SINA">ISPRA - DG SINA</option>
               <option value="ISPRA - DG AMB">ISPRA - DG AMB</option>
               <option value="ISPRA - DG GEO">ISPRA - DG GEO</option>
@@ -199,7 +201,7 @@ export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password *</label>
+            <label htmlFor="password">{t('register.password.label2')}</label>
             <input
               type="password"
               id="password"
@@ -208,13 +210,13 @@ export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
               onChange={handleChange}
               required
               disabled={loading}
-              placeholder="Almeno 6 caratteri"
+              placeholder={t('register.password.placeholder2')}
               minLength={6}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirmPassword">Conferma Password *</label>
+            <label htmlFor="confirmPassword">{t('register.confirm.label2')}</label>
             <input
               type="password"
               id="confirmPassword"
@@ -223,7 +225,7 @@ export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
               onChange={handleChange}
               required
               disabled={loading}
-              placeholder="Ripeti la password"
+              placeholder={t('register.confirm.placeholder2')}
             />
           </div>
 
@@ -233,36 +235,36 @@ export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
             </div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="register-button"
             disabled={loading || !formData.username || !formData.email || !formData.full_name || !formData.password || !formData.confirmPassword}
           >
             {loading ? (
               <>
                 <span className="spinner"></span>
-                Registrazione in corso...
+                {t('register.submitting')}
               </>
             ) : (
-              'Registrati al Sistema'
+              t('register.submit')
             )}
           </button>
         </form>
 
         <div className="register-actions">
-          <button 
+          <button
             onClick={onBackToLogin}
             className="back-link"
             disabled={loading}
           >
-            ← Torna al Login
+            {t('register.back_to_login')}
           </button>
         </div>
 
         <div className="register-footer">
-          <p>🔒 Accesso riservato al personale ISPRA</p>
-          <p>I nuovi utenti ricevono accesso in sola lettura</p>
-          <p>L'amministratore può modificare i permessi dopo la registrazione</p>
+          <p>{t('register.footer.restricted')}</p>
+          <p>{t('register.footer.readonly')}</p>
+          <p>{t('register.footer.admin')}</p>
         </div>
       </div>
     </div>

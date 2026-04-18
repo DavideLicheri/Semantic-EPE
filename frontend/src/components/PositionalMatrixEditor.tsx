@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import EuringAPI from '../services/api';
 import PositionalMatrix from './PositionalMatrix';
+import { useTranslation } from '../hooks/useTranslation';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -39,7 +40,6 @@ interface EditState {
   fieldName: string;
   version: string;
   fieldInfo: FieldInfo;
-  // editable copies
   description: string;
   semanticMeaning: string;
   canonicalName: string;
@@ -55,21 +55,8 @@ interface EditState {
 
 const VERSIONS = ['1966', '1979', '2000', '2020'];
 
-// Versioni pipe-delimited: 'position' = indice del campo (1-based), 'length' non applicabile.
-// Il passaggio da lunghezza fissa a delimitatore è avvenuto nel codice 2020 e non tornerà indietro.
 const PIPE_DELIMITED_VERSIONS = ['2020'];
 const isPipeDelimited = (v: string) => PIPE_DELIMITED_VERSIONS.includes(v);
-
-const SEMANTIC_DOMAINS = [
-  { value: '', label: '— nessuno —' },
-  { value: 'identification_marking', label: 'Identificazione / Marcatura' },
-  { value: 'species', label: 'Specie' },
-  { value: 'demographics', label: 'Dati demografici' },
-  { value: 'temporal', label: 'Temporale' },
-  { value: 'spatial', label: 'Spaziale' },
-  { value: 'biometrics', label: 'Biometria' },
-  { value: 'methodology', label: 'Metodologia' },
-];
 
 const DATA_TYPES = ['string', 'integer', 'float', 'alphanumeric', 'numeric'];
 
@@ -104,6 +91,7 @@ interface PositionalMatrixEditorProps {
 }
 
 const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ currentUser }) => {
+  const { t } = useTranslation();
   const [matrixData, setMatrixData] = useState<MatrixData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedVersions, setSelectedVersions] = useState<string[]>(['2000', '2020']);
@@ -116,6 +104,18 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
 
   const canEdit = currentUser?.role === 'matrix_editor' || currentUser?.role === 'super_admin';
   const [confirmDelete, setConfirmDelete] = useState<{ fieldName: string; version: string } | null>(null);
+
+  // Semantic domains — translated labels
+  const SEMANTIC_DOMAINS = [
+    { value: '', label: t('editor.semantic_domain.none') },
+    { value: 'identification_marking', label: t('editor.semantic_domain.identification_marking') },
+    { value: 'species', label: t('editor.semantic_domain.species') },
+    { value: 'demographics', label: t('editor.semantic_domain.demographics') },
+    { value: 'temporal', label: t('editor.semantic_domain.temporal') },
+    { value: 'spatial', label: t('editor.semantic_domain.spatial') },
+    { value: 'biometrics', label: t('editor.semantic_domain.biometrics') },
+    { value: 'methodology', label: t('editor.semantic_domain.methodology') },
+  ];
 
   // ── Data fetching ────────────────────────────────────────────────────────────
 
@@ -146,21 +146,19 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
     }
   };
 
-  // ── Conflict detection (client-side) ────────────────────────────────────────
+  // ── Conflict detection ────────────────────────────────────────────────────────
 
   const checkConflicts = (version: string, excludeFieldName: string, pos: number, len: number): string[] => {
     if (!matrixData || pos < 1) return [];
     const conflicts: string[] = [];
 
     if (isPipeDelimited(version)) {
-      // Pipe-delimited: controlla solo duplicato di indice (pos = indice campo)
       for (const row of matrixData.field_matrix) {
         const info = row.versions[version];
         if (!info || info.name === excludeFieldName) continue;
         if (info.position === pos) { conflicts.push(info.name); }
       }
     } else {
-      // Fixed-width: controlla overlap di range caratteri
       if (len < 1) return [];
       const range = new Set(Array.from({ length: len }, (_, i) => pos + i));
       for (const row of matrixData.field_matrix) {
@@ -184,7 +182,7 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
     return checkConflicts(newField.version, newField.name, newField.position, newField.length);
   }, [showAddField, newField.version, newField.name, newField.position, newField.length, matrixData]);
 
-  // ── Related fields (same canonical_name) ────────────────────────────────────
+  // ── Related fields ────────────────────────────────────────────────────────────
 
   const relatedFields = useMemo(() => {
     if (!editState?.canonicalName?.trim() || !matrixData) return [];
@@ -239,13 +237,13 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
       editState.fieldName, editState.version, property, value,
       `Edit via PositionalMatrixEditor at ${new Date().toISOString()}`
     );
-    if (!result.success) throw new Error(result.error || 'Errore sconosciuto');
+    if (!result.success) throw new Error(result.error || 'Unknown error');
   };
 
   const handleSaveAll = async () => {
     if (!editState || !canEdit) return;
     if (positionConflicts.length > 0) {
-      showStatus('error', `Conflitto di posizione con: ${positionConflicts.join(', ')}`);
+      showStatus('error', `${t('editor.save_all')} — conflict: ${positionConflicts.join(', ')}`);
       return;
     }
     setSaving(true);
@@ -274,7 +272,6 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
         .map((r, i) => r.status === 'rejected' ? `${saves[i].label}: ${(r.reason as Error)?.message}` : null)
         .filter(Boolean);
 
-      // Save lookup values (only if no blocking errors)
       if (editState.lookupLoaded && editState.lookupValues.length > 0) {
         const lookupData = {
           name: `${editState.fieldName} Values`,
@@ -285,17 +282,16 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
       }
 
       await loadMatrix();
-      // Update editState to reflect new saved values
       setEditState(prev => prev ? { ...prev, fieldInfo: { ...prev.fieldInfo, ...{ description: prev.description, data_type: prev.dataType, semantic_domain: prev.semanticDomain as any, canonical_name: prev.canonicalName, position: prev.position, length: prev.length } } } : prev);
 
       if (failures.length > 0) {
-        showStatus('error', `⚠ Salvato parzialmente. Errori: ${failures.join('; ')}`);
+        showStatus('error', `⚠ Partial save. Errors: ${failures.join('; ')}`);
       } else {
-        showStatus('success', `✅ Campo "${editState.fieldName}" salvato`);
+        showStatus('success', `✅ "${editState.fieldName}" saved`);
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Errore nel salvataggio';
-      showStatus('error', `Errore: ${msg}`);
+      const msg = e instanceof Error ? e.message : 'Save error';
+      showStatus('error', `Error: ${msg}`);
     } finally {
       setSaving(false);
     }
@@ -309,14 +305,14 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
         newField.name.trim(), newField.version, newField.position,
         newField.dataType, newField.length, newField.description
       );
-      if (!result.success) throw new Error(result.error || 'Errore');
-      showStatus('success', `✅ Campo "${newField.name}" aggiunto alla versione ${newField.version}`);
+      if (!result.success) throw new Error(result.error || 'Error');
+      showStatus('success', `✅ "${newField.name}" added to version ${newField.version}`);
       setShowAddField(false);
       setNewField({ name: '', position: 1, length: 1, dataType: 'string', description: '', version: '2000' });
       await loadMatrix();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Errore';
-      showStatus('error', `Errore: ${msg}`);
+      const msg = e instanceof Error ? e.message : 'Error';
+      showStatus('error', `Error: ${msg}`);
     } finally {
       setSaving(false);
     }
@@ -328,14 +324,14 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
     setSaving(true);
     try {
       const result = await EuringAPI.deleteFieldFromVersion(confirmDelete.fieldName, confirmDelete.version);
-      if (!result.success) throw new Error(result.error || 'Errore');
-      showStatus('success', `✅ Campo "${confirmDelete.fieldName}" eliminato dalla versione ${confirmDelete.version}`);
+      if (!result.success) throw new Error(result.error || 'Error');
+      showStatus('success', `✅ "${confirmDelete.fieldName}" deleted from version ${confirmDelete.version}`);
       setConfirmDelete(null);
       setEditState(null);
       await loadMatrix();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Errore';
-      showStatus('error', `Errore: ${msg}`);
+      const msg = e instanceof Error ? e.message : 'Error';
+      showStatus('error', `Error: ${msg}`);
     } finally {
       savingRef.current = false;
       setSaving(false);
@@ -344,8 +340,8 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>Caricamento matrice...</div>;
-  if (!matrixData) return <div style={{ padding: '40px', color: 'red' }}>Errore nel caricamento dei dati.</div>;
+  if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>{t('editor.loading')}</div>;
+  if (!matrixData) return <div style={{ padding: '40px', color: 'red' }}>{t('editor.error')}</div>;
 
   const panelOpen = !!editState || showAddField;
 
@@ -355,9 +351,9 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
       {/* ── Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.3em' }}>Editor Definizioni Campo</h2>
+          <h2 style={{ margin: 0, fontSize: '1.3em' }}>{t('editor.title')}</h2>
           <p style={{ color: '#666', margin: '4px 0 0 0', fontSize: '0.85em' }}>
-            Clicca ✏️ su una proprietà nella matrice per modificarla
+            {t('editor.subtitle')}
           </p>
         </div>
         {canEdit && (
@@ -365,7 +361,7 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
             padding: '8px 16px', backgroundColor: '#28a745', color: 'white',
             border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold',
           }}>
-            + Nuovo campo
+            {t('editor.new_field')}
           </button>
         )}
       </div>
@@ -436,33 +432,33 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
               {/* Description */}
-              <FormField label="Descrizione">
+              <FormField label={t('editor.field.description')}>
                 <textarea value={editState.description} rows={3}
                   onChange={e => setEditState(p => p ? { ...p, description: e.target.value } : p)}
                   style={inputStyle} />
               </FormField>
 
               {/* Semantic meaning */}
-              <FormField label="Significato semantico">
+              <FormField label={t('editor.field.semantic_meaning')}>
                 <input value={editState.semanticMeaning}
                   onChange={e => setEditState(p => p ? { ...p, semanticMeaning: e.target.value } : p)}
                   style={inputStyle} />
               </FormField>
 
               {/* Canonical name */}
-              <FormField label="Nome canonico (cross-versione)">
-                <input value={editState.canonicalName} placeholder="es. geographic_location"
+              <FormField label={t('editor.field.canonical_name')}>
+                <input value={editState.canonicalName} placeholder={t('editor.field.canonical_placeholder')}
                   onChange={e => setEditState(p => p ? { ...p, canonicalName: e.target.value } : p)}
                   style={inputStyle} />
                 {relatedFields.length > 0 && (
                   <div style={{ marginTop: '5px', fontSize: '0.8em', color: '#0062cc', backgroundColor: '#e7f0ff', padding: '5px 8px', borderRadius: '4px' }}>
-                    Stesso campo: {relatedFields.map(f => `${f.name} (${f.ver})`).join(' • ')}
+                    {t('editor.field.same_field')} {relatedFields.map(f => `${f.name} (${f.ver})`).join(' • ')}
                   </div>
                 )}
               </FormField>
 
               {/* Semantic domain */}
-              <FormField label="Dominio semantico">
+              <FormField label={t('editor.field.semantic_domain')}>
                 <select value={editState.semanticDomain}
                   onChange={e => setEditState(p => p ? { ...p, semanticDomain: e.target.value } : p)}
                   style={inputStyle}>
@@ -471,22 +467,22 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
               </FormField>
 
               {/* Data type */}
-              <FormField label="Tipo dato">
+              <FormField label={t('editor.field.data_type')}>
                 <select value={editState.dataType}
                   onChange={e => setEditState(p => p ? { ...p, dataType: e.target.value } : p)}
                   style={inputStyle}>
-                  {DATA_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  {DATA_TYPES.map(dt => <option key={dt} value={dt}>{dt}</option>)}
                 </select>
               </FormField>
 
               {/* Position + length */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <FormField label={isPipeDelimited(editState.version) ? 'Indice campo (1 = primo)' : 'Posizione'}>
+                <FormField label={isPipeDelimited(editState.version) ? t('editor.field.field_index') : t('editor.field.position')}>
                   <input type="number" min={1} value={editState.position}
                     onChange={e => setEditState(p => p ? { ...p, position: Math.max(1, parseInt(e.target.value) || 1) } : p)}
                     style={inputStyle} />
                 </FormField>
-                <FormField label={isPipeDelimited(editState.version) ? 'Lunghezza max (car.)' : 'Lunghezza'}>
+                <FormField label={isPipeDelimited(editState.version) ? t('editor.field.max_length') : t('editor.field.length')}>
                   <input type="number" min={1} value={editState.length}
                     onChange={e => setEditState(p => p ? { ...p, length: Math.max(1, parseInt(e.target.value) || 1) } : p)}
                     style={inputStyle} />
@@ -495,37 +491,37 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
               {positionConflicts.length > 0 && (
                 <div style={{ padding: '8px 12px', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '6px', color: '#856404', fontSize: '0.85em' }}>
                   {isPipeDelimited(editState.version)
-                    ? `⚠ Indice ${editState.position} già usato da: ${positionConflicts.join(', ')}`
-                    : `⚠ Conflitto posizione con: ${positionConflicts.join(', ')}`}
+                    ? `⚠ Index ${editState.position} already used by: ${positionConflicts.join(', ')}`
+                    : `⚠ Position conflict with: ${positionConflicts.join(', ')}`}
                 </div>
               )}
               {editState && !isPipeDelimited(editState.version) && editState.length > 100 && (
                 <div style={{ padding: '8px 12px', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '6px', color: '#856404', fontSize: '0.85em' }}>
-                  ⚠ Lunghezza insolitamente grande ({editState.length} caratteri) — verifica che sia corretto
+                  {t('editor.warn.length_large_prefix')}{editState.length} {t('editor.warn.length_large_suffix')}
                 </div>
               )}
               {editState && !isPipeDelimited(editState.version) && (editState.position + editState.length - 1) > 300 && (
                 <div style={{ padding: '8px 12px', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '6px', color: '#856404', fontSize: '0.85em' }}>
-                  ⚠ Il campo supera la posizione 300 — verifica posizione e lunghezza
+                  {t('editor.warn.exceeds_300')}
                 </div>
               )}
 
               {/* Lookup values */}
-              <FormField label="Valori validi (codice → significato)">
+              <FormField label={t('editor.field.valid_values')}>
                 {!editState.lookupLoaded ? (
-                  <div style={{ color: '#666', fontSize: '0.85em', padding: '8px' }}>Caricamento valori...</div>
+                  <div style={{ color: '#666', fontSize: '0.85em', padding: '8px' }}>{t('editor.field.loading_values')}</div>
                 ) : (
                   <div>
                     {editState.lookupValues.map((lv, idx) => (
                       <div key={idx} style={{ display: 'flex', gap: '6px', marginBottom: '5px', alignItems: 'center' }}>
-                        <input value={lv.code} placeholder="Cod"
+                        <input value={lv.code} placeholder={t('editor.field.code_placeholder')}
                           onChange={e => {
                             const vals = [...editState.lookupValues];
                             vals[idx] = { ...vals[idx], code: e.target.value };
                             setEditState(p => p ? { ...p, lookupValues: vals } : p);
                           }}
                           style={{ ...inputStyle, width: '75px', flexShrink: 0 }} />
-                        <input value={lv.meaning} placeholder="Significato"
+                        <input value={lv.meaning} placeholder={t('editor.field.meaning_placeholder')}
                           onChange={e => {
                             const vals = [...editState.lookupValues];
                             vals[idx] = { ...vals[idx], meaning: e.target.value };
@@ -541,7 +537,7 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
                     <button
                       onClick={() => setEditState(p => p ? { ...p, lookupValues: [...p.lookupValues, { code: '', meaning: '' }] } : p)}
                       style={{ padding: '5px 12px', backgroundColor: '#e9ecef', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85em', marginTop: '4px' }}>
-                      + Aggiungi codice
+                      {t('editor.field.add_code')}
                     </button>
                   </div>
                 )}
@@ -558,10 +554,10 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
                   color: 'white', border: 'none', borderRadius: '6px',
                   cursor: saving || positionConflicts.length > 0 ? 'not-allowed' : 'pointer',
                 }}>
-                {saving ? 'Salvataggio...' : '💾 Salva tutto'}
+                {saving ? t('editor.saving') : t('editor.save_all')}
               </button>
               <button onClick={() => setEditState(null)} style={{ padding: '10px 16px', backgroundColor: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '6px', cursor: 'pointer' }}>
-                Annulla
+                {t('editor.cancel')}
               </button>
             </div>
 
@@ -571,16 +567,16 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
                 {confirmDelete?.fieldName === editState.fieldName && confirmDelete?.version === editState.version ? (
                   <div style={{ backgroundColor: '#f8d7da', border: '1px solid #f5c6cb', borderRadius: '6px', padding: '10px 12px' }}>
                     <p style={{ margin: '0 0 10px 0', fontSize: '0.85em', color: '#721c24', fontWeight: 'bold' }}>
-                      ⚠ Eliminare "{editState.fieldName}" dalla versione EURING {editState.version}?
+                      {t('editor.delete.confirm_prefix')}"{editState.fieldName}"{t('editor.delete.confirm_mid')} {editState.version}?
                     </p>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button onClick={handleDeleteField} disabled={saving}
                         style={{ padding: '6px 14px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85em' }}>
-                        {saving ? 'Eliminazione...' : 'Sì, elimina'}
+                        {saving ? t('editor.deleting') : t('editor.delete.yes')}
                       </button>
                       <button onClick={() => setConfirmDelete(null)}
                         style={{ padding: '6px 14px', backgroundColor: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '5px', cursor: 'pointer', fontSize: '0.85em' }}>
-                        Annulla
+                        {t('editor.cancel')}
                       </button>
                     </div>
                   </div>
@@ -588,7 +584,7 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
                   <button
                     onClick={() => setConfirmDelete({ fieldName: editState.fieldName, version: editState.version })}
                     style={{ width: '100%', padding: '7px', backgroundColor: 'transparent', color: '#dc3545', border: '1px solid #dc3545', borderRadius: '6px', cursor: 'pointer', fontSize: '0.82em' }}>
-                    🗑 Elimina questo campo dalla versione {editState.version}
+                    {t('editor.delete_btn')} {editState.version}
                   </button>
                 )}
               </div>
@@ -604,12 +600,12 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
             padding: '20px', position: 'sticky', top: '20px',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '2px solid #e9ecef' }}>
-              <span style={{ fontWeight: 'bold', fontSize: '1.05em' }}>+ Nuovo campo</span>
+              <span style={{ fontWeight: 'bold', fontSize: '1.05em' }}>{t('editor.new_field')}</span>
               <button onClick={() => setShowAddField(false)} style={{ background: '#6c757d', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', padding: '4px 10px' }}>✕</button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <FormField label="Versione">
+              <FormField label={t('editor.add_field.version')}>
                 <select value={newField.version}
                   onChange={e => setNewField(p => ({ ...p, version: e.target.value }))}
                   style={inputStyle}>
@@ -617,19 +613,19 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
                 </select>
               </FormField>
 
-              <FormField label="Nome campo">
-                <input value={newField.name} placeholder="es. wing_length_measured"
+              <FormField label={t('editor.add_field.name')}>
+                <input value={newField.name} placeholder={t('editor.add_field.name_placeholder')}
                   onChange={e => setNewField(p => ({ ...p, name: e.target.value }))}
                   style={inputStyle} />
               </FormField>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <FormField label={isPipeDelimited(newField.version) ? 'Indice campo (1 = primo)' : 'Posizione'}>
+                <FormField label={isPipeDelimited(newField.version) ? t('editor.field.field_index') : t('editor.field.position')}>
                   <input type="number" min={1} value={newField.position}
                     onChange={e => setNewField(p => ({ ...p, position: Math.max(1, parseInt(e.target.value) || 1) }))}
                     style={inputStyle} />
                 </FormField>
-                <FormField label={isPipeDelimited(newField.version) ? 'Lunghezza max (car.)' : 'Lunghezza'}>
+                <FormField label={isPipeDelimited(newField.version) ? t('editor.field.max_length') : t('editor.field.length')}>
                   <input type="number" min={1} value={newField.length}
                     onChange={e => setNewField(p => ({ ...p, length: Math.max(1, parseInt(e.target.value) || 1) }))}
                     style={inputStyle} />
@@ -639,38 +635,38 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
               {newFieldConflicts.length > 0 && (
                 <div style={{ padding: '8px 12px', backgroundColor: '#f8d7da', border: '1px solid #f5c6cb', borderRadius: '6px', color: '#721c24', fontSize: '0.85em' }}>
                   {isPipeDelimited(newField.version)
-                    ? `⚠ Indice ${newField.position} già usato da: ${newFieldConflicts.join(', ')}`
-                    : `⚠ Posizioni ${newField.position}–${newField.position + newField.length - 1} già occupate da: ${newFieldConflicts.join(', ')}`}
+                    ? `⚠ Index ${newField.position} already used by: ${newFieldConflicts.join(', ')}`
+                    : `⚠ Positions ${newField.position}–${newField.position + newField.length - 1} already occupied by: ${newFieldConflicts.join(', ')}`}
                 </div>
               )}
               {newFieldConflicts.length === 0 && newField.name && (
                 <div style={{ padding: '6px 12px', backgroundColor: '#d4edda', border: '1px solid #c3e6cb', borderRadius: '6px', color: '#155724', fontSize: '0.85em' }}>
                   {isPipeDelimited(newField.version)
-                    ? `✓ Indice ${newField.position} libero`
-                    : `✓ Posizioni ${newField.position}–${newField.position + newField.length - 1} libere`}
+                    ? `✓ Index ${newField.position} free`
+                    : `✓ Positions ${newField.position}–${newField.position + newField.length - 1} free`}
                 </div>
               )}
               {!isPipeDelimited(newField.version) && newField.length > 100 && (
                 <div style={{ padding: '8px 12px', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '6px', color: '#856404', fontSize: '0.85em' }}>
-                  ⚠ Lunghezza insolitamente grande ({newField.length} caratteri) — verifica che sia corretto
+                  {t('editor.warn.length_large_prefix')}{newField.length} {t('editor.warn.length_large_suffix')}
                 </div>
               )}
               {!isPipeDelimited(newField.version) && (newField.position + newField.length - 1) > 300 && (
                 <div style={{ padding: '8px 12px', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '6px', color: '#856404', fontSize: '0.85em' }}>
-                  ⚠ Il campo supera la posizione 300 — verifica posizione e lunghezza
+                  {t('editor.warn.exceeds_300')}
                 </div>
               )}
 
-              <FormField label="Tipo dato">
+              <FormField label={t('editor.field.data_type')}>
                 <select value={newField.dataType}
                   onChange={e => setNewField(p => ({ ...p, dataType: e.target.value }))}
                   style={inputStyle}>
-                  {DATA_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  {DATA_TYPES.map(dt => <option key={dt} value={dt}>{dt}</option>)}
                 </select>
               </FormField>
 
-              <FormField label="Descrizione">
-                <textarea value={newField.description} rows={2} placeholder="Descrizione del nuovo campo"
+              <FormField label={t('editor.field.description')}>
+                <textarea value={newField.description} rows={2} placeholder={t('editor.add_field.description_placeholder')}
                   onChange={e => setNewField(p => ({ ...p, description: e.target.value }))}
                   style={inputStyle} />
               </FormField>
@@ -685,10 +681,10 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
                   color: 'white', border: 'none', borderRadius: '6px',
                   cursor: saving || newFieldConflicts.length > 0 || !newField.name.trim() ? 'not-allowed' : 'pointer',
                 }}>
-                {saving ? 'Aggiunta...' : '+ Aggiungi campo'}
+                {saving ? t('editor.add_field.adding') : t('editor.add_field.submit')}
               </button>
               <button onClick={() => setShowAddField(false)} style={{ padding: '10px 16px', backgroundColor: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '6px', cursor: 'pointer' }}>
-                Annulla
+                {t('editor.cancel')}
               </button>
             </div>
           </div>
