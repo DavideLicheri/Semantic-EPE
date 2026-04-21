@@ -2,7 +2,7 @@
 export const itTranslations = {
   // App header
   'app.title': 'ECES',
-  'app.subtitle': 'Euring Codes Evolution System',
+  'app.subtitle': 'Sistema evolutivo dei Codici EURING',
   'app.loading': 'Caricamento...',
   
   // User menu
@@ -91,6 +91,10 @@ export const itTranslations = {
   'matrix.max.chars': 'Max:',
   'matrix.chars': 'car.',
   'matrix.position': 'Pos',
+  'matrix.field.fieldIndex': 'Indice campo',
+  'matrix.field.maxLength': 'Lunghezza max (car.)',
+  'matrix.max.fields': 'campi',
+  'matrix.max.pos_fields': 'pos / campi',
   
   // Domain Panel
   'domains.title': '🏷️ Domini Semantici',
@@ -337,7 +341,7 @@ export const itTranslations = {
   'domains.analysis.relationships': 'Relazioni Semantiche:',
 
   // Login additions
-  'login.title_full': 'Sistema Evoluzione Codici EURING',
+  'login.title_full': 'Sistema evolutivo dei Codici EURING',
   'login.institution': 'ISPRA - DG SINA',
   'login.username.label': 'Nome Utente',
   'login.username.placeholder': 'Nome utente',
@@ -379,7 +383,7 @@ export const itTranslations = {
 
   // Register component (detailed)
   'register.success.title': 'Registrazione Completata!',
-  'register.success.subtitle': 'ECES - Sistema Evoluzione Codici EURING',
+  'register.success.subtitle': 'ECES - Sistema evolutivo dei Codici EURING',
   'register.success.welcome': 'Benvenuto nel sistema ECES!',
   'register.success.completed': 'La tua registrazione è stata completata con successo.',
   'register.success.readonly': 'Hai accesso in sola lettura al sistema.',
