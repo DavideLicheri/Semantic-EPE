@@ -91,6 +91,10 @@ export const enTranslations = {
   'matrix.max.chars': 'Max:',
   'matrix.chars': 'chars',
   'matrix.position': 'Pos',
+  'matrix.field.fieldIndex': 'Field index',
+  'matrix.field.maxLength': 'Max length (chars)',
+  'matrix.max.fields': 'fields',
+  'matrix.max.pos_fields': 'pos / fields',
   
   // Domain Panel
   'domains.title': '🏷️ Semantic Domains',
