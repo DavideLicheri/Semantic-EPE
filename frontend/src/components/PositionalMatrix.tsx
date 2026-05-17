@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface FieldInfo {
   position: number;
@@ -19,7 +20,6 @@ interface FieldRow {
   versions: Record<string, FieldInfo | null>;
 }
 
-// Callback type for editing a specific property
 type EditPropertyCallback = (fieldName: string, version: string, property: string, currentValue: string) => void;
 
 interface PositionalMatrixProps {
@@ -29,8 +29,6 @@ interface PositionalMatrixProps {
   onEditProperty?: EditPropertyCallback;
 }
 
-// Versioni che usano formato pipe-delimited (campo separato da '|').
-// In queste versioni 'position' = indice del campo (1-based), 'length' non è applicabile.
 const PIPE_DELIMITED_VERSIONS = ['2020'];
 const isPipeDelimited = (v: string) => PIPE_DELIMITED_VERSIONS.includes(v);
 
@@ -45,9 +43,6 @@ const FIELD_COLORS = [
   '#c51162', '#00bfa5', '#dd2c00', '#aa00ff', '#64dd17',
 ];
 
-// Only store the identity of the selected field, not the data itself.
-// fieldInfo and color are derived from current props on each render,
-// so the panel survives data reloads after save.
 interface SelectedFieldKey {
   fieldName: string;
   version: string;
@@ -66,6 +61,7 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
   editMode,
   onEditProperty,
 }) => {
+  const { t } = useTranslation();
   const [hoveredField, setHoveredField] = useState<string | null>(null);
   const [showFieldNames, setShowFieldNames] = useState<boolean>(true);
   const [selectedFieldKey, setSelectedFieldKey] = useState<SelectedFieldKey | null>(null);
@@ -87,12 +83,10 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
       fields.sort((a, b) => a.fieldInfo.position - b.fieldInfo.position);
 
       const charMap: Array<{ charPos: number; fieldName: string; fieldInfo: FieldInfo; colorIndex: number } | null> = [];
-      
+
       for (const { fieldName, fieldInfo } of fields) {
         const colorIndex = fields.indexOf(fields.find(f => f.fieldName === fieldName)!) % FIELD_COLORS.length;
         if (isPipeDelimited(version)) {
-          // Pipe-delimited: ogni campo occupa 1 sola riga (il suo indice),
-          // la lunghezza è solo metadato sul contenuto, non sposta l'indice successivo.
           const idx = fieldInfo.position;
           while (charMap.length <= idx) charMap.push(null);
           charMap[idx] = { charPos: idx, fieldName, fieldInfo, colorIndex };
@@ -135,11 +129,9 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
   }, [fieldMatrix, selectedVersions]);
 
   const handleFieldSelect = (fieldName: string, version: string) => {
-    // Always update selection, don't toggle off
     setSelectedFieldKey({ fieldName, version });
   };
 
-  // Derive the full selectedField from current props data (survives reloads)
   const selectedField: SelectedField | null = useMemo(() => {
     if (!selectedFieldKey) return null;
     const { fieldName, version } = selectedFieldKey;
@@ -150,20 +142,30 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
     return { fieldName, version, fieldInfo: item.fieldInfo, color: item.color };
   }, [selectedFieldKey, legendData]);
 
-  // Build field connections between versions
-  // REMOVED: Arrow connections feature was abandoned by user
-
-
   if (selectedVersions.length === 0) {
-    return <div style={{ padding: '20px', color: '#666' }}>Seleziona almeno una versione.</div>;
+    return <div style={{ padding: '20px', color: '#666' }}>{t('matrix.select.empty')}</div>;
   }
 
   const { data, maxLength } = positionalData;
   const isSelected = (fn: string, v: string) => selectedField?.fieldName === fn && selectedField?.version === v;
 
+  // Max label suffix
+  const maxSuffix = selectedVersions.every(isPipeDelimited)
+    ? t('matrix.max.fields')
+    : selectedVersions.some(isPipeDelimited)
+    ? t('matrix.max.pos_fields')
+    : t('matrix.chars');
+
+  // Position header label
+  const posHeader = selectedVersions.every(isPipeDelimited)
+    ? '#'
+    : selectedVersions.some(isPipeDelimited)
+    ? 'Pos/#'
+    : t('matrix.position');
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Field Detail Panel - ALWAYS VISIBLE AT TOP */}
+      {/* Field Detail Panel */}
       <div style={{
         width: '100%',
         backgroundColor: selectedField ? '#fff' : '#f8f9fa',
@@ -176,7 +178,6 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
       }}>
         {selectedField ? (
           <>
-            {/* Header */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -187,47 +188,30 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span style={{
-                  display: 'inline-block',
-                  width: '20px',
-                  height: '20px',
-                  backgroundColor: selectedField.color,
-                  borderRadius: '4px',
+                  display: 'inline-block', width: '20px', height: '20px',
+                  backgroundColor: selectedField.color, borderRadius: '4px',
                 }} />
                 <span style={{ fontWeight: 'bold', fontSize: '1.1em', color: '#2c3e50' }}>{selectedField.fieldName}</span>
                 <span style={{
-                  display: 'inline-block',
-                  padding: '4px 12px',
-                  backgroundColor: '#e9ecef',
-                  borderRadius: '12px',
-                  fontSize: '0.85em',
-                  color: '#555',
+                  display: 'inline-block', padding: '4px 12px', backgroundColor: '#e9ecef',
+                  borderRadius: '12px', fontSize: '0.85em', color: '#555',
                 }}>EURING {selectedField.version}</span>
               </div>
               <button onClick={() => setSelectedFieldKey(null)} style={{
-                background: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '1em',
-                padding: '6px 12px',
-                fontWeight: '500',
-              }}>✕ Chiudi</button>
+                background: '#dc3545', color: 'white', border: 'none',
+                borderRadius: '6px', cursor: 'pointer', fontSize: '1em',
+                padding: '6px 12px', fontWeight: '500',
+              }}>{t('matrix.field.close')}</button>
             </div>
 
-            {/* Properties grid */}
             <FieldPropertiesGrid field={selectedField} editMode={editMode} onEditProperty={onEditProperty} />
           </>
         ) : (
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '80px',
-            color: '#6c757d',
-            fontSize: '1em',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            height: '80px', color: '#6c757d', fontSize: '1em',
           }}>
-            <span>👆 Clicca su un campo nella matrice per visualizzarne i dettagli</span>
+            <span>{t('matrix.field.click')}</span>
           </div>
         )}
       </div>
@@ -241,16 +225,16 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
         }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
             <input type="checkbox" checked={showFieldNames} onChange={(e) => setShowFieldNames(e.target.checked)} />
-            Mostra nomi campi
+            {t('matrix.show.names')}
           </label>
           <span style={{ color: '#666', fontSize: '0.9em' }}>
-            Max: {maxLength} {selectedVersions.every(isPipeDelimited) ? 'campi' : selectedVersions.some(isPipeDelimited) ? 'pos / campi' : 'car.'}
+            {t('matrix.max.chars')} {maxLength} {maxSuffix}
           </span>
           {selectedField && (
             <button onClick={() => setSelectedFieldKey(null)} style={{
               padding: '4px 10px', backgroundColor: '#dc3545', color: 'white',
               border: 'none', borderRadius: '4px', fontSize: '0.8em', cursor: 'pointer',
-            }}>✕ Chiudi dettagli</button>
+            }}>{t('matrix.field.closeDetails')}</button>
           )}
         </div>
 
@@ -264,7 +248,7 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
                   position: 'sticky', left: 0, zIndex: 10, fontSize: '0.8em', fontWeight: 'bold',
                   minWidth: '50px', textAlign: 'center',
                 }}>
-                  {selectedVersions.every(isPipeDelimited) ? '#' : selectedVersions.some(isPipeDelimited) ? 'Pos/#' : 'Pos'}
+                  {posHeader}
                 </th>
                 {selectedVersions.map((year, idx) => (
                   <React.Fragment key={year}>
@@ -273,7 +257,6 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
                       fontWeight: 'bold', textAlign: 'center', fontSize: '0.9em',
                       minWidth: showFieldNames ? '140px' : '40px',
                     }}>{year}</th>
-                    {/* Spacer column between versions (except after last) */}
                     {idx < selectedVersions.length - 1 && (
                       <th style={{
                         padding: '0', border: 'none', backgroundColor: 'transparent',
@@ -294,10 +277,9 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
                   }}>{charPos}</td>
                   {selectedVersions.map((year, idx) => {
                     const cell = data[year]?.[charPos];
-                    
+
                     return (
                       <React.Fragment key={year}>
-                        {/* Version column */}
                         {!cell ? (
                           <td style={{ padding: '2px', border: '1px solid #f0f0f0', backgroundColor: '#fafafa' }} />
                         ) : (
@@ -325,8 +307,7 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
                             {(isPipeDelimited(year) || cell.fieldInfo.position === charPos) && showFieldNames ? cell.fieldInfo.name : ''}
                           </td>
                         )}
-                        
-                        {/* Spacer column between versions (except after last) */}
+
                         {idx < selectedVersions.length - 1 && (
                           <td style={{
                             padding: '0', border: 'none', backgroundColor: 'transparent',
@@ -396,14 +377,15 @@ const FieldPropertiesGrid: React.FC<{
   editMode: boolean;
   onEditProperty?: EditPropertyCallback;
 }> = ({ field, editMode, onEditProperty }) => {
+  const { t } = useTranslation();
   const pipeDelimited = isPipeDelimited(field.version);
   const properties = [
-    { key: 'description', label: 'Descrizione', value: field.fieldInfo.description || '' },
-    { key: 'data_type', label: 'Tipo dato', value: field.fieldInfo.data_type || '' },
-    { key: 'length', label: pipeDelimited ? 'Lunghezza max (car.)' : 'Lunghezza', value: String(field.fieldInfo.length || '') },
-    { key: 'position', label: pipeDelimited ? 'Indice campo' : 'Posizione', value: String(field.fieldInfo.position || '') },
-    { key: 'semantic_domain', label: 'Dominio semantico', value: field.fieldInfo.semantic_domain || '' },
-    { key: 'valid_values', label: 'Valori validi', value: Array.isArray(field.fieldInfo.valid_values) ? field.fieldInfo.valid_values.join(', ') : '' },
+    { key: 'description',     label: t('matrix.field.description'),                                           value: field.fieldInfo.description || '' },
+    { key: 'data_type',       label: t('matrix.field.dataType'),                                              value: field.fieldInfo.data_type || '' },
+    { key: 'length',          label: pipeDelimited ? t('matrix.field.maxLength') : t('matrix.field.length'),  value: String(field.fieldInfo.length || '') },
+    { key: 'position',        label: pipeDelimited ? t('matrix.field.fieldIndex') : t('matrix.field.position'), value: String(field.fieldInfo.position || '') },
+    { key: 'semantic_domain', label: t('matrix.field.semanticDomain'),                                        value: field.fieldInfo.semantic_domain || '' },
+    { key: 'valid_values',    label: t('matrix.field.validValues'),                                           value: Array.isArray(field.fieldInfo.valid_values) ? field.fieldInfo.valid_values.join(', ') : '' },
   ];
 
   return (
@@ -426,11 +408,8 @@ const FieldPropertiesGrid: React.FC<{
             marginBottom: '6px',
           }}>
             <span style={{
-              fontSize: '0.75em',
-              color: '#6c757d',
-              fontWeight: '600',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
+              fontSize: '0.75em', color: '#6c757d', fontWeight: '600',
+              textTransform: 'uppercase', letterSpacing: '0.5px',
             }}>
               {prop.label}
             </span>
@@ -438,28 +417,20 @@ const FieldPropertiesGrid: React.FC<{
               <button
                 onClick={() => onEditProperty(field.fieldName, field.version, prop.key, prop.value)}
                 style={{
-                  background: 'none',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  padding: '2px 8px',
-                  fontSize: '0.75em',
-                  color: '#555',
+                  background: 'none', border: '1px solid #ccc', borderRadius: '4px',
+                  cursor: 'pointer', padding: '2px 8px', fontSize: '0.75em', color: '#555',
                 }}
-                title={`Modifica ${prop.label}`}
+                title={`Edit ${prop.label}`}
               >✏️</button>
             )}
           </div>
           <div style={{
-            fontSize: '0.9em',
-            color: '#2c3e50',
-            wordBreak: 'break-word',
-            fontWeight: '500',
+            fontSize: '0.9em', color: '#2c3e50', wordBreak: 'break-word', fontWeight: '500',
           }}>
             {prop.value || <span style={{ color: '#bbb', fontStyle: 'italic' }}>—</span>}
             {prop.key === 'valid_values' && field.fieldInfo.valid_values_count != null && field.fieldInfo.valid_values_count > 0 && (
               <span style={{ color: '#6c757d', fontSize: '0.85em', marginLeft: '8px' }}>
-                ({field.fieldInfo.valid_values_count} valori)
+                ({field.fieldInfo.valid_values_count} {t('matrix.field.values')})
               </span>
             )}
           </div>
@@ -468,9 +439,5 @@ const FieldPropertiesGrid: React.FC<{
     </div>
   );
 };
-
-
-// ConnectionsOverlay Component - REMOVED: Feature was abandoned by user
-
 
 export default PositionalMatrix;

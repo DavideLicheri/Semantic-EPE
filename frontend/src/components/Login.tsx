@@ -1,8 +1,7 @@
-/**
- * Login Component for ECES
- */
 import React, { useState } from 'react';
 import { authService, LoginRequest } from '../services/auth';
+import { useTranslation } from '../hooks/useTranslation';
+import { i18n } from '../i18n';
 import './Login.css';
 
 interface LoginProps {
@@ -11,6 +10,7 @@ interface LoginProps {
 }
 
 export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onShowRegister }) => {
+  const { t } = useTranslation();
   const [credentials, setCredentials] = useState<LoginRequest>({
     username: '',
     password: ''
@@ -27,7 +27,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onShowRegister }) 
       await authService.login(credentials);
       onLoginSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Credenziali non valide');
+      setError(err instanceof Error ? err.message : t('login.error.invalid_credentials'));
     } finally {
       setLoading(false);
     }
@@ -43,20 +43,29 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onShowRegister }) 
   return (
     <div className="login-container">
       <div className="login-card">
+        <div className="login-lang-toggle">
+          <button
+            className="lang-toggle"
+            onClick={() => i18n.setLanguage(i18n.getLanguage() === 'en' ? 'it' : 'en')}
+          >
+            {i18n.getLanguage() === 'en' ? t('lang.switch_to_it') : t('lang.switch_to_en')}
+          </button>
+        </div>
+
         <div className="login-header">
-          <img 
-            src="/images/epeLogo.jpg" 
-            alt="EPE Logo" 
+          <img
+            src="/images/epeLogo.jpg"
+            alt="EPE Logo"
             className="login-logo"
           />
           <h1>ECES</h1>
-          <h2>Sistema Evoluzione Codici EURING</h2>
-          <p className="login-subtitle">ISPRA - DG SINA</p>
+          <h2>{t('login.title_full')}</h2>
+          <p className="login-subtitle">{t('login.institution')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label htmlFor="username">Nome Utente</label>
+            <label htmlFor="username">{t('login.username.label')}</label>
             <input
               type="text"
               id="username"
@@ -65,12 +74,12 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onShowRegister }) 
               onChange={handleChange}
               required
               disabled={loading}
-              placeholder="Nome utente"
+              placeholder={t('login.username.placeholder')}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">{t('login.password.label')}</label>
             <input
               type="password"
               id="password"
@@ -79,7 +88,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onShowRegister }) 
               onChange={handleChange}
               required
               disabled={loading}
-              placeholder="Password"
+              placeholder={t('login.password.placeholder')}
             />
           </div>
 
@@ -89,35 +98,35 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onShowRegister }) 
             </div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="login-button"
             disabled={loading || !credentials.username || !credentials.password}
           >
             {loading ? (
               <>
                 <span className="spinner"></span>
-                Accesso in corso...
+                {t('login.loading')}
               </>
             ) : (
-              'Accedi'
+              t('login.button')
             )}
           </button>
         </form>
 
         <div className="login-footer">
-          <p>🔒 Accesso riservato al personale ISPRA</p>
-          <p>Sistema interno - Rete ISPRA</p>
-          
+          <p>{t('login.footer.restricted')}</p>
+          <p>{t('login.footer.internal')}</p>
+
           {onShowRegister && (
             <div className="register-link">
-              <p>Non hai un account?</p>
-              <button 
+              <p>{t('login.register.text')}</p>
+              <button
                 onClick={onShowRegister}
                 className="register-button-link"
                 disabled={loading}
               >
-                Registrati
+                {t('login.register.link')}
               </button>
             </div>
           )}

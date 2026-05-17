@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DomainEvolutionEntry } from '../types/euring-types';
 import EuringAPI from '../services/api';
+import { useTranslation } from '../hooks/useTranslation';
 import './DomainComparison.css';
 
 interface DomainComparisonProps {
@@ -30,6 +31,7 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
   evolutionEntries,
   onClose
 }) => {
+  const { t } = useTranslation();
   const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'fields' | 'evolution'>('overview');
@@ -40,21 +42,20 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
 
   const generateComparisonData = () => {
     setLoading(true);
-    
+
     try {
       const v1Entry = evolutionEntries.find(e => e.version === version1);
       const v2Entry = evolutionEntries.find(e => e.version === version2);
-      
+
       if (!v1Entry || !v2Entry) {
         throw new Error('Version data not found');
       }
 
-      // Calculate field differences
       const v1Fields = new Set([
         ...v1Entry.fields_added,
         ...v1Entry.fields_modified
       ]);
-      
+
       const v2Fields = new Set([
         ...v2Entry.fields_added,
         ...v2Entry.fields_modified
@@ -63,17 +64,15 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
       const fieldsOnlyInV1 = Array.from(v1Fields).filter(field => !v2Fields.has(field));
       const fieldsOnlyInV2 = Array.from(v2Fields).filter(field => !v1Fields.has(field));
       const commonFields = Array.from(v1Fields).filter(field => v2Fields.has(field));
-      
-      // Find modified fields between versions
-      const modifiedFields = commonFields.filter(field => 
+
+      const modifiedFields = commonFields.filter(field =>
         v1Entry.fields_modified.includes(field) || v2Entry.fields_modified.includes(field)
       );
 
-      // Get evolution path between versions
       const sortedEntries = [...evolutionEntries].sort((a, b) => a.year - b.year);
       const v1Index = sortedEntries.findIndex(e => e.version === version1);
       const v2Index = sortedEntries.findIndex(e => e.version === version2);
-      
+
       const startIndex = Math.min(v1Index, v2Index);
       const endIndex = Math.max(v1Index, v2Index);
       const evolutionPath = sortedEntries.slice(startIndex, endIndex + 1);
@@ -98,23 +97,23 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
 
   const calculateCompatibilityScore = () => {
     if (!comparisonData) return 0;
-    
+
     const { differences } = comparisonData;
-    const totalFields = differences.fieldsOnlyInV1.length + 
-                       differences.fieldsOnlyInV2.length + 
+    const totalFields = differences.fieldsOnlyInV1.length +
+                       differences.fieldsOnlyInV2.length +
                        differences.commonFields.length;
-    
+
     if (totalFields === 0) return 100;
-    
+
     const compatibleFields = differences.commonFields.length;
     return Math.round((compatibleFields / totalFields) * 100);
   };
 
   const getCompatibilityLevel = (score: number) => {
-    if (score >= 90) return { level: 'Eccellente', color: '#27ae60', icon: '🟢' };
-    if (score >= 70) return { level: 'Buona', color: '#f39c12', icon: '🟡' };
-    if (score >= 50) return { level: 'Parziale', color: '#e67e22', icon: '🟠' };
-    return { level: 'Limitata', color: '#e74c3c', icon: '🔴' };
+    if (score >= 90) return { level: t('comparison.level.excellent'), color: '#27ae60', icon: '🟢' };
+    if (score >= 70) return { level: t('comparison.level.good'), color: '#f39c12', icon: '🟡' };
+    if (score >= 50) return { level: t('comparison.level.partial'), color: '#e67e22', icon: '🟠' };
+    return { level: t('comparison.level.limited'), color: '#e74c3c', icon: '🔴' };
   };
 
   const getYearDifference = () => {
@@ -126,12 +125,12 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
     return (
       <div className="domain-comparison">
         <div className="comparison-header">
-          <h3>🔍 Confronto Versioni</h3>
+          <h3>{t('comparison.title')}</h3>
           <button className="close-button" onClick={onClose}>✕</button>
         </div>
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p>Generazione confronto...</p>
+          <p>{t('comparison.loading')}</p>
         </div>
       </div>
     );
@@ -141,11 +140,11 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
     return (
       <div className="domain-comparison">
         <div className="comparison-header">
-          <h3>🔍 Confronto Versioni</h3>
+          <h3>{t('comparison.title')}</h3>
           <button className="close-button" onClick={onClose}>✕</button>
         </div>
         <div className="error-container">
-          <p>❌ Errore nel caricamento dei dati di confronto</p>
+          <p>{t('comparison.error')}</p>
         </div>
       </div>
     );
@@ -159,7 +158,7 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
     <div className="domain-comparison">
       <div className="comparison-header">
         <div className="comparison-title">
-          <h3>🔍 Confronto Versioni - {EuringAPI.getDomainDisplayName(domain)}</h3>
+          <h3>{t('comparison.title')} - {EuringAPI.getDomainDisplayName(domain)}</h3>
           <div className="version-comparison-title">
             <span className="version-badge v1">{EuringAPI.getVersionDisplayName(version1)}</span>
             <span className="vs-indicator">vs</span>
@@ -174,19 +173,19 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
           className={`nav-tab ${activeTab === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveTab('overview')}
         >
-          📊 Panoramica
+          {t('comparison.tab.overview')}
         </button>
         <button
           className={`nav-tab ${activeTab === 'fields' ? 'active' : ''}`}
           onClick={() => setActiveTab('fields')}
         >
-          📋 Campi
+          {t('comparison.tab.fields')}
         </button>
         <button
           className={`nav-tab ${activeTab === 'evolution' ? 'active' : ''}`}
           onClick={() => setActiveTab('evolution')}
         >
-          📈 Percorso Evolutivo
+          {t('comparison.tab.evolution')}
         </button>
       </div>
 
@@ -197,7 +196,7 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
               <div className="compatibility-score">
                 <div className="score-circle" style={{ borderColor: compatibility.color }}>
                   <span className="score-number">{compatibilityScore}%</span>
-                  <span className="score-label">Compatibilità</span>
+                  <span className="score-label">{t('comparison.score_label')}</span>
                 </div>
                 <div className="compatibility-info">
                   <div className="compatibility-level">
@@ -208,7 +207,7 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
                   </div>
                   <div className="time-difference">
                     <span className="time-icon">⏰</span>
-                    <span className="time-text">{yearDiff} anni di differenza</span>
+                    <span className="time-text">{yearDiff} {t('comparison.years_diff')}</span>
                   </div>
                 </div>
               </div>
@@ -218,37 +217,37 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
               <div className="stat-card">
                 <div className="stat-header">
                   <span className="stat-icon">🔗</span>
-                  <h4>Campi Comuni</h4>
+                  <h4>{t('comparison.common_fields')}</h4>
                 </div>
                 <div className="stat-value">{comparisonData.differences.commonFields.length}</div>
-                <div className="stat-description">Campi presenti in entrambe le versioni</div>
+                <div className="stat-description">{t('comparison.fields_in_both')}</div>
               </div>
 
               <div className="stat-card">
                 <div className="stat-header">
                   <span className="stat-icon">➕</span>
-                  <h4>Solo in {EuringAPI.getVersionDisplayName(version2)}</h4>
+                  <h4>{t('comparison.only_in')} {EuringAPI.getVersionDisplayName(version2)}</h4>
                 </div>
                 <div className="stat-value">{comparisonData.differences.fieldsOnlyInV2.length}</div>
-                <div className="stat-description">Campi aggiunti nella versione più recente</div>
+                <div className="stat-description">{t('comparison.fields_added_recent')}</div>
               </div>
 
               <div className="stat-card">
                 <div className="stat-header">
                   <span className="stat-icon">➖</span>
-                  <h4>Solo in {EuringAPI.getVersionDisplayName(version1)}</h4>
+                  <h4>{t('comparison.only_in')} {EuringAPI.getVersionDisplayName(version1)}</h4>
                 </div>
                 <div className="stat-value">{comparisonData.differences.fieldsOnlyInV1.length}</div>
-                <div className="stat-description">Campi rimossi nella versione più recente</div>
+                <div className="stat-description">{t('comparison.fields_removed_recent')}</div>
               </div>
 
               <div className="stat-card">
                 <div className="stat-header">
                   <span className="stat-icon">🔄</span>
-                  <h4>Campi Modificati</h4>
+                  <h4>{t('comparison.modified_fields')}</h4>
                 </div>
                 <div className="stat-value">{comparisonData.differences.modifiedFields.length}</div>
-                <div className="stat-description">Campi con modifiche tra le versioni</div>
+                <div className="stat-description">{t('comparison.fields_changed')}</div>
               </div>
             </div>
 
@@ -259,15 +258,15 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
                 <div className="version-changes">
                   <div className="change-stat">
                     <span className="change-count">{comparisonData.version1.fields_added.length}</span>
-                    <span className="change-label">Aggiunti</span>
+                    <span className="change-label">{t('comparison.added')}</span>
                   </div>
                   <div className="change-stat">
                     <span className="change-count">{comparisonData.version1.fields_removed.length}</span>
-                    <span className="change-label">Rimossi</span>
+                    <span className="change-label">{t('comparison.removed')}</span>
                   </div>
                   <div className="change-stat">
                     <span className="change-count">{comparisonData.version1.fields_modified.length}</span>
-                    <span className="change-label">Modificati</span>
+                    <span className="change-label">{t('comparison.modified')}</span>
                   </div>
                 </div>
               </div>
@@ -278,15 +277,15 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
                 <div className="version-changes">
                   <div className="change-stat">
                     <span className="change-count">{comparisonData.version2.fields_added.length}</span>
-                    <span className="change-label">Aggiunti</span>
+                    <span className="change-label">{t('comparison.added')}</span>
                   </div>
                   <div className="change-stat">
                     <span className="change-count">{comparisonData.version2.fields_removed.length}</span>
-                    <span className="change-label">Rimossi</span>
+                    <span className="change-label">{t('comparison.removed')}</span>
                   </div>
                   <div className="change-stat">
                     <span className="change-count">{comparisonData.version2.fields_modified.length}</span>
-                    <span className="change-label">Modificati</span>
+                    <span className="change-label">{t('comparison.modified')}</span>
                   </div>
                 </div>
               </div>
@@ -300,7 +299,7 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
               <div className="field-group common">
                 <div className="field-group-header">
                   <span className="field-icon">🔗</span>
-                  <h4>Campi Comuni ({comparisonData.differences.commonFields.length})</h4>
+                  <h4>{t('comparison.common_fields')} ({comparisonData.differences.commonFields.length})</h4>
                 </div>
                 <div className="field-list">
                   {comparisonData.differences.commonFields.map(field => (
@@ -314,7 +313,7 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
               <div className="field-group added">
                 <div className="field-group-header">
                   <span className="field-icon">➕</span>
-                  <h4>Solo in {EuringAPI.getVersionDisplayName(version2)} ({comparisonData.differences.fieldsOnlyInV2.length})</h4>
+                  <h4>{t('comparison.only_in')} {EuringAPI.getVersionDisplayName(version2)} ({comparisonData.differences.fieldsOnlyInV2.length})</h4>
                 </div>
                 <div className="field-list">
                   {comparisonData.differences.fieldsOnlyInV2.map(field => (
@@ -328,7 +327,7 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
               <div className="field-group removed">
                 <div className="field-group-header">
                   <span className="field-icon">➖</span>
-                  <h4>Solo in {EuringAPI.getVersionDisplayName(version1)} ({comparisonData.differences.fieldsOnlyInV1.length})</h4>
+                  <h4>{t('comparison.only_in')} {EuringAPI.getVersionDisplayName(version1)} ({comparisonData.differences.fieldsOnlyInV1.length})</h4>
                 </div>
                 <div className="field-list">
                   {comparisonData.differences.fieldsOnlyInV1.map(field => (
@@ -342,7 +341,7 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
               <div className="field-group modified">
                 <div className="field-group-header">
                   <span className="field-icon">🔄</span>
-                  <h4>Campi Modificati ({comparisonData.differences.modifiedFields.length})</h4>
+                  <h4>{t('comparison.modified_fields')} ({comparisonData.differences.modifiedFields.length})</h4>
                 </div>
                 <div className="field-list">
                   {comparisonData.differences.modifiedFields.map(field => (
@@ -357,10 +356,10 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
         {activeTab === 'evolution' && (
           <div className="evolution-tab">
             <div className="evolution-path-header">
-              <h4>📈 Percorso Evolutivo</h4>
-              <p>Cambiamenti tra {EuringAPI.getVersionDisplayName(version1)} e {EuringAPI.getVersionDisplayName(version2)}</p>
+              <h4>{t('comparison.evolution_path')}</h4>
+              <p>{t('comparison.between')} {EuringAPI.getVersionDisplayName(version1)} {t('comparison.and')} {EuringAPI.getVersionDisplayName(version2)}</p>
             </div>
-            
+
             <div className="evolution-path">
               {comparisonData.evolutionPath.map((entry, index) => (
                 <div key={entry.version} className="evolution-step">
@@ -370,31 +369,31 @@ const DomainComparison: React.FC<DomainComparisonProps> = ({
                   <div className="step-content">
                     <h5>{EuringAPI.getVersionDisplayName(entry.version)}</h5>
                     <p>{entry.changes_summary}</p>
-                    
+
                     {(entry.fields_added.length > 0 || entry.fields_removed.length > 0 || entry.fields_modified.length > 0) && (
                       <div className="step-changes">
                         {entry.fields_added.length > 0 && (
                           <div className="step-change-group">
                             <span className="change-type added">+{entry.fields_added.length}</span>
-                            <span className="change-description">campi aggiunti</span>
+                            <span className="change-description">{t('comparison.fields_added_label')}</span>
                           </div>
                         )}
                         {entry.fields_removed.length > 0 && (
                           <div className="step-change-group">
                             <span className="change-type removed">-{entry.fields_removed.length}</span>
-                            <span className="change-description">campi rimossi</span>
+                            <span className="change-description">{t('comparison.fields_removed_label')}</span>
                           </div>
                         )}
                         {entry.fields_modified.length > 0 && (
                           <div className="step-change-group">
                             <span className="change-type modified">~{entry.fields_modified.length}</span>
-                            <span className="change-description">campi modificati</span>
+                            <span className="change-description">{t('comparison.fields_modified_label')}</span>
                           </div>
                         )}
                       </div>
                     )}
                   </div>
-                  
+
                   {index < comparisonData.evolutionPath.length - 1 && (
                     <div className="evolution-arrow">↓</div>
                   )}

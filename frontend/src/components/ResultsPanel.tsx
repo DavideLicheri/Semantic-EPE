@@ -1,20 +1,10 @@
 import { useState } from 'react';
+import { useTranslation } from '../hooks/useTranslation';
 import './ResultsPanel.css';
 
-// interface ResultsPanelProps {
-//   results: any[];
-//   type: 'recognition' | 'conversion';
-//   onExport?: (format: 'json' | 'csv' | 'txt') => void;
-// }
-
 const ResultsPanel = ({ results, type }: { results: any[], type: 'recognition' | 'conversion' }) => {
+  const { t } = useTranslation();
   const [exportFormat, setExportFormat] = useState<'json' | 'csv' | 'txt'>('json');
-
-  // const handleExport = () => {
-  //   if (onExport) {
-  //     onExport(exportFormat);
-  //   }
-  // };
 
   const downloadResults = (format: 'json' | 'csv' | 'txt') => {
     let content = '';
@@ -27,17 +17,17 @@ const ResultsPanel = ({ results, type }: { results: any[], type: 'recognition' |
         filename = `euring_${type}_results.json`;
         mimeType = 'application/json';
         break;
-      
+
       case 'csv':
         if (type === 'recognition') {
           const headers = 'Index,Original String,Version,Confidence,Length,Processing Time\n';
-          const rows = results.map((result, index) => 
+          const rows = results.map((result, index) =>
             `${index + 1},"${result.original_string}","${result.version || 'N/A'}",${result.confidence || 0},${result.length || 0},${result.processing_time_ms || 0}`
           ).join('\n');
           content = headers + rows;
         } else {
           const headers = 'Index,Original String,Converted String,Source Version,Target Version,Processing Time\n';
-          const rows = results.map((result, index) => 
+          const rows = results.map((result, index) =>
             `${index + 1},"${result.original_string}","${result.converted_string || 'N/A'}","${result.source_version}","${result.target_version}",${result.processing_time_ms || 0}`
           ).join('\n');
           content = headers + rows;
@@ -45,7 +35,7 @@ const ResultsPanel = ({ results, type }: { results: any[], type: 'recognition' |
         filename = `euring_${type}_results.csv`;
         mimeType = 'text/csv';
         break;
-      
+
       case 'txt':
         content = results.map((result, index) => {
           if (type === 'recognition') {
@@ -95,12 +85,12 @@ ${result.success ? 'Status: Success' : 'Status: Failed - ' + (result.error || 'U
     <div className="results-panel">
       <div className="results-header">
         <h3>
-          {type === 'recognition' ? '🔍 Risultati Riconoscimento' : '🔄 Risultati Conversione'}
+          {type === 'recognition' ? t('results.title.recognition') : t('results.title.conversion')}
         </h3>
-        
+
         <div className="export-controls">
-          <select 
-            value={exportFormat} 
+          <select
+            value={exportFormat}
             onChange={(e) => setExportFormat(e.target.value as 'json' | 'csv' | 'txt')}
             className="format-select"
           >
@@ -108,40 +98,40 @@ ${result.success ? 'Status: Success' : 'Status: Failed - ' + (result.error || 'U
             <option value="csv">CSV</option>
             <option value="txt">TXT</option>
           </select>
-          
-          <button 
+
+          <button
             onClick={() => downloadResults(exportFormat)}
             className="export-btn"
           >
-            📥 Esporta {exportFormat.toUpperCase()}
+            📥 {t('results.export_btn')} {exportFormat.toUpperCase()}
           </button>
         </div>
       </div>
 
       <div className="results-stats">
         <div className="stat-item">
-          <span className="stat-label">Totale:</span>
+          <span className="stat-label">{t('results.total')}</span>
           <span className="stat-value">{results.length}</span>
         </div>
-        
+
         <div className="stat-item">
-          <span className="stat-label">Successi:</span>
+          <span className="stat-label">{t('results.success')}</span>
           <span className="stat-value success">{results.filter(r => r.success).length}</span>
         </div>
-        
+
         <div className="stat-item">
-          <span className="stat-label">Errori:</span>
+          <span className="stat-label">{t('results.errors')}</span>
           <span className="stat-value error">{results.filter(r => !r.success).length}</span>
         </div>
-        
+
         {type === 'recognition' && (
           <div className="stat-item">
-            <span className="stat-label">Confidenza Media:</span>
+            <span className="stat-label">{t('results.avg_confidence')}</span>
             <span className="stat-value">
               {Math.round(
                 results
                   .filter(r => r.success && r.confidence)
-                  .reduce((sum, r) => sum + r.confidence, 0) / 
+                  .reduce((sum, r) => sum + r.confidence, 0) /
                 results.filter(r => r.success && r.confidence).length * 100
               ) || 0}%
             </span>
