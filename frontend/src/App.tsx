@@ -11,6 +11,7 @@ import { Register } from './components/Register'
 import { UserManagement } from './components/UserManagement'
 import { UserProfile } from './components/UserProfile'
 import Analytics from './components/Analytics'
+import ISPRAQuery from './components/ISPRAQuery'
 import { authService, User } from './services/auth'
 import { useTranslation } from './hooks/useTranslation'
 import epeLogo from './assets/images/epeLogo.jpg'
@@ -18,7 +19,7 @@ import './App.css'
 
 function App() {
   const { t } = useTranslation()
-  const [activeTab, setActiveTab] = useState<'recognize' | 'convert' | 'domains' | 'navigator' | 'matrix' | 'editor' | 'users' | 'analytics'>('recognize')
+  const [activeTab, setActiveTab] = useState<'recognize' | 'convert' | 'domains' | 'navigator' | 'matrix' | 'editor' | 'users' | 'analytics' | 'ispra'>('recognize')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -139,6 +140,12 @@ function App() {
         >
           {t('nav.domains')}
         </button>
+        <button
+          className={`tab-button ${activeTab === 'ispra' ? 'active' : ''}`}
+          onClick={() => setActiveTab('ispra')}
+        >
+          EPE ISPRA
+        </button>
         {(currentUser?.role === 'matrix_editor' || currentUser?.role === 'super_admin') && (
           <button
             className={`tab-button ${activeTab === 'editor' ? 'active' : ''}`}
@@ -182,6 +189,8 @@ function App() {
           <UserManagement currentUser={currentUser} />
         ) : activeTab === 'analytics' ? (
           <Analytics />
+        ) : activeTab === 'ispra' ? (
+          <ISPRAQuery />
         ) : (
           <DomainPanel />
         )}

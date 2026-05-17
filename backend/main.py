@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from app.api.euring_api import router as euring_router
 from app.api.auth_api import router as auth_router
 from app.api.analytics_api import router as analytics_router
+from app.api.ispra_api import router as ispra_router
 
 
 @asynccontextmanager
@@ -50,6 +51,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(euring_router)
 app.include_router(analytics_router)
+app.include_router(ispra_router)
 
 
 @app.get("/")
