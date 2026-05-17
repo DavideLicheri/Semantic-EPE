@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import EuringAPI from '../services/api';
 import PositionalMatrix from './PositionalMatrix';
+import { useTranslation } from '../hooks/useTranslation';
 import './EuringMatrix.css';
 
 interface VersionMetadata {
@@ -53,6 +54,7 @@ interface EuringMatrixProps {
 }
 
 const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
+  const { t } = useTranslation();
   const [matrixData, setMatrixData] = useState<MatrixData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -95,8 +97,8 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
   }, [showEditModal, editValue, modalEditData]);
 
   const toggleVersion = (year: string) => {
-    setSelectedVersions(prev => 
-      prev.includes(year) 
+    setSelectedVersions(prev =>
+      prev.includes(year)
         ? prev.filter(v => v !== year)
         : [...prev, year].sort()
     );
@@ -105,7 +107,7 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
   const getVersionColor = (year: string): string => {
     const colors: Record<string, string> = {
       '1966': '#e74c3c',
-      '1979': '#f39c12', 
+      '1979': '#f39c12',
       '2000': '#3498db',
       '2020': '#27ae60'
     };
@@ -118,22 +120,18 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
 
   const shouldShowField = (fieldRow: FieldRow): boolean => {
     if (showEmptyFields) return true;
-    
-    // Mostra campo se esiste in almeno una versione selezionata
     return selectedVersions.some(version => getFieldValue(fieldRow, version) !== null);
   };
 
   const filteredFields = useMemo(() => {
     if (!matrixData) return [];
-    
     return matrixData.field_matrix.filter(shouldShowField);
   }, [matrixData, selectedVersions, showEmptyFields]);
 
   const startEditing = async (fieldName: string, version: string, property: string, currentValue: string) => {
-    // Trova le informazioni del campo
     const fieldRow = matrixData?.field_matrix.find(f => f.field_name === fieldName);
     const fieldInfo = fieldRow?.versions[version] || null;
-    
+
     setModalEditData({
       fieldName,
       version,
@@ -142,14 +140,13 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
       fieldInfo
     });
     setShowEditModal(true);
-    
-    // For valid_values, load full data from lookup table API
+
     if (property === 'valid_values') {
-      setEditValue(''); // Clear while loading
+      setEditValue('');
       try {
         const response = await EuringAPI.getFieldLookupTable(fieldName, version);
         if (response.success && response.lookup_table && response.lookup_table.values) {
-          const lines = response.lookup_table.values.map((item: any) => 
+          const lines = response.lookup_table.values.map((item: any) =>
             `${item.code}:${item.meaning}`
           );
           setEditValue(lines.join('\n'));
@@ -158,7 +155,6 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
         }
       } catch (error) {
         console.error('Error loading lookup table:', error);
-        // Fallback: use valid_values codes from field info
         if (fieldInfo?.valid_values && fieldInfo.valid_values.length > 0) {
           setEditValue(fieldInfo.valid_values.join('\n'));
         } else if (currentValue !== '__LOADING__') {
@@ -179,6 +175,7 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
     editMode: boolean;
     onEdit: () => void | Promise<void>;
   }> = ({ values, valuesCount, editMode, onEdit }) => {
+    const { t } = useTranslation();
     const totalCount = valuesCount || values.length;
 
     const handleEdit = async () => {
@@ -188,8 +185,8 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
     };
 
     return (
-      <div 
-        style={{ 
+      <div
+        style={{
           color: '#17a2b8',
           cursor: editMode ? 'pointer' : 'default',
           padding: '2px',
@@ -199,15 +196,15 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
           fontFamily: 'monospace'
         }}
         onClick={handleEdit}
-        title={editMode ? 'Clicca per modificare i valori' : `${totalCount} valori definiti`}
+        title={editMode ? t('euring.values.click_edit') : `${totalCount} ${t('euring.values.count_defined')}`}
       >
         {totalCount > 0 ? (
           <>
-            📋 {totalCount} {'valori definiti'}
+            📋 {totalCount} {t('euring.values.count_defined')}
             {editMode && <span style={{ marginLeft: '4px', color: '#17a2b8' }}>✏️</span>}
           </>
         ) : (
-          <span style={{ color: '#999' }}>{'Nessun valore'}</span>
+          <span style={{ color: '#999' }}>{t('euring.values.none')}</span>
         )}
       </div>
     );
@@ -215,45 +212,40 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
 
   const saveEdit = async () => {
     if (!modalEditData) return;
-    
-    // Validazione frontend per posizione
+
     if (modalEditData.property === 'position') {
       const positionValue = parseInt(editValue);
       if (isNaN(positionValue) || positionValue < 0) {
-        setSaveStatus({type: 'error', message: 'Posizione non valida'});
+        setSaveStatus({type: 'error', message: t('euring.validation.invalid_pos')});
         setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
         return;
       }
     }
-    
-    // Validazione frontend per lunghezza
+
     if (modalEditData.property === 'length') {
       const lengthValue = parseInt(editValue);
       if (isNaN(lengthValue) || lengthValue < 1) {
-        setSaveStatus({type: 'error', message: 'Lunghezza non valida'});
+        setSaveStatus({type: 'error', message: t('euring.validation.invalid_len')});
         setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
         return;
       }
     }
-    
+
     try {
       console.log('Saving edit:', modalEditData, editValue);
-      
-      // Special handling for valid_values - use lookup table API and don't close modals
+
       if (modalEditData.property === 'valid_values') {
         await handleValidValuesUpdate();
-        return; // Exit completely for valid_values
+        return;
       }
-      
-      // Regular field update for non-valid_values properties
+
       await handleRegularFieldUpdate();
-      
+
     } catch (error) {
-      setSaveStatus({type: 'error', message: `${'Errore di connessione:'} ${error}`});
+      setSaveStatus({type: 'error', message: `${t('euring.save.connection_error')} ${error}`});
       setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
       console.error('Error saving edit:', error);
-      
-      // Close modal on error for regular fields, but not for valid_values
+
       if (modalEditData.property !== 'valid_values') {
         setShowEditModal(false);
         setModalEditData(null);
@@ -263,10 +255,9 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
   };
 
   const handleValidValuesUpdate = async () => {
-    // Parse the input - support CODE:DESCRIPTION format (one per line)
     const lines = editValue.split('\n').map(line => line.trim()).filter(line => line.length > 0);
     const values: Array<{code: string, meaning: string}> = [];
-    
+
     for (const line of lines) {
       if (line.includes(':')) {
         const colonIndex = line.indexOf(':');
@@ -276,45 +267,40 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
           values.push({ code, meaning });
         }
       } else {
-        // Line without colon, treat as code only
         const code = line.trim();
         if (code) {
           values.push({ code, meaning: code });
         }
       }
     }
-    
+
     if (values.length === 0) {
-      setSaveStatus({type: 'error', message: 'Nessun valore inserito'});
+      setSaveStatus({type: 'error', message: t('euring.validation.no_values')});
       setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
       return;
     }
-    
-    // Create lookup data structure
+
     const lookupData = {
       name: `${modalEditData!.fieldName.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} Values`,
       description: `Valid values for ${modalEditData!.fieldName}`,
       values: values
     };
-    
+
     try {
-      // Call lookup table update API
       const lookupResult = await EuringAPI.updateFieldLookupTable(
         modalEditData!.fieldName,
         modalEditData!.version,
         lookupData
       );
-      
+
       if (lookupResult.success) {
-        setSaveStatus({type: 'success', message: `✅ Salvati ${values.length} valori per ${modalEditData!.fieldName}`});
+        setSaveStatus({type: 'success', message: `✅ Saved ${values.length} values for ${modalEditData!.fieldName}`});
         setTimeout(() => setSaveStatus({type: null, message: ''}), 4000);
 
-        // Reload from server to verify persistence (consistent with regular field updates)
         setTimeout(async () => {
           await loadMatrixData(true);
         }, 500);
 
-        // Update local state immediately
         if (matrixData) {
           const updatedMatrix = JSON.parse(JSON.stringify(matrixData));
           const fieldIndex = updatedMatrix.field_matrix.findIndex((f: FieldRow) => f.field_name === modalEditData!.fieldName);
@@ -330,21 +316,19 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
           }
         }
 
-        // Update the edit value to show saved format
         setEditValue(values.map(v => `${v.code}:${v.meaning}`).join('\n'));
-        
+
       } else {
-        setSaveStatus({type: 'error', message: `Errore: ${lookupResult.error}`});
+        setSaveStatus({type: 'error', message: `${t('euring.save.error_prefix')} ${lookupResult.error}`});
         setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
       }
     } catch (error) {
-      setSaveStatus({type: 'error', message: `Errore di connessione: ${error}`});
+      setSaveStatus({type: 'error', message: `${t('euring.save.connection_error')} ${error}`});
       setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
     }
   };
 
   const handleRegularFieldUpdate = async () => {
-    // Regular field update
     const result = await EuringAPI.updateMatrixField(
       modalEditData!.fieldName,
       modalEditData!.version,
@@ -352,31 +336,26 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
       editValue,
       `Manual edit via matrix interface at ${new Date().toISOString()}`
     );
-    
+
     if (result.success) {
       console.log('✅ Backend save successful:', result);
-      setSaveStatus({type: 'success', message: `✅ Campo ${modalEditData!.fieldName} - ${modalEditData!.property} salvato: ${editValue}`});
+      setSaveStatus({type: 'success', message: `✅ ${modalEditData!.fieldName} - ${modalEditData!.property}: ${editValue}`});
       setTimeout(() => setSaveStatus({type: null, message: ''}), 4000);
-      
-      // Close modal immediately
+
       setShowEditModal(false);
       setModalEditData(null);
       setEditValue('');
-      
-      // Reload data from backend to show exactly what was saved
-      // No local state manipulation - what you see is what's in the backend
-      // Increased delay to 1000ms to ensure file write completes
+
       setTimeout(async () => {
         console.log('🔄 Reloading matrix data from backend after 1000ms delay');
-        await loadMatrixData(true); // Preserve scroll position
+        await loadMatrixData(true);
       }, 1000);
-      
+
     } else {
-      setSaveStatus({type: 'error', message: `${'Errore nel salvataggio:'} ${result.error}`});
+      setSaveStatus({type: 'error', message: `${t('euring.save.save_error')} ${result.error}`});
       setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
       console.error('Failed to save edit:', result.error);
-      
-      // Close modal on error
+
       setShowEditModal(false);
       setModalEditData(null);
       setEditValue('');
@@ -391,66 +370,58 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
 
   const addFieldToVersion = async (fieldName: string, version: string) => {
     try {
-      // Conferma dall'utente
       const confirmed = window.confirm(
-        `Vuoi aggiungere il campo "${fieldName}" alla versione ${version}?`
+        `${t('euring.cell.add_field')} "${fieldName}" → v${version}?`
       );
-      
+
       if (!confirmed) return;
-      
+
       console.log('Adding field to version:', fieldName, version);
-      
-      // Calcola una posizione intelligente per il nuovo campo
+
       let suggestedPosition = 0;
-      
+
       if (matrixData) {
-        // Trova la posizione massima nella versione target
         const versionFields = matrixData.field_matrix
           .map(f => f.versions[version])
           .filter(f => f !== null)
           .map(f => f!.position);
-        
+
         if (versionFields.length > 0) {
           suggestedPosition = Math.max(...versionFields) + 1;
         }
-        
-        // Se il campo esiste in altre versioni, usa una posizione simile
+
         const fieldRow = matrixData.field_matrix.find(f => f.field_name === fieldName);
         if (fieldRow) {
           const existingPositions = Object.values(fieldRow.versions)
             .filter(f => f !== null)
             .map(f => f!.position);
-          
+
           if (existingPositions.length > 0) {
-            // Usa la posizione media delle altre versioni come suggerimento
             const avgPosition = Math.round(existingPositions.reduce((a, b) => a + b, 0) / existingPositions.length);
             suggestedPosition = Math.max(suggestedPosition, avgPosition);
           }
         }
       }
-      
-      // Chiedi all'utente di confermare o modificare la posizione
+
       const positionInput = window.prompt(
-        `Inserisci la posizione per il campo "${fieldName}" nella versione ${version} (suggerita: ${suggestedPosition})`,
+        `${t('euring.modal.placeholder_pos')} "${fieldName}" v${version} (→ ${suggestedPosition})`,
         suggestedPosition.toString()
       );
-      
-      if (positionInput === null) return; // Utente ha annullato
-      
+
+      if (positionInput === null) return;
+
       const finalPosition = parseInt(positionInput) || suggestedPosition;
-      
-      // Crea un nuovo campo con valori di default
+
       const defaultField = {
         position: finalPosition,
         name: fieldName,
         data_type: 'string',
         length: 10,
-        description: `Campo ${fieldName} aggiunto alla versione ${version} in posizione ${finalPosition}`,
+        description: `${fieldName} v${version} @${finalPosition}`,
         valid_values: [],
         semantic_domain: undefined
       };
-      
-      // Chiama l'API per aggiungere il campo realmente al backend
+
       console.log('🔄 Calling API to add field to backend...');
       const result = await EuringAPI.addFieldToVersion(
         fieldName,
@@ -458,44 +429,41 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
         finalPosition,
         'string',
         10,
-        `Campo ${fieldName} aggiunto alla versione ${version} in posizione ${finalPosition}`
+        `${fieldName} v${version} @${finalPosition}`
       );
-      
+
       if (result.success) {
         console.log('✅ Field added successfully to backend:', result);
-        
-        // Aggiorna anche lo stato locale per feedback immediato
+
         if (matrixData) {
           const updatedMatrix = { ...matrixData };
           const fieldIndex = updatedMatrix.field_matrix.findIndex(f => f.field_name === fieldName);
-          
+
           if (fieldIndex !== -1) {
             const field = updatedMatrix.field_matrix[fieldIndex];
             field.versions[version] = defaultField;
             setMatrixData(updatedMatrix);
           }
         }
-        
+
         setSaveStatus({
-          type: 'success', 
-          message: `✅ Campo ${fieldName} aggiunto alla versione ${version} in posizione ${finalPosition}`
+          type: 'success',
+          message: `✅ ${fieldName} → v${version} @${finalPosition}`
         });
         setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
-        
-        // Ricarica i dati per confermare il salvataggio
-        // Aumentato delay a 2500ms per dare tempo al backend di scrivere il file
+
         setTimeout(() => {
           console.log('🔄 Reloading data to confirm field addition after 2.5s delay');
           loadMatrixData(true);
         }, 2500);
-        
+
       } else {
-        setSaveStatus({type: 'error', message: `${'Errore aggiunta campo:'} ${result.error}`});
+        setSaveStatus({type: 'error', message: `${t('euring.save.add_error')} ${result.error}`});
         setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
       }
-      
+
     } catch (error) {
-      setSaveStatus({type: 'error', message: `${'Errore aggiunta campo:'} ${error}`});
+      setSaveStatus({type: 'error', message: `${t('euring.save.add_error')} ${error}`});
       setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
       console.error('Error adding field:', error);
     }
@@ -503,57 +471,52 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
 
   const removeFieldFromVersion = async (fieldName: string, version: string) => {
     try {
-      // Conferma dall'utente
       const confirmed = window.confirm(
-        `Vuoi rimuovere il campo "${fieldName}" dalla versione ${version}?`
+        `${t('euring.cell.remove_field')} "${fieldName}" v${version}?`
       );
-      
+
       if (!confirmed) return;
-      
+
       console.log('Removing field from version:', fieldName, version);
-      
-      // Rimuovi il campo dalla versione
+
       if (matrixData) {
         const updatedMatrix = { ...matrixData };
         const fieldIndex = updatedMatrix.field_matrix.findIndex(f => f.field_name === fieldName);
-        
+
         if (fieldIndex !== -1) {
           const field = updatedMatrix.field_matrix[fieldIndex];
           field.versions[version] = null;
           setMatrixData(updatedMatrix);
-          
-          setSaveStatus({type: 'success', message: `🗑️ Campo ${fieldName} rimosso dalla versione ${version}`});
+
+          setSaveStatus({type: 'success', message: `🗑️ ${fieldName} ← v${version}`});
           setTimeout(() => setSaveStatus({type: null, message: ''}), 3000);
         }
       }
-      
+
     } catch (error) {
-      setSaveStatus({type: 'error', message: `${'Errore rimozione campo:'} ${error}`});
+      setSaveStatus({type: 'error', message: `${t('euring.save.remove_error')} ${error}`});
       setTimeout(() => setSaveStatus({type: null, message: ''}), 5000);
       console.error('Error removing field:', error);
     }
   };
 
   const loadMatrixData = async (preserveScrollPosition: boolean = false): Promise<void> => {
-    // Salva la posizione di scroll corrente se richiesto
     const scrollPosition = preserveScrollPosition ? window.scrollY : 0;
-    
+
     setLoading(true);
     setError(null);
 
     try {
       console.log('Loading matrix data...');
       const response = await EuringAPI.getEuringVersionsMatrix();
-      
+
       if (response.success) {
         setMatrixData(response);
-        // Seleziona tutte le versioni di default solo al primo caricamento
         if (!preserveScrollPosition) {
           setSelectedVersions(response.versions_metadata.map((v: VersionMetadata) => v.year.toString()));
         }
         console.log('Matrix data loaded successfully:', response.field_matrix.length, 'fields');
-        
-        // Ripristina la posizione di scroll se richiesto
+
         if (preserveScrollPosition && scrollPosition > 0) {
           setTimeout(() => {
             console.log('📍 Restoring scroll to position:', scrollPosition);
@@ -564,11 +527,11 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
           }, 100);
         }
       } else {
-        setError(response.error || 'Errore nel caricamento della matrice');
+        setError(response.error || t('euring.error.loading'));
       }
     } catch (err: any) {
       console.error('Matrix loading error:', err);
-      setError(err.message || 'Errore di connessione al server');
+      setError(err.message || t('euring.error.connection'));
     } finally {
       setLoading(false);
     }
@@ -577,8 +540,8 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
   if (loading) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
-        <h2>📊 {'Matrice EURING'}</h2>
-        <p>{'Caricamento dati...'}</p>
+        <h2>📊 {t('euring.title')}</h2>
+        <p>{t('euring.loading')}</p>
       </div>
     );
   }
@@ -586,19 +549,19 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
   if (error) {
     return (
       <div style={{ padding: '20px' }}>
-        <h2>📊 {'Matrice EURING'}</h2>
-        <div style={{ 
-          backgroundColor: '#f8d7da', 
+        <h2>📊 {t('euring.title')}</h2>
+        <div style={{
+          backgroundColor: '#f8d7da',
           color: '#721c24',
-          padding: '15px', 
+          padding: '15px',
           borderRadius: '5px',
           margin: '10px 0'
         }}>
-          <strong>❌ {'Errore:'}</strong> {error}
+          <strong>❌ {t('euring.save.error_prefix')}</strong> {error}
           <br />
-          <button 
-            onClick={() => loadMatrixData(false)} // Non preservare la posizione in caso di errore
-            style={{ 
+          <button
+            onClick={() => loadMatrixData(false)}
+            style={{
               marginTop: '10px',
               padding: '8px 16px',
               backgroundColor: '#dc3545',
@@ -608,7 +571,7 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
               cursor: 'pointer'
             }}
           >
-            {'Riprova'}
+            {t('euring.error.retry')}
           </button>
         </div>
       </div>
@@ -618,8 +581,8 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
   if (!matrixData) {
     return (
       <div style={{ padding: '20px' }}>
-        <h2>📊 {'Matrice EURING'}</h2>
-        <p>{'Nessun dato disponibile'}</p>
+        <h2>📊 {t('euring.title')}</h2>
+        <p>{t('euring.no_data')}</p>
       </div>
     );
   }
@@ -628,9 +591,9 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
     <div style={{ padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
-          <h2>📊 Matrice Versioni EURING</h2>
+          <h2>📊 {t('euring.title')}</h2>
           <p>Confronto campi tra versioni EURING (riferimento: {matrixData.reference_version})</p>
-          
+
           {/* User Info */}
           {currentUser && (
             <div style={{
@@ -645,25 +608,25 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                 👤 {currentUser.full_name} ({currentUser.role === 'super_admin' ? 'Super Admin' : currentUser.role === 'admin' ? 'Admin' : currentUser.role === 'user' ? 'User' : 'Viewer'})
               </span>
               <span style={{ marginLeft: '10px', color: '#666' }}>
-                {currentUser.role === 'super_admin' && '✅ Modifica abilitata'}
-                {currentUser.role === 'admin' && '👁️ Solo lettura'}
-                {currentUser.role === 'user' && '👁️ Solo lettura'}
-                {currentUser.role === 'viewer' && `👁️ ${'Solo lettura'}`}
+                {currentUser.role === 'super_admin' && t('euring.user.edit_enabled')}
+                {currentUser.role === 'admin' && t('euring.user.read_only')}
+                {currentUser.role === 'user' && t('euring.user.read_only')}
+                {currentUser.role === 'viewer' && t('euring.user.read_only')}
               </span>
             </div>
           )}
         </div>
-        
+
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button
             onClick={() => setEditMode(!editMode)}
             disabled={!currentUser || currentUser.role !== 'super_admin'}
             title={
-              !currentUser 
-                ? 'Login richiesto'
+              !currentUser
+                ? t('euring.btn.login_required')
                 : currentUser.role !== 'super_admin'
-                ? 'Solo Super Admin'
-                : 'Super Admin abilitato'
+                ? t('euring.btn.super_admin_only')
+                : t('euring.btn.super_admin_enabled')
             }
             style={{
               padding: '10px 20px',
@@ -679,12 +642,12 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
               opacity: (!currentUser || currentUser.role !== 'super_admin') ? 0.6 : 1
             }}
           >
-            {editMode ? '✏️ ' + 'Modalità Modifica' : '🔒 ' + 'Sola Lettura'}
+            {editMode ? `✏️ ${t('euring.btn.edit_mode')}` : `🔒 ${t('euring.btn.read_only')}`}
             {currentUser?.role === 'super_admin' && ' 👑'}
           </button>
-          
+
           <button
-            onClick={() => loadMatrixData(true)} // Preserva la posizione di scroll anche per il reload manuale
+            onClick={() => loadMatrixData(true)}
             style={{
               padding: '10px 20px',
               backgroundColor: '#007bff',
@@ -698,11 +661,11 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
               gap: '8px'
             }}
           >
-            🔄 {'Ricarica'}
+            🔄 {t('euring.btn.reload')}
           </button>
-          
+
           {editMode && (
-            <div style={{ 
+            <div style={{
               backgroundColor: '#fff3cd',
               color: '#856404',
               padding: '8px 12px',
@@ -710,13 +673,13 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
               fontSize: '0.9em',
               border: '1px solid #ffeaa7'
             }}>
-              💡 {'Clicca sui valori per modificarli'}
+              💡 {t('euring.btn.click_to_edit')}
             </div>
           )}
-          
+
           {/* Notifiche di salvataggio */}
           {saveStatus.type && (
-            <div style={{ 
+            <div style={{
               backgroundColor: saveStatus.type === 'success' ? '#d4edda' : '#f8d7da',
               color: saveStatus.type === 'success' ? '#155724' : '#721c24',
               padding: '8px 12px',
@@ -733,9 +696,9 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
           )}
         </div>
       </div>
-      
+
       {/* Controlli */}
-      <div style={{ 
+      <div style={{
         backgroundColor: '#f8f9fa',
         padding: '20px',
         borderRadius: '8px',
@@ -743,21 +706,21 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
         border: '1px solid #e9ecef'
       }}>
         <div style={{ marginBottom: '20px' }}>
-          <h4 style={{ margin: '0 0 15px 0' }}>{'Versioni EURING'}</h4>
+          <h4 style={{ margin: '0 0 15px 0' }}>{t('euring.ctrl.versions')}</h4>
           <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
             {matrixData.versions_metadata.map(version => (
-              <label 
-                key={version.year} 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+              <label
+                key={version.year}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: '8px',
                   cursor: 'pointer',
                   padding: '8px 12px',
                   borderRadius: '6px',
                   border: `2px solid ${getVersionColor(version.year.toString())}`,
-                  backgroundColor: selectedVersions.includes(version.year.toString()) 
-                    ? `${getVersionColor(version.year.toString())}20` 
+                  backgroundColor: selectedVersions.includes(version.year.toString())
+                    ? `${getVersionColor(version.year.toString())}20`
                     : 'white'
                 }}
               >
@@ -767,14 +730,14 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                   onChange={() => toggleVersion(version.year.toString())}
                   style={{ margin: 0 }}
                 />
-                <span style={{ 
+                <span style={{
                   fontWeight: 'bold',
                   color: getVersionColor(version.year.toString())
                 }}>
                   {version.year}
                 </span>
                 <span style={{ fontSize: '0.9em', color: '#666' }}>
-                  ({version.total_fields} {'campi'})
+                  ({version.total_fields} {t('euring.ctrl.fields_suffix')})
                 </span>
               </label>
             ))}
@@ -782,9 +745,9 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
         </div>
 
         <div>
-          <label style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
+          <label style={{
+            display: 'flex',
+            alignItems: 'center',
             gap: '8px',
             cursor: 'pointer'
           }}>
@@ -794,13 +757,13 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
               onChange={(e) => setShowEmptyFields(e.target.checked)}
               style={{ margin: 0 }}
             />
-            <span>{'Mostra campi vuoti'}</span>
+            <span>{t('euring.ctrl.show_empty')}</span>
           </label>
         </div>
 
         {/* View mode toggle */}
         <div style={{ marginTop: '15px' }}>
-          <span style={{ fontWeight: 'bold', marginRight: '10px' }}>Visualizzazione:</span>
+          <span style={{ fontWeight: 'bold', marginRight: '10px' }}>{t('euring.ctrl.view')}</span>
           <div style={{ display: 'inline-flex', gap: '0', borderRadius: '6px', overflow: 'hidden', border: '1px solid #dee2e6' }}>
             <button
               onClick={() => setViewMode('table')}
@@ -814,7 +777,7 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                 fontWeight: viewMode === 'table' ? 'bold' : 'normal',
               }}
             >
-              📋 Tabella campi
+              {t('euring.ctrl.table')}
             </button>
             <button
               onClick={() => setViewMode('positional')}
@@ -829,34 +792,34 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                 fontWeight: viewMode === 'positional' ? 'bold' : 'normal',
               }}
             >
-              🎨 Mappa posizionale
+              {t('euring.ctrl.positional')}
             </button>
           </div>
         </div>
-        
+
         {editMode && (
-          <div style={{ 
+          <div style={{
             backgroundColor: '#e8f4fd',
             padding: '15px',
             borderRadius: '6px',
             border: '1px solid #bee5eb',
             marginTop: '15px'
           }}>
-            <h5 style={{ margin: '0 0 10px 0', color: '#0c5460' }}>🛠️ {'Modalità modifica attiva'}</h5>
+            <h5 style={{ margin: '0 0 10px 0', color: '#0c5460' }}>🛠️ {t('euring.edit.active')}</h5>
             <div style={{ fontSize: '0.9em', color: '#0c5460' }}>
-              • {'Clicca sui valori per modificarli'}<br/>
-              • {'Usa + per aggiungere campi'}<br/>
-              • {'Usa 🗑️ per rimuovere campi'}<br/>
-              • {'Le modifiche vengono salvate automaticamente'}<br/>
-              • ⚠️ {'Attenzione: le modifiche sono permanenti'}<br/>
-              • {'Scopo: documentazione evoluzione EURING'}
+              • {t('euring.edit.hint_click')}<br/>
+              • {t('euring.edit.hint_add')}<br/>
+              • {t('euring.edit.hint_remove')}<br/>
+              • {t('euring.edit.hint_save')}<br/>
+              • ⚠️ {t('euring.edit.hint_warning')}<br/>
+              • {t('euring.edit.hint_purpose')}
             </div>
           </div>
         )}
       </div>
 
       {/* Statistiche */}
-      <div style={{ 
+      <div style={{
         backgroundColor: '#e8f4fd',
         padding: '15px',
         borderRadius: '8px',
@@ -865,13 +828,13 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
       }}>
         <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
           <div>
-            <strong>{'Totale campi:'}</strong> {matrixData.total_fields}
+            <strong>{t('euring.stats.total')}</strong> {matrixData.total_fields}
           </div>
           <div>
-            <strong>{'Visualizzati:'}</strong> {filteredFields.length}
+            <strong>{t('euring.stats.shown')}</strong> {filteredFields.length}
           </div>
           <div>
-            <strong>{'Versioni selezionate:'}</strong> {selectedVersions.length}
+            <strong>{t('euring.stats.selected')}</strong> {selectedVersions.length}
           </div>
         </div>
       </div>
@@ -889,23 +852,23 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
       ) : (
       <>
       {/* Tabella completa */}
-      <div 
-        key={`matrix-table-${refreshKey}`} // Force re-render when refreshKey changes
-        style={{ 
+      <div
+        key={`matrix-table-${refreshKey}`}
+        style={{
           overflowX: 'auto',
           border: '1px solid #ddd',
           borderRadius: '8px'
         }}
       >
-        <table style={{ 
-          width: '100%', 
+        <table style={{
+          width: '100%',
           borderCollapse: 'collapse',
           minWidth: '800px'
         }}>
           <thead>
             <tr style={{ backgroundColor: '#f8f9fa' }}>
-              <th style={{ 
-                padding: '12px', 
+              <th style={{
+                padding: '12px',
                 border: '1px solid #ddd',
                 textAlign: 'left',
                 fontWeight: 'bold',
@@ -918,8 +881,8 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
               }}>
                 {'#'}
               </th>
-              <th style={{ 
-                padding: '12px', 
+              <th style={{
+                padding: '12px',
                 border: '1px solid #ddd',
                 textAlign: 'left',
                 fontWeight: 'bold',
@@ -930,22 +893,22 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                 zIndex: 109,
                 boxShadow: '2px 0 5px rgba(0,0,0,0.1)'
               }}>
-                {'Campo'}
+                {t('euring.table.field')}
               </th>
-              <th style={{ 
-                padding: '12px', 
+              <th style={{
+                padding: '12px',
                 border: '1px solid #ddd',
                 textAlign: 'left',
                 fontWeight: 'bold',
                 width: '300px'
               }}>
-                {'Descrizione'}
+                {t('euring.table.description')}
               </th>
               {selectedVersions.map(year => (
-                <th 
+                <th
                   key={year}
-                  style={{ 
-                    padding: '12px', 
+                  style={{
+                    padding: '12px',
                     border: '1px solid #ddd',
                     textAlign: 'center',
                     fontWeight: 'bold',
@@ -968,11 +931,11 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
           </thead>
           <tbody>
             {filteredFields.map((fieldRow, index) => (
-              <tr key={fieldRow.field_name} style={{ 
+              <tr key={fieldRow.field_name} style={{
                 backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8f9fa'
               }}>
-                <td style={{ 
-                  padding: '10px', 
+                <td style={{
+                  padding: '10px',
                   border: '1px solid #ddd',
                   textAlign: 'center',
                   fontWeight: 'bold',
@@ -987,8 +950,8 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                 }}>
                   {index + 1}
                 </td>
-                <td style={{ 
-                  padding: '10px', 
+                <td style={{
+                  padding: '10px',
                   border: '1px solid #ddd',
                   fontWeight: 'bold',
                   position: 'sticky',
@@ -998,7 +961,7 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                   boxShadow: '2px 0 5px rgba(0,0,0,0.1)'
                 }}>
                   <div>
-                    <div 
+                    <div
                       style={{
                         cursor: editMode ? 'pointer' : 'default',
                         padding: '2px',
@@ -1006,32 +969,13 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                         backgroundColor: editMode ? 'rgba(0,123,255,0.1)' : 'transparent'
                       }}
                       onClick={() => {
-                        console.log('🖱️ Field name clicked!', {
-                          editMode,
-                          selectedVersionsCount: selectedVersions.length,
-                          selectedVersions,
-                          fieldName: fieldRow.field_name
-                        });
-                        
                         if (editMode && selectedVersions.length > 0) {
-                          // Edit name for first selected version
                           const firstVersion = selectedVersions[0];
                           const fieldInfo = getFieldValue(fieldRow, firstVersion);
-                          console.log('📋 Field info:', fieldInfo);
-                          
                           if (fieldInfo) {
-                            // Use fieldInfo.name if available, otherwise use fieldRow.field_name
                             const currentName = fieldInfo.name || fieldRow.field_name;
-                            console.log('✏️ Starting edit with name:', currentName);
                             startEditing(fieldRow.field_name, firstVersion, 'name', currentName);
-                          } else {
-                            console.warn('⚠️ No field info found for version:', firstVersion);
                           }
-                        } else {
-                          console.warn('⚠️ Cannot edit:', {
-                            editMode,
-                            selectedVersionsLength: selectedVersions.length
-                          });
                         }
                       }}
                     >
@@ -1048,8 +992,8 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                     )}
                   </div>
                 </td>
-                <td style={{ 
-                  padding: '10px', 
+                <td style={{
+                  padding: '10px',
                   border: '1px solid #ddd',
                   zIndex: 1
                 }}>
@@ -1058,10 +1002,10 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                 {selectedVersions.map(year => {
                   const fieldInfo = getFieldValue(fieldRow, year);
                   return (
-                    <td 
+                    <td
                       key={year}
-                      style={{ 
-                        padding: '8px', 
+                      style={{
+                        padding: '8px',
                         border: '1px solid #ddd',
                         backgroundColor: fieldInfo ? `${getVersionColor(year)}10` : '#f8f8f8',
                         position: 'relative',
@@ -1070,19 +1014,19 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                     >
                       {fieldInfo ? (
                         <div style={{ fontSize: '0.8em' }}>
-                          <div style={{ 
-                            fontWeight: 'bold', 
+                          <div style={{
+                            fontWeight: 'bold',
                             color: getVersionColor(year),
                             marginBottom: '4px'
                           }}>
-                            ✓ {'Presente'}
+                            {t('euring.cell.present')}
                           </div>
-                          
-                          {/* Campo Descrizione - Editabile */}
+
+                          {/* Campo Descrizione */}
                           <div style={{ marginBottom: '4px' }}>
-                            <strong>{'Descrizione:'}</strong>
-                            <div 
-                              style={{ 
+                            <strong>{t('euring.cell.desc_label')}</strong>
+                            <div
+                              style={{
                                 color: '#666',
                                 cursor: editMode ? 'pointer' : 'default',
                                 padding: '2px',
@@ -1095,14 +1039,14 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                               {editMode && <span style={{ marginLeft: '4px', color: '#007bff' }}>✏️</span>}
                             </div>
                           </div>
-                          
-                          {/* Dettagli tecnici - Editabili */}
+
+                          {/* Dettagli tecnici */}
                           <div style={{ color: '#666', fontSize: '0.75em', marginTop: '4px' }}>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
                               <span>
-                                {'Pos:'} 
-                                <span 
-                                  style={{ 
+                                {t('euring.cell.pos_label')}
+                                <span
+                                  style={{
                                     cursor: editMode ? 'pointer' : 'default',
                                     padding: '1px 2px',
                                     borderRadius: '2px',
@@ -1114,12 +1058,11 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                                   {editMode && <span style={{ marginLeft: '2px', color: '#007bff' }}>✏️</span>}
                                 </span>
                               </span>
-                              
-                              {/* Tipo di dato editabile */}
+
                               <span>
-                                {'Tipo:'} 
-                                <span 
-                                  style={{ 
+                                {t('euring.cell.type_label')}
+                                <span
+                                  style={{
                                     cursor: editMode ? 'pointer' : 'default',
                                     padding: '1px 2px',
                                     borderRadius: '2px',
@@ -1131,12 +1074,11 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                                   {editMode && <span style={{ marginLeft: '2px', color: '#007bff' }}>✏️</span>}
                                 </span>
                               </span>
-                              
-                              {/* Lunghezza editabile */}
+
                               <span>
-                                {'Lung:'} 
-                                <span 
-                                  style={{ 
+                                {t('euring.cell.len_label')}
+                                <span
+                                  style={{
                                     cursor: editMode ? 'pointer' : 'default',
                                     padding: '1px 2px',
                                     borderRadius: '2px',
@@ -1148,8 +1090,7 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                                   {editMode && <span style={{ marginLeft: '2px', color: '#007bff' }}>✏️</span>}
                                 </span>
                               </span>
-                              
-                              {/* Pulsante rimuovi campo */}
+
                               {editMode && (
                                 <button
                                   style={{
@@ -1163,18 +1104,18 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                                     marginLeft: '8px'
                                   }}
                                   onClick={() => removeFieldFromVersion(fieldRow.field_name, year)}
-                                  title={'Rimuovi campo'}
+                                  title={t('euring.cell.remove_field')}
                                 >
                                   🗑️
                                 </button>
                               )}
                             </div>
                           </div>
-                          
-                          {/* Valori Validi - Editabili */}
+
+                          {/* Valori Validi */}
                           {fieldInfo.valid_values && fieldInfo.valid_values.length > 0 && (
                             <div style={{ marginTop: '4px' }}>
-                              <strong>{'Valori:'}</strong>
+                              <strong>{t('euring.cell.values_label')}</strong>
                               <FieldValuesDisplay
                                 fieldName={fieldRow.field_name}
                                 version={year}
@@ -1182,13 +1123,12 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                                 valuesCount={fieldInfo.valid_values_count}
                                 editMode={editMode}
                                 onEdit={async () => {
-                                  // Load full values with descriptions for editing
                                   startEditing(fieldRow.field_name, year, 'valid_values', '__LOADING__');
                                 }}
                               />
                             </div>
                           )}
-                          
+
                           {/* Aggiungi valori se non presenti */}
                           {editMode && (!fieldInfo.valid_values || fieldInfo.valid_values.length === 0) && (
                             <div style={{ marginTop: '4px' }}>
@@ -1204,17 +1144,17 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                                 }}
                                 onClick={() => startEditing(fieldRow.field_name, year, 'valid_values', '')}
                               >
-                                + {'Aggiungi valori'}
+                                {t('euring.cell.add_values')}
                               </button>
                             </div>
                           )}
-                          
-                          {/* Dominio Semantico - Editabile */}
+
+                          {/* Dominio Semantico */}
                           {fieldInfo.semantic_domain && (
                             <div style={{ marginTop: '4px' }}>
-                              <strong>{'Dominio:'}</strong>
-                              <div 
-                                style={{ 
+                              <strong>{t('euring.cell.domain_label')}</strong>
+                              <div
+                                style={{
                                   color: '#4CAF50',
                                   cursor: editMode ? 'pointer' : 'default',
                                   padding: '2px',
@@ -1229,7 +1169,7 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                               </div>
                             </div>
                           )}
-                          
+
                           {/* Aggiungi dominio se non presente */}
                           {editMode && !fieldInfo.semantic_domain && (
                             <div style={{ marginTop: '4px' }}>
@@ -1245,18 +1185,18 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                                 }}
                                 onClick={() => startEditing(fieldRow.field_name, year, 'semantic_domain', '')}
                               >
-                                + {'Aggiungi dominio'}
+                                {t('euring.cell.add_domain')}
                               </button>
                             </div>
                           )}
                         </div>
                       ) : (
-                        <div style={{ 
+                        <div style={{
                           textAlign: 'center',
                           color: '#ccc',
                           fontStyle: 'italic'
                         }}>
-                          {'Non presente'}
+                          {t('euring.cell.absent')}
                           {editMode && (
                             <div style={{ marginTop: '4px' }}>
                               <button
@@ -1273,7 +1213,7 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                                   addFieldToVersion(fieldRow.field_name, year);
                                 }}
                               >
-                                + {'Aggiungi campo'}
+                                {t('euring.cell.add_field')}
                               </button>
                             </div>
                           )}
@@ -1289,43 +1229,43 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
       </div>
 
       {/* Legenda */}
-      <div style={{ 
+      <div style={{
         backgroundColor: '#f8f9fa',
         padding: '20px',
         borderRadius: '8px',
         margin: '20px 0',
         border: '1px solid #e9ecef'
       }}>
-        <h4 style={{ margin: '0 0 15px 0' }}>{'Legenda'}</h4>
+        <h4 style={{ margin: '0 0 15px 0' }}>{t('euring.legend.title')}</h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ 
-              width: '20px', 
-              height: '20px', 
+            <div style={{
+              width: '20px',
+              height: '20px',
               backgroundColor: '#e8f5e8',
               border: '1px solid #4caf50'
             }}></div>
-            <span>{'Campo presente'}</span>
+            <span>{t('euring.legend.present')}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ 
-              width: '20px', 
-              height: '20px', 
+            <div style={{
+              width: '20px',
+              height: '20px',
               backgroundColor: '#f8f8f8',
               border: '1px solid #ccc'
             }}></div>
-            <span>{'Campo assente'}</span>
+            <span>{t('euring.legend.absent')}</span>
           </div>
-          <div><strong>Pos:</strong> {'Posizione nel record'}</div>
-          <div><strong>Tipo:</strong> {'Tipo di dato'}</div>
-          <div><strong>Lung:</strong> {'Lunghezza campo'}</div>
-          <div><strong>Valori:</strong> {'Valori ammessi'}</div>
+          <div><strong>Pos:</strong> {t('euring.legend.pos')}</div>
+          <div><strong>Tipo:</strong> {t('euring.legend.type')}</div>
+          <div><strong>Lung:</strong> {t('euring.legend.len')}</div>
+          <div><strong>Valori:</strong> {t('euring.legend.values')}</div>
         </div>
       </div>
       </>
       )}
 
-      {/* Modal di Editing Zoomato */}
+      {/* Modal di Editing */}
       {showEditModal && modalEditData && (
         <div style={{
           position: 'fixed',
@@ -1358,26 +1298,26 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
               paddingBottom: '20px',
               marginBottom: '25px'
             }}>
-              <h3 style={{ 
-                margin: '0 0 10px 0', 
+              <h3 style={{
+                margin: '0 0 10px 0',
                 color: '#333',
                 fontSize: '1.4em',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px'
               }}>
-                ✏️ {'Modifica Campo'}
+                {t('euring.modal.title')}
               </h3>
-              <div style={{ 
-                fontSize: '1.1em', 
+              <div style={{
+                fontSize: '1.1em',
                 color: '#666',
                 display: 'flex',
                 flexWrap: 'wrap',
                 gap: '15px'
               }}>
-                <span><strong>{'Campo:'}</strong> {modalEditData.fieldName}</span>
-                <span><strong>{'Versione:'}</strong> {modalEditData.version}</span>
-                <span><strong>{'Proprietà:'}</strong> {modalEditData.property}</span>
+                <span><strong>{t('euring.modal.field')}</strong> {modalEditData.fieldName}</span>
+                <span><strong>{t('euring.modal.version')}</strong> {modalEditData.version}</span>
+                <span><strong>{t('euring.modal.property')}</strong> {modalEditData.property}</span>
               </div>
             </div>
 
@@ -1390,18 +1330,18 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                 marginBottom: '25px',
                 border: '1px solid #e9ecef'
               }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#495057' }}>📋 {'Informazioni campo'}</h4>
+                <h4 style={{ margin: '0 0 10px 0', color: '#495057' }}>{t('euring.modal.info_title')}</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', fontSize: '0.9em' }}>
-                  <div><strong>{'Posizione:'}</strong> {modalEditData.fieldInfo.position}</div>
-                  <div><strong>{'Tipo:'}</strong> {modalEditData.fieldInfo.data_type}</div>
-                  <div><strong>{'Lunghezza:'}</strong> {modalEditData.fieldInfo.length}</div>
+                  <div><strong>{t('euring.modal.position')}</strong> {modalEditData.fieldInfo.position}</div>
+                  <div><strong>{t('euring.modal.type')}</strong> {modalEditData.fieldInfo.data_type}</div>
+                  <div><strong>{t('euring.modal.length')}</strong> {modalEditData.fieldInfo.length}</div>
                   {modalEditData.fieldInfo.semantic_domain && (
-                    <div><strong>{'Dominio:'}</strong> {EuringAPI.getDomainDisplayName(modalEditData.fieldInfo.semantic_domain)}</div>
+                    <div><strong>{t('euring.modal.domain')}</strong> {EuringAPI.getDomainDisplayName(modalEditData.fieldInfo.semantic_domain)}</div>
                   )}
                 </div>
                 {modalEditData.fieldInfo.description && (
                   <div style={{ marginTop: '10px' }}>
-                    <strong>{'Valore attuale:'}</strong> {modalEditData.fieldInfo.description}
+                    <strong>{t('euring.modal.current_value')}</strong> {modalEditData.fieldInfo.description}
                   </div>
                 )}
               </div>
@@ -1409,22 +1349,22 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
 
             {/* Campo di Editing */}
             <div style={{ marginBottom: '30px' }}>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '10px', 
+              <label style={{
+                display: 'block',
+                marginBottom: '10px',
                 fontWeight: 'bold',
                 fontSize: '1.1em',
                 color: '#333'
               }}>
-                {modalEditData.property === 'name' && `✏️ ${'Modifica nome campo'}`}
-                {modalEditData.property === 'description' && `📝 ${'Modifica descrizione'}`}
-                {modalEditData.property === 'semantic_domain' && `🏷️ ${'Modifica dominio semantico'}`}
-                {modalEditData.property === 'data_type' && `🔧 ${'Modifica tipo dato'}`}
-                {modalEditData.property === 'length' && `📏 ${'Modifica lunghezza'}`}
-                {modalEditData.property === 'position' && `📍 ${'Modifica posizione'}`}
-                {modalEditData.property === 'valid_values' && `📋 ${'Modifica valori ammessi'}`}
+                {modalEditData.property === 'name' && t('euring.modal.edit_name')}
+                {modalEditData.property === 'description' && t('euring.modal.edit_desc')}
+                {modalEditData.property === 'semantic_domain' && t('euring.modal.edit_domain')}
+                {modalEditData.property === 'data_type' && t('euring.modal.edit_type')}
+                {modalEditData.property === 'length' && t('euring.modal.edit_length')}
+                {modalEditData.property === 'position' && t('euring.modal.edit_position')}
+                {modalEditData.property === 'valid_values' && t('euring.modal.edit_values')}
               </label>
-              
+
               {modalEditData.property === 'valid_values' ? (
                 <div>
                   {/* Summary */}
@@ -1436,9 +1376,9 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                     fontSize: '0.9em',
                     color: '#0c5460'
                   }}>
-                    📊 {editValue.split('\n').filter(l => l.trim().length > 0).length} valori attualmente definiti
+                    📊 {editValue.split('\n').filter(l => l.trim().length > 0).length} {t('euring.modal.values_count')}
                   </div>
-                  
+
                   <textarea
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
@@ -1458,9 +1398,9 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                     autoComplete="off"
                     data-lpignore="true"
                     data-form-type="other"
-                    placeholder="Inserisci i valori nel formato CODICE:DESCRIZIONE (uno per riga)&#10;&#10;Esempio:&#10;ABT:Albania (Tirana)&#10;AUW:Austria (Wien (Vienna))&#10;BGS:Bulgaria (Sofia)"
+                    placeholder={`${t('euring.modal.format_hint')}\n\nABT:Albania (Tirana)\nAUW:Austria (Wien (Vienna))\nBGS:Bulgaria (Sofia)`}
                   />
-                  
+
                   {/* Action buttons for valid_values */}
                   <div style={{
                     display: 'flex',
@@ -1470,7 +1410,6 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                   }}>
                     <button
                       onClick={() => {
-                        // Sort values alphabetically by code
                         const lines = editValue.split('\n').filter(l => l.trim().length > 0);
                         lines.sort((a, b) => a.localeCompare(b));
                         setEditValue(lines.join('\n'));
@@ -1485,11 +1424,10 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                         cursor: 'pointer'
                       }}
                     >
-                      🔤 Ordina A-Z
+                      {t('euring.modal.sort_az')}
                     </button>
                     <button
                       onClick={() => {
-                        // Remove duplicates
                         const lines = editValue.split('\n').filter(l => l.trim().length > 0);
                         const seen = new Set<string>();
                         const unique = lines.filter(line => {
@@ -1503,7 +1441,7 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                         const removed = lines.length - unique.length;
                         setEditValue(unique.join('\n'));
                         if (removed > 0) {
-                          setSaveStatus({type: 'success', message: `Rimossi ${removed} duplicati`});
+                          setSaveStatus({type: 'success', message: `${removed} duplicates removed`});
                           setTimeout(() => setSaveStatus({type: null, message: ''}), 3000);
                         }
                       }}
@@ -1517,11 +1455,11 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                         cursor: 'pointer'
                       }}
                     >
-                      🧹 Rimuovi duplicati
+                      {t('euring.modal.remove_dupes')}
                     </button>
                     <button
                       onClick={() => {
-                        if (window.confirm('Vuoi cancellare tutti i valori?')) {
+                        if (window.confirm(t('euring.modal.clear_all') + '?')) {
                           setEditValue('');
                         }
                       }}
@@ -1535,10 +1473,10 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                         cursor: 'pointer'
                       }}
                     >
-                      🗑️ Cancella tutto
+                      {t('euring.modal.clear_all')}
                     </button>
                   </div>
-                  
+
                   <div style={{
                     fontSize: '0.85em',
                     color: '#666',
@@ -1547,8 +1485,8 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                     backgroundColor: '#f8f9fa',
                     borderRadius: '4px'
                   }}>
-                    💡 <strong>Formato:</strong> CODICE:DESCRIZIONE (uno per riga)<br/>
-                    Puoi incollare direttamente una lista di valori.
+                    💡 <strong>{t('euring.modal.format_hint')}</strong><br/>
+                    {t('euring.modal.paste_hint')}
                   </div>
                 </div>
               ) : modalEditData.property === 'name' ? (
@@ -1557,7 +1495,7 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                     type="text"
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
-                    placeholder="Nome campo (es. latitude_sign)"
+                    placeholder="latitude_sign"
                     style={{
                       width: '100%',
                       padding: '12px',
@@ -1578,7 +1516,7 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                     borderRadius: '4px',
                     border: '1px solid #ffc107'
                   }}>
-                    ⚠️ <strong>Attenzione:</strong> Modificare il nome del campo può influenzare le conversioni e i parser. Usa nomi descrittivi in snake_case (es. latitude_sign, ring_number).
+                    ⚠️ {t('euring.modal.name_warning')}
                   </div>
                 </div>
               ) : modalEditData.property === 'semantic_domain' ? (
@@ -1597,14 +1535,14 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                   autoComplete="off"
                   data-lpignore="true"
                 >
-                  <option value="">{'Seleziona dominio...'}</option>
-                  <option value="identification_marking">🏷️ {'Identificazione'}</option>
-                  <option value="species">🐦 {'Specie'}</option>
-                  <option value="demographics">👥 {'Demografia'}</option>
-                  <option value="temporal">⏰ {'Temporale'}</option>
-                  <option value="spatial">🌍 {'Spaziale'}</option>
-                  <option value="biometrics">📏 {'Biometria'}</option>
-                  <option value="methodology">🔬 {'Metodologia'}</option>
+                  <option value="">{t('euring.modal.select_domain')}</option>
+                  <option value="identification_marking">{t('euring.domain.identification')}</option>
+                  <option value="species">{t('euring.domain.species')}</option>
+                  <option value="demographics">{t('euring.domain.demographics')}</option>
+                  <option value="temporal">{t('euring.domain.temporal')}</option>
+                  <option value="spatial">{t('euring.domain.spatial')}</option>
+                  <option value="biometrics">{t('euring.domain.biometrics')}</option>
+                  <option value="methodology">{t('euring.domain.methodology')}</option>
                 </select>
               ) : modalEditData.property === 'data_type' ? (
                 <select
@@ -1622,11 +1560,11 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                   autoComplete="off"
                   data-lpignore="true"
                 >
-                  <option value="string">📝 {'Stringa'}</option>
-                  <option value="integer">🔢 {'Intero'}</option>
-                  <option value="float">🔢 {'Decimale'}</option>
-                  <option value="date">📅 {'Data'}</option>
-                  <option value="code">🏷️ {'Codice'}</option>
+                  <option value="string">{t('euring.type.string')}</option>
+                  <option value="integer">{t('euring.type.integer')}</option>
+                  <option value="float">{t('euring.type.float')}</option>
+                  <option value="date">{t('euring.type.date')}</option>
+                  <option value="code">{t('euring.type.code')}</option>
                 </select>
               ) : modalEditData.property === 'length' || modalEditData.property === 'position' ? (
                 <input
@@ -1646,7 +1584,7 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                   data-form-type="other"
                   min={modalEditData.property === 'position' ? "0" : "1"}
                   max={modalEditData.property === 'position' ? "100" : "100"}
-                  placeholder={modalEditData.property === 'position' ? 'Inserisci posizione' : 'Inserisci lunghezza'}
+                  placeholder={modalEditData.property === 'position' ? t('euring.modal.placeholder_pos') : t('euring.modal.placeholder_len')}
                 />
               ) : (
                 <textarea
@@ -1665,24 +1603,24 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                   autoComplete="off"
                   data-lpignore="true"
                   data-form-type="other"
-                  placeholder={'Inserisci descrizione...'}
+                  placeholder={t('euring.modal.placeholder_desc')}
                 />
               )}
             </div>
 
             {/* Pulsanti di Azione */}
-            <div style={{ 
-              display: 'flex', 
-              gap: '15px', 
+            <div style={{
+              display: 'flex',
+              gap: '15px',
               justifyContent: 'space-between',
               alignItems: 'center',
               borderTop: '1px solid #f0f0f0',
               paddingTop: '20px'
             }}>
               <div style={{ fontSize: '0.9em', color: '#666' }}>
-                {modalEditData?.property === 'valid_values' 
-                  ? `💡 ${'Ctrl+Enter per salvare, Esc per chiudere'}`
-                  : `💡 ${'Ctrl+Enter per salvare, Esc per annullare'}`
+                {modalEditData?.property === 'valid_values'
+                  ? t('euring.modal.shortcut_save_close')
+                  : t('euring.modal.shortcut_save_cancel')
                 }
               </div>
               <div style={{ display: 'flex', gap: '15px' }}>
@@ -1701,7 +1639,7 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                     gap: '8px'
                   }}
                 >
-                  {modalEditData?.property === 'valid_values' ? `❌ ${'Chiudi'}` : `❌ ${'Annulla'}`}
+                  {modalEditData?.property === 'valid_values' ? t('euring.modal.btn_close') : t('euring.modal.btn_cancel')}
                 </button>
                 <button
                   onClick={saveEdit}
@@ -1718,7 +1656,7 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
                     gap: '8px'
                   }}
                 >
-                  {modalEditData?.property === 'valid_values' ? `💾 ${'Salva valori'}` : `✅ ${'Salva'}`}
+                  {modalEditData?.property === 'valid_values' ? t('euring.modal.btn_save_values') : t('euring.modal.btn_save')}
                 </button>
               </div>
             </div>

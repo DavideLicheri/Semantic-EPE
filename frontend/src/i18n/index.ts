@@ -6,7 +6,7 @@ type TranslationKey = string;
 type Translations = Record<string, string>;
 
 class CompleteI18nService {
-  private currentLanguage: string = 'it';
+  private currentLanguage: string = 'en';
   private translations: Record<string, Translations> = {
     it: itTranslations,
     en: enTranslations,

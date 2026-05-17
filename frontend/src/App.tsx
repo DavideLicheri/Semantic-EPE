@@ -14,6 +14,7 @@ import Analytics from './components/Analytics'
 import ISPRAQuery from './components/ISPRAQuery'
 import { authService, User } from './services/auth'
 import { useTranslation } from './hooks/useTranslation'
+import { i18n } from './i18n'
 import epeLogo from './assets/images/epeLogo.jpg'
 import './App.css'
 
@@ -88,6 +89,13 @@ function App() {
           </div>
           
           <div className="header-right">
+            <button
+              className="lang-toggle"
+              onClick={() => i18n.setLanguage(i18n.getLanguage() === 'en' ? 'it' : 'en')}
+              title={i18n.getLanguage() === 'en' ? 'Switch to Italian' : "Passa all'inglese"}
+            >
+              {i18n.getLanguage() === 'en' ? t('lang.switch_to_it') : t('lang.switch_to_en')}
+            </button>
             <div className="user-info">
               <div className="user-details">
                 <span className="user-name">{currentUser?.full_name}</span>
@@ -151,7 +159,7 @@ function App() {
             className={`tab-button ${activeTab === 'editor' ? 'active' : ''}`}
             onClick={() => setActiveTab('editor')}
           >
-            Editor Campi
+            {t('nav.editor')}
           </button>
         )}
         {currentUser?.role === 'super_admin' && (
@@ -182,7 +190,7 @@ function App() {
         ) : activeTab === 'matrix' ? (
           <EuringMatrix currentUser={currentUser} />
         ) : activeTab === 'editor' ? (
-          <ErrorBoundary fallbackTitle="Errore nell'Editor Campi">
+          <ErrorBoundary fallbackTitle={t('app.error.field_editor')}>
             <PositionalMatrixEditor currentUser={currentUser} />
           </ErrorBoundary>
         ) : activeTab === 'users' ? (
