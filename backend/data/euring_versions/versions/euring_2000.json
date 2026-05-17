@@ -117,11 +117,12 @@
       "length": 1,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "Condizioni dell'evento di cattura",
+      "description": "Conditions of the bird when found",
       "semantic_domain": "biometrics",
       "semantic_meaning": null,
       "evolution_notes": [
-        "Field added manually on 2026-03-23T19:02:09.614536"
+        "Field added manually on 2026-03-23T19:02:09.614536",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-05-11T15:59:29.593Z"
       ]
     },
     {
@@ -402,11 +403,12 @@
       "length": 5,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "Species as concluded by the Scheme.\nThe importance of this filed is to confirm if the Scheme considers the species, givewn by the person who handled the bird, is correct or not",
+      "description": "Species as concluded by the Scheme.\nThe importance of this filed is to confirm if the Scheme considers the species, given by the person who handled the bird, is correct or not",
       "semantic_domain": "species",
       "semantic_meaning": null,
       "evolution_notes": [
-        "Field added manually on 2026-03-31T18:31:58.213006"
+        "Field added manually on 2026-03-31T18:31:58.213006",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-04-17T17:29:33.201Z"
       ]
     },
     {
@@ -509,7 +511,7 @@
       "valid_values": [],
       "valid_values_descriptions": null,
       "description": "Ringing schemes are here defined as centres issuing rings",
-      "semantic_domain": null,
+      "semantic_domain": "identification_marking",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-03-31T18:50:23.331708"

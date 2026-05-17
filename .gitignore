@@ -76,5 +76,8 @@ check_*.sh
 data/auth/
 backend/data/auth/
 
+# Usage logs (operational data, not for versioning)
+backend/data/usage/
+
 # Claude worktrees
 .claude/worktrees/
