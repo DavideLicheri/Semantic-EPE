@@ -39,6 +39,15 @@ class SemanticDomain(str, Enum):
     METHODOLOGY = "methodology"
 
 
+class ValidValuesType(str, Enum):
+    ENUMERATION = "enumeration"
+    EXTERNAL_REFERENCE = "external_reference"
+    COMPUTED = "computed"
+    FREE_NUMERIC = "free_numeric"
+    FREE_TEXT = "free_text"
+    FREE_ALPHANUMERIC = "free_alphanumeric"
+
+
 class DomainCompatibilityLevel(str, Enum):
     FULL = "full"
     PARTIAL = "partial"
@@ -65,6 +74,10 @@ class FieldDefinition(BaseModel):
     semantic_domain: Optional[SemanticDomain] = None
     semantic_meaning: Optional[str] = None
     evolution_notes: Optional[List[str]] = None
+    valid_values_type: Optional[ValidValuesType] = None
+    valid_values_source: Optional[str] = None
+    valid_values_lookup_tool: Optional[str] = None
+    valid_values_range: Optional[Dict[str, Any]] = None
 
 
 class ValidationRule(BaseModel):

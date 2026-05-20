@@ -1297,17 +1297,17 @@ async def get_supported_versions():
         
         if not versions:
             raise HTTPException(status_code=500, detail="No EURING versions found")
-        
-        # Sort versions by year
-        sorted_versions = sorted(versions, key=lambda v: v.year)
-        
+
+        # Deduplicate versions per year, keeping the one with the most field definitions
+        deduped: dict[int, any] = {}
+        for v in versions:
+            if v.year not in deduped or len(v.field_definitions) > len(deduped[v.year].field_definitions):
+                deduped[v.year] = v
+        sorted_versions = sorted(deduped.values(), key=lambda v: v.year)
+
         # Build field matrix using 2020 as reference
-        reference_version = None
-        for version in sorted_versions:
-            if version.year == 2020:
-                reference_version = version
-                break
-        
+        reference_version = deduped.get(2020)
+
         if not reference_version:
             raise HTTPException(status_code=500, detail="Reference version (2020) not found")
         
@@ -1328,10 +1328,11 @@ async def get_supported_versions():
                 version_key = str(version.year)
                 field_info = None
                 
-                # Try to find matching field by semantic meaning or name
+                # Try to find matching field by name first, then by semantic meaning
                 for field in version.field_definitions:
-                    if (field.semantic_meaning == ref_field.semantic_meaning or 
-                        field.name == ref_field.name):
+                    if (field.name == ref_field.name or
+                        (ref_field.semantic_meaning is not None and
+                         field.semantic_meaning == ref_field.semantic_meaning)):
                         field_info = {
                             "position": field.position,
                             "name": field.name,
@@ -1339,10 +1340,15 @@ async def get_supported_versions():
                             "length": field.length,
                             "description": field.description,
                             "valid_values": field.valid_values if field.valid_values else [],
-                            "valid_values_count": len(field.valid_values) if field.valid_values else 0
+                            "valid_values_count": len(field.valid_values) if field.valid_values else 0,
+                            "valid_values_type": field.valid_values_type.value if field.valid_values_type else None,
+                            "valid_values_descriptions": field.valid_values_descriptions,
+                            "valid_values_source": field.valid_values_source,
+                            "valid_values_lookup_tool": field.valid_values_lookup_tool,
+                            "valid_values_range": field.valid_values_range
                         }
                         break
-                
+
                 field_row["versions"][version_key] = field_info
             
             field_matrix.append(field_row)
@@ -1425,6 +1431,70 @@ async def get_supported_versions():
             "2000": ["1966", "1979", "2020"],
             "2020": ["1966", "1979", "2000"]
         }
+    }
+
+
+@router.get("/field/{field_name}")
+async def get_field_info(
+    field_name: str,
+    version: str = "2020",
+    current_user=Depends(get_current_user_optional)
+):
+    """
+    Get full semantic information for a single EURING field.
+
+    Returns valid values, descriptions, range constraints, and source info
+    so that AI tools can explain any field without hardcoded tables.
+    """
+    await skos_manager.load_version_model()
+    versions = await skos_manager.get_all_versions()
+
+    # Deduplicate: keep version with most fields per year
+    deduped: dict[int, any] = {}
+    for v in versions:
+        if v.year not in deduped or len(v.field_definitions) > len(deduped[v.year].field_definitions):
+            deduped[v.year] = v
+
+    # Resolve version year
+    try:
+        year = int(version)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid version: {version}. Use 1966, 1979, 2000 or 2020.")
+
+    target = deduped.get(year)
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Version {year} not found.")
+
+    field_name_norm = field_name.strip().lower().replace("_", " ")
+    found = None
+    for f in target.field_definitions:
+        if f.name.lower() == field_name_norm or (f.canonical_name or "").lower() == field_name_norm:
+            found = f
+            break
+
+    if not found:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Field '{field_name}' not found in EURING {year}. "
+                   f"Available fields: {[f.name for f in target.field_definitions]}"
+        )
+
+    return {
+        "field_name": found.name,
+        "canonical_name": found.canonical_name,
+        "version": f"euring_{year}",
+        "position": found.position,
+        "length": found.length,
+        "data_type": found.data_type,
+        "description": found.description,
+        "semantic_domain": found.semantic_domain.value if found.semantic_domain else None,
+        "semantic_meaning": found.semantic_meaning,
+        "valid_values_type": found.valid_values_type.value if found.valid_values_type else None,
+        "valid_values": found.valid_values or [],
+        "valid_values_descriptions": found.valid_values_descriptions,
+        "valid_values_source": found.valid_values_source,
+        "valid_values_lookup_tool": found.valid_values_lookup_tool,
+        "valid_values_range": found.valid_values_range,
     }
 
 
