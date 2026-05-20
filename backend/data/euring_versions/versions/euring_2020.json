@@ -17,7 +17,10 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-04-03T17:58:04.548268"
-      ]
+      ],
+      "valid_values_type": "external_reference",
+      "valid_values_source": "euring_ringing_schemes",
+      "valid_values_lookup_tool": null
     },
     {
       "position": 2,
@@ -25,14 +28,41 @@
       "canonical_name": null,
       "data_type": "alphanumeric",
       "length": 2,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "A0",
+        "B0",
+        "C0",
+        "D0",
+        "E0",
+        "F0",
+        "G0",
+        "H0",
+        "K0",
+        "L0",
+        "R0",
+        "T0"
+      ],
+      "valid_values_descriptions": {
+        "A0": "Anello metallico",
+        "B0": "Anello in plastica",
+        "C0": "Marcatore alare",
+        "D0": "Marcatore patagio",
+        "E0": "Anello Darvic",
+        "F0": "Transponder / chip PIT",
+        "G0": "Anello colorato",
+        "H0": "Trasmettitore satellitare",
+        "K0": "Data logger",
+        "L0": "Collare numerato al collo",
+        "R0": "Sella nasale",
+        "T0": "Anello numerato al tarso"
+      },
       "description": "Is to denote the primary method used to identify a bird",
       "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-04-03T18:03:35.776381"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 3,
@@ -47,7 +77,8 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-04-17T19:11:52.388996"
-      ]
+      ],
+      "valid_values_type": "free_alphanumeric"
     },
     {
       "position": 4,
@@ -55,14 +86,23 @@
       "canonical_name": null,
       "data_type": "integer",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "0",
+        "1",
+        "9"
+      ],
+      "valid_values_descriptions": {
+        "0": "Non verificato",
+        "1": "Verificato",
+        "9": "Sconosciuto"
+      },
       "description": "Ring verification may be by the ring being sent or a photograph, photocopy, rubbing or carbon copy being available",
       "semantic_domain": "identification_marking",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-04-17T19:16:18.805040"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 5,
@@ -70,14 +110,35 @@
       "canonical_name": null,
       "data_type": "integer",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "9"
+      ],
+      "valid_values_descriptions": {
+        "0": "Nessun anello metallico presente",
+        "1": "Anello metallico integro",
+        "2": "Anello danneggiato, numero leggibile",
+        "3": "Anello danneggiato, numero non leggibile",
+        "4": "Anello perso",
+        "5": "Anello corroso",
+        "6": "Anello consumato",
+        "7": "Anello sostituito",
+        "9": "Nessuna informazione disponibile"
+      },
       "description": "Informations about metal ring",
       "semantic_domain": "identification_marking",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-04-17T19:18:47.142990"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 6,
@@ -85,14 +146,47 @@
       "canonical_name": null,
       "data_type": "string",
       "length": 2,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "BB",
+        "BC",
+        "BD",
+        "BE",
+        "B-",
+        "CB",
+        "CC",
+        "CD",
+        "CE",
+        "C-",
+        "MM",
+        "OM",
+        "OP",
+        "OT",
+        "ZZ"
+      ],
+      "valid_values_descriptions": {
+        "BB": "Marca/anello presente e letto",
+        "BC": "Marca/anello presente ma non letto",
+        "BD": "Probabilmente presente, identità incerta",
+        "BE": "Certamente assente",
+        "B-": "Anello: non applicabile",
+        "CB": "Collare presente e letto",
+        "CC": "Collare presente ma non letto",
+        "CD": "Collare probabilmente presente",
+        "CE": "Collare certamente assente",
+        "C-": "Collare: non applicabile",
+        "MM": "Anelli metallici multipli",
+        "OM": "Marche multiple (altro tipo)",
+        "OP": "Marca presente (tipo sconosciuto)",
+        "OT": "Altro tipo di marca",
+        "ZZ": "Nessuna altra marca"
+      },
       "description": "This gives information about any other marks associated with the bird",
       "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-04-17T19:20:54.068617"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 7,
@@ -107,7 +201,10 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-04-17T19:28:23.578216"
-      ]
+      ],
+      "valid_values_type": "external_reference",
+      "valid_values_source": "euring_species_csv",
+      "valid_values_lookup_tool": "eces_species_lookup"
     },
     {
       "position": 8,
@@ -123,7 +220,10 @@
       "evolution_notes": [
         "Field added manually on 2026-04-17T19:29:13.631425",
         "Manual edit: Edit via PositionalMatrixEditor at 2026-04-17T17:29:59.064Z"
-      ]
+      ],
+      "valid_values_type": "external_reference",
+      "valid_values_source": "euring_species_csv",
+      "valid_values_lookup_tool": "eces_species_lookup"
     },
     {
       "position": 9,
@@ -131,14 +231,39 @@
       "canonical_name": null,
       "data_type": "string",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "H",
+        "K",
+        "C",
+        "F",
+        "T",
+        "M",
+        "R",
+        "E",
+        "P",
+        "N",
+        "U"
+      ],
+      "valid_values_descriptions": {
+        "H": "Allevato a mano dall'uomo",
+        "K": "Tenuto in cattività",
+        "C": "Colorato (anello colorato applicato)",
+        "F": "Dotato di bandierina",
+        "T": "Dotato di trasmettitore",
+        "M": "Evento multiplo: inanellato al nido e ricatturato",
+        "R": "Rilasciato dopo ritrovamento",
+        "E": "Uccello sperimentale",
+        "P": "Spostato artificialmente (trapiantato)",
+        "N": "Normale (non manipolato)",
+        "U": "Sconosciuto"
+      },
       "description": "The options are presented in order with the most important first",
       "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-04-17T19:42:36.101685"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 10,
@@ -146,14 +271,27 @@
       "canonical_name": null,
       "data_type": "integer",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "0",
+        "2",
+        "4",
+        "6",
+        "9"
+      ],
+      "valid_values_descriptions": {
+        "0": "Non spostato",
+        "2": "Spostato involontariamente",
+        "4": "Spostato intenzionalmente",
+        "6": "Spostato via acqua",
+        "9": "Sconosciuto"
+      },
       "description": "The movement indicated is that which has happened before the encounter",
       "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-04-17T19:48:07.864980"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 11,
@@ -161,14 +299,57 @@
       "canonical_name": null,
       "data_type": "string",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "-",
+        "A",
+        "B",
+        "C",
+        "D",
+        "F",
+        "G",
+        "H",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
+        "R",
+        "S",
+        "T",
+        "U",
+        "V",
+        "W",
+        "Z"
+      ],
+      "valid_values_descriptions": {
+        "-": "Non applicabile (inanellatore o trovato a mano)",
+        "A": "Rete a cannone",
+        "B": "Trappola con esca / gabbia",
+        "C": "Trappola a clap",
+        "D": "Rete dho-gaza",
+        "F": "In volo",
+        "G": "Trappola a cappio",
+        "H": "Amo",
+        "L": "Rete whoosh",
+        "M": "Rete a nebbia (mist net)",
+        "N": "Con luce notturna",
+        "O": "Altra trappola",
+        "P": "Pullus (nidiaceo)",
+        "R": "Rete a razzo",
+        "S": "Trappola per uccelli acquatici / decoy",
+        "T": "Trappola a tenda / bownet",
+        "U": "Metodo sconosciuto",
+        "V": "Trappola a imbuto / Helgoland trap",
+        "W": "Trappola walk-in",
+        "Z": "Metodo non registrato"
+      },
       "description": "Catching method typology",
       "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-04-29T19:54:44.122339"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 12,
@@ -176,14 +357,41 @@
       "canonical_name": null,
       "data_type": "string",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "-",
+        "U",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "M",
+        "N"
+      ],
+      "valid_values_descriptions": {
+        "-": "Non applicabile",
+        "U": "Sconosciuto",
+        "A": "Esca alimentare",
+        "B": "Acqua come richiamo",
+        "C": "Uccello impagliato (richiamo conspecifico)",
+        "D": "Uccello esca vivo (decoy)",
+        "E": "Richiamo elettronico (canto/verso)",
+        "F": "Rete senza richiamo",
+        "G": "Ghiaia o sabbia come richiamo",
+        "H": "Imitazione habitat",
+        "M": "Specchio",
+        "N": "Nessun richiamo utilizzato"
+      },
       "description": "Catching lures used",
       "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-04-29T19:55:26.800039"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 13,
@@ -191,14 +399,23 @@
       "canonical_name": null,
       "data_type": "string",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "U",
+        "M",
+        "F"
+      ],
+      "valid_values_descriptions": {
+        "U": "Sconosciuto",
+        "M": "Maschio",
+        "F": "Femmina"
+      },
       "description": "Sex as mentioned by the person who handled the bird",
       "semantic_domain": "demographics",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-04-29T19:56:38.895765"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 14,
@@ -206,14 +423,23 @@
       "canonical_name": null,
       "data_type": "string",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "U",
+        "M",
+        "F"
+      ],
+      "valid_values_descriptions": {
+        "U": "Sconosciuto",
+        "M": "Maschio",
+        "F": "Femmina"
+      },
       "description": "Sex as concluded by the Scheme",
       "semantic_domain": "demographics",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-04-29T19:57:24.033183"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 15,
@@ -221,14 +447,53 @@
       "canonical_name": null,
       "data_type": "alphanumeric",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ],
+      "valid_values_descriptions": {
+        "0": "Sconosciuto / età non determinata",
+        "1": "Pullus (nidiaceo dipendente)",
+        "2": "Adulto, anno di nascita non determinato",
+        "3": "Adulto, nato l'anno precedente (≥2° anno calendario)",
+        "4": "Nato nell'anno corrente (1° anno calendario, dopo l'involo)",
+        "5": "Nato l'anno precedente (2° anno calendario)",
+        "6": "Adulto, nato 2 anni prima (≥3° anno calendario)",
+        "7": "Adulto, nato 3 anni prima (≥4° anno calendario)",
+        "8": "Più di 2 anni (2° anno calendario o oltre, età esatta ignota)",
+        "9": "Adulto, anno specifico sconosciuto",
+        "A": "5° anno calendario",
+        "B": "4° anno calendario o più vecchio",
+        "C": "6° anno calendario",
+        "D": "5° anno calendario o più vecchio",
+        "E": "7° anno calendario",
+        "F": "6° anno calendario o più vecchio",
+        "G": "8° anno calendario o più vecchio",
+        "H": "7° anno calendario o più vecchio"
+      },
       "description": "Age as mentioned by the person who handled the bird",
       "semantic_domain": "demographics",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-04T19:34:31.497774"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 16,
@@ -236,14 +501,53 @@
       "canonical_name": null,
       "data_type": "alphanumeric",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H"
+      ],
+      "valid_values_descriptions": {
+        "0": "Sconosciuto / età non determinata",
+        "1": "Pullus (nidiaceo dipendente)",
+        "2": "Adulto, anno di nascita non determinato",
+        "3": "Adulto, nato l'anno precedente (≥2° anno calendario)",
+        "4": "Nato nell'anno corrente (1° anno calendario, dopo l'involo)",
+        "5": "Nato l'anno precedente (2° anno calendario)",
+        "6": "Adulto, nato 2 anni prima (≥3° anno calendario)",
+        "7": "Adulto, nato 3 anni prima (≥4° anno calendario)",
+        "8": "Più di 2 anni (2° anno calendario o oltre, età esatta ignota)",
+        "9": "Adulto, anno specifico sconosciuto",
+        "A": "5° anno calendario",
+        "B": "4° anno calendario o più vecchio",
+        "C": "6° anno calendario",
+        "D": "5° anno calendario o più vecchio",
+        "E": "7° anno calendario",
+        "F": "6° anno calendario o più vecchio",
+        "G": "8° anno calendario o più vecchio",
+        "H": "7° anno calendario o più vecchio"
+      },
       "description": "Age as concluded by the Scheme",
       "semantic_domain": "demographics",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-04T19:35:55.339193"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 17,
@@ -251,14 +555,39 @@
       "canonical_name": null,
       "data_type": "string",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "-",
+        "U",
+        "N",
+        "R",
+        "K",
+        "M",
+        "T",
+        "L",
+        "W",
+        "P",
+        "S"
+      ],
+      "valid_values_descriptions": {
+        "-": "Record di pullus",
+        "U": "Sconosciuto",
+        "N": "Nidificante",
+        "R": "Nidificante accertato (residente)",
+        "K": "Nidificante noto",
+        "M": "Migratore",
+        "T": "In territorio (nidificazione non confermata)",
+        "L": "Residente locale (stanziale)",
+        "W": "Svernante",
+        "P": "In transito (migrazione attiva)",
+        "S": "Malato o ferito"
+      },
       "description": "Status of full grown bird",
       "semantic_domain": "demographics",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-04T19:36:45.659921"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 18,
@@ -274,7 +603,14 @@
       "evolution_notes": [
         "Field added manually on 2026-05-04T19:37:52.534689",
         "Manual edit: Edit via PositionalMatrixEditor at 2026-05-04T17:38:54.473Z"
-      ]
+      ],
+      "valid_values_type": "free_numeric",
+      "valid_values_range": {
+        "min": 0,
+        "max": 99,
+        "unit": "nidiacei",
+        "precision": 1
+      }
     },
     {
       "position": 19,
@@ -290,7 +626,14 @@
       "evolution_notes": [
         "Field added manually on 2026-05-04T19:42:28.775701",
         "Manual edit: Edit via PositionalMatrixEditor at 2026-05-04T17:42:50.087Z"
-      ]
+      ],
+      "valid_values_type": "free_numeric",
+      "valid_values_range": {
+        "min": 0,
+        "max": 99,
+        "unit": "giorni",
+        "precision": 1
+      }
     },
     {
       "position": 20,
@@ -298,15 +641,42 @@
       "canonical_name": null,
       "data_type": "alphanumeric",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "-",
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "U"
+      ],
+      "valid_values_descriptions": {
+        "-": "Non pullus",
+        "0": "Data esatta",
+        "1": "±1 giorno",
+        "2": "±2 giorni",
+        "3": "±3 giorni",
+        "4": "±4 giorni",
+        "5": "±5 giorni",
+        "6": "±6 giorni",
+        "7": "±7 giorni",
+        "8": "±8 giorni",
+        "9": "±9 giorni",
+        "U": "Non registrata"
+      },
       "description": "- bird is not a pullus 0 accurate to the day n accurate to within n days either side of day coded",
       "semantic_domain": "demographics",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-04T19:43:52.856618",
         "Manual edit: Edit via PositionalMatrixEditor at 2026-05-04T17:44:15.820Z"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 21,
@@ -321,7 +691,12 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-04T19:45:38.119528"
-      ]
+      ],
+      "valid_values_type": "free_numeric",
+      "valid_values_range": {
+        "format": "ddmmyyyy",
+        "precision": 1
+      }
     },
     {
       "position": 22,
@@ -329,15 +704,38 @@
       "canonical_name": null,
       "data_type": "integer",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "valid_values_descriptions": {
+        "0": "Data esatta",
+        "1": "±1 giorno",
+        "2": "±3 giorni",
+        "3": "±1 settimana",
+        "4": "±2 settimane",
+        "5": "±6 settimane",
+        "6": "Non utilizzato",
+        "7": "Non utilizzato",
+        "8": "Non utilizzato",
+        "9": "Sconosciuto"
+      },
       "description": "Date accurato to within...",
       "semantic_domain": "temporal",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-04T19:46:47.342437",
         "Manual edit: Edit via PositionalMatrixEditor at 2026-05-04T17:47:12.854Z"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 23,
@@ -353,7 +751,8 @@
       "evolution_notes": [
         "Field added manually on 2026-05-04T19:53:48.811828",
         "Manual edit: Edit via PositionalMatrixEditor at 2026-05-04T17:54:20.733Z"
-      ]
+      ],
+      "valid_values_type": "free_alphanumeric"
     },
     {
       "position": 24,
@@ -368,7 +767,10 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-11T17:41:44.268891"
-      ]
+      ],
+      "valid_values_type": "external_reference",
+      "valid_values_source": "euring_place_codes",
+      "valid_values_lookup_tool": null
     },
     {
       "position": 25,
@@ -383,7 +785,8 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-11T17:52:17.078995"
-      ]
+      ],
+      "valid_values_type": "free_alphanumeric"
     },
     {
       "position": 26,
@@ -391,14 +794,65 @@
       "canonical_name": null,
       "data_type": "alphanumeric",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "Z"
+      ],
+      "valid_values_descriptions": {
+        "0": "±1 km",
+        "1": "±2 km",
+        "2": "±5 km",
+        "3": "±10 km",
+        "4": "±20 km",
+        "5": "±50 km",
+        "6": "±100 km",
+        "7": "±200 km",
+        "8": "±500 km",
+        "9": "Livello paese/regione",
+        "A": "±1 m",
+        "B": "±2 m",
+        "C": "±5 m",
+        "D": "±10 m",
+        "E": "±20 m",
+        "F": "±50 m",
+        "G": "±100 m",
+        "H": "±200 m",
+        "I": "±500 m",
+        "J": "±1 km",
+        "K": "±2 km",
+        "L": "±5 km",
+        "M": "±10 km o più",
+        "Z": "Sconosciuto"
+      },
       "description": "Numeric scale for old definitions, alphabetic scale for more precise definitions",
       "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-11T17:57:06.648642"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 27,
@@ -406,14 +860,37 @@
       "canonical_name": null,
       "data_type": "integer",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "valid_values_descriptions": {
+        "0": "Sconosciuto",
+        "1": "Morto (causa non accertata)",
+        "2": "Morto di recente",
+        "3": "Trovato morto da tempo",
+        "4": "Indebolito",
+        "5": "Malato o ferito",
+        "6": "Rilasciato dopo cura",
+        "7": "Vivo e sano (rilasciato dall'inanellatore)",
+        "8": "Vivo (rilasciato dall'inanellatore, stato non specificato)",
+        "9": "Sconosciuto alla ricattura"
+      },
       "description": "Conditions of the bird when found",
       "semantic_domain": "temporal",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-11T17:58:33.535017"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 28,
@@ -428,7 +905,10 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-11T18:02:09.563183"
-      ]
+      ],
+      "valid_values_type": "external_reference",
+      "valid_values_source": "euring_circumstances_table",
+      "valid_values_lookup_tool": null
     },
     {
       "position": 29,
@@ -436,14 +916,21 @@
       "canonical_name": null,
       "data_type": "string",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "0",
+        "1"
+      ],
+      "valid_values_descriptions": {
+        "0": "Certi",
+        "1": "Presunti"
+      },
       "description": "Boolean: 0 no doubt about the circumstances\n               1 circumstances presumed",
       "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-11T18:09:17.842203"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 30,
@@ -451,14 +938,31 @@
       "canonical_name": null,
       "data_type": "integer",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6"
+      ],
+      "valid_values_descriptions": {
+        "0": "Codice 1966 (diretto)",
+        "1": "Codice 1966 (convertito)",
+        "2": "Codice 1979 (diretto)",
+        "3": "Codice 1979 (convertito)",
+        "4": "Codice 2000 (diretto)",
+        "5": "Codice 2000 (convertito)",
+        "6": "Codice 2020 (diretto)"
+      },
       "description": "This field show the history of the record",
       "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-11T18:13:17.953664"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 31,
@@ -473,7 +977,8 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-11T18:15:28.922660"
-      ]
+      ],
+      "valid_values_type": "computed"
     },
     {
       "position": 32,
@@ -488,7 +993,8 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-11T18:17:02.689646"
-      ]
+      ],
+      "valid_values_type": "computed"
     },
     {
       "position": 33,
@@ -503,7 +1009,8 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-11T18:18:17.994134"
-      ]
+      ],
+      "valid_values_type": "computed"
     },
     {
       "position": 34,
@@ -518,7 +1025,14 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-13T17:22:02.598346"
-      ]
+      ],
+      "valid_values_type": "free_numeric",
+      "valid_values_range": {
+        "min": 0,
+        "max": 999,
+        "unit": "mm",
+        "precision": 0.5
+      }
     },
     {
       "position": 35,
@@ -533,7 +1047,14 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-14T15:58:44.835569"
-      ]
+      ],
+      "valid_values_type": "free_numeric",
+      "valid_values_range": {
+        "min": 0,
+        "max": 999,
+        "unit": "mm",
+        "precision": 0.5
+      }
     },
     {
       "position": 36,
@@ -541,14 +1062,29 @@
       "canonical_name": null,
       "data_type": "string",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "U",
+        "A",
+        "B",
+        "G",
+        "M",
+        "V"
+      ],
+      "valid_values_descriptions": {
+        "U": "Sconosciuto",
+        "A": "Abraso",
+        "B": "Rotto",
+        "G": "In crescita",
+        "M": "Mancante",
+        "V": "Molto abraso"
+      },
       "description": "The condition of the longest primary feather",
       "semantic_domain": "biometrics",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-14T16:21:28.416499"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 37,
@@ -563,7 +1099,14 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-14T16:22:32.847827"
-      ]
+      ],
+      "valid_values_type": "free_numeric",
+      "valid_values_range": {
+        "min": 0,
+        "max": 9999,
+        "unit": "g",
+        "precision": 0.1
+      }
     },
     {
       "position": 38,
@@ -571,14 +1114,29 @@
       "canonical_name": null,
       "data_type": "string",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "B",
+        "J",
+        "M",
+        "P",
+        "X",
+        "U"
+      ],
+      "valid_values_descriptions": {
+        "B": "Solo muta corporea",
+        "J": "Piumaggio giovanile (nessuna muta)",
+        "M": "Muta attiva delle remiganti primarie",
+        "P": "Muta post-giovanile parziale",
+        "X": "Non in muta",
+        "U": "Sconosciuto"
+      },
       "description": "A single letter code for main, clearly identifiable moult states",
       "semantic_domain": "biometrics",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-14T16:23:22.567645"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 39,
@@ -586,14 +1144,49 @@
       "canonical_name": null,
       "data_type": "string",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "U",
+        "A",
+        "B",
+        "D",
+        "E",
+        "F",
+        "I",
+        "J",
+        "W",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7"
+      ],
+      "valid_values_descriptions": {
+        "U": "Sconosciuto",
+        "A": "Piumaggio da adulto",
+        "B": "Piumaggio di base",
+        "D": "Piumaggio definitivo",
+        "E": "Piumaggio eclissale",
+        "F": "Primo piumaggio",
+        "I": "Piumaggio intermedio",
+        "J": "Piumaggio giovanile",
+        "W": "Piumaggio invernale",
+        "1": "Nuziale/estivo (limicoli)",
+        "2": "Post-nuziale/autunnale (limicoli)",
+        "3": "Invernale (limicoli)",
+        "4": "Transizione 1 (limicoli)",
+        "5": "Transizione 2 (limicoli)",
+        "6": "Transizione 3 (limicoli)",
+        "7": "Transizione 4 (limicoli)"
+      },
       "description": "For extra information to enhance age code",
       "semantic_domain": "demographics",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-14T16:29:47.493537"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 40,
@@ -608,7 +1201,14 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-15T18:26:55.863919"
-      ]
+      ],
+      "valid_values_type": "free_numeric",
+      "valid_values_range": {
+        "min": 0,
+        "max": 999,
+        "unit": "mm",
+        "precision": 0.1
+      }
     },
     {
       "position": 41,
@@ -623,7 +1223,14 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-15T18:28:00.402759"
-      ]
+      ],
+      "valid_values_type": "free_numeric",
+      "valid_values_range": {
+        "min": 0,
+        "max": 999,
+        "unit": "mm",
+        "precision": 0.1
+      }
     },
     {
       "position": 42,
@@ -631,14 +1238,25 @@
       "canonical_name": null,
       "data_type": "string",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "C",
+        "F",
+        "N",
+        "S"
+      ],
+      "valid_values_descriptions": {
+        "C": "Alla cera",
+        "F": "Alle piume",
+        "N": "Alla narice",
+        "S": "Al cranio"
+      },
       "description": "This field is mandatory if the Bill Length is given",
       "semantic_domain": "biometrics",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-15T18:29:14.954936"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 43,
@@ -653,7 +1271,14 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-15T18:30:18.230995"
-      ]
+      ],
+      "valid_values_type": "free_numeric",
+      "valid_values_range": {
+        "min": 0,
+        "max": 999,
+        "unit": "mm",
+        "precision": 0.1
+      }
     },
     {
       "position": 44,
@@ -668,7 +1293,14 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-15T18:31:10.640567"
-      ]
+      ],
+      "valid_values_type": "free_numeric",
+      "valid_values_range": {
+        "min": 0,
+        "max": 999,
+        "unit": "mm",
+        "precision": 0.1
+      }
     },
     {
       "position": 45,
@@ -676,14 +1308,23 @@
       "canonical_name": null,
       "data_type": "string",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "M",
+        "S",
+        "T"
+      ],
+      "valid_values_descriptions": {
+        "M": "Massimo",
+        "S": "Minimo (Svensson)",
+        "T": "Tarso + dito"
+      },
       "description": "This field is mandatory if the Tarsus is given",
       "semantic_domain": "biometrics",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-15T18:32:04.993154"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 46,
@@ -698,7 +1339,14 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-15T18:32:52.713508"
-      ]
+      ],
+      "valid_values_type": "free_numeric",
+      "valid_values_range": {
+        "min": 0,
+        "max": 999,
+        "unit": "mm",
+        "precision": 0.1
+      }
     },
     {
       "position": 47,
@@ -713,7 +1361,14 @@
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-15T18:34:21.372925"
-      ]
+      ],
+      "valid_values_type": "free_numeric",
+      "valid_values_range": {
+        "min": 0,
+        "max": 999,
+        "unit": "mm",
+        "precision": 0.1
+      }
     },
     {
       "position": 48,
@@ -721,14 +1376,35 @@
       "canonical_name": null,
       "data_type": "integer",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8"
+      ],
+      "valid_values_descriptions": {
+        "0": "Nessun grasso",
+        "1": "Tracce",
+        "2": "Pochissimo",
+        "3": "Poco",
+        "4": "Moderato",
+        "5": "Abbastanza",
+        "6": "Molto",
+        "7": "Moltissimo",
+        "8": "Estremamente abbondante"
+      },
       "description": "Codes are defined fot three nethods of assessing fat:\nB - Biometrics Working Group\nE - ESF system\nP - Operation Baltic",
       "semantic_domain": "biometrics",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-15T18:36:25.506699"
-      ]
+      ],
+      "valid_values_type": "enumeration"
     },
     {
       "position": 49,
@@ -736,14 +1412,381 @@
       "canonical_name": null,
       "data_type": "string",
       "length": 1,
-      "valid_values": [],
-      "valid_values_descriptions": null,
+      "valid_values": [
+        "B",
+        "E",
+        "P"
+      ],
+      "valid_values_descriptions": {
+        "B": "BWG (Biebricher Wasservogel-Gebiete)",
+        "E": "ESF (EURING Speed Factor)",
+        "P": "Operation Baltic"
+      },
       "description": "One character code to indicate fat score method used (B, E, P)",
-      "semantic_domain": null,
+      "semantic_domain": "biometrics",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-15T18:37:28.145490"
-      ]
+      ],
+      "valid_values_type": "enumeration"
+    },
+    {
+      "position": 50,
+      "name": "pectoral muscle score",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 1,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "valid_values_descriptions": {
+        "0": "Sterno molto prominente, muscolo profondamente concavo",
+        "1": "Sterno prominente, muscolo piatto o leggermente concavo",
+        "2": "Sterno rilevabile, muscolo leggermente convesso",
+        "3": "Sterno difficilmente rilevabile, muscolo arrotondato/convesso"
+      },
+      "description": "A single numeric code to describe state of pectoral muscle",
+      "semantic_domain": "biometrics",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-05-18T19:49:01.615015"
+      ],
+      "valid_values_type": "enumeration"
+    },
+    {
+      "position": 51,
+      "name": "brood patch",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 1,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "P"
+      ],
+      "valid_values_descriptions": {
+        "0": "Assente",
+        "1": "In sviluppo",
+        "2": "Ben sviluppata",
+        "3": "Completamente vascolarizzata",
+        "4": "In regressione",
+        "5": "In rinnovo",
+        "P": "Presente (stadio non determinato)"
+      },
+      "description": "A single character to describe, in chronological order, the state of the brood patch in the breeding season",
+      "semantic_domain": "demographics",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-05-18T19:49:59.925206"
+      ],
+      "valid_values_type": "enumeration"
+    },
+    {
+      "position": 52,
+      "name": "primary score",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 2,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "The sum of the (usually 10) primary scores",
+      "semantic_domain": "methodology",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-05-18T19:51:50.461002"
+      ],
+      "valid_values_type": "free_numeric",
+      "valid_values_range": {
+        "min": 0,
+        "max": 50,
+        "unit": "punti",
+        "precision": 1
+      }
+    },
+    {
+      "position": 53,
+      "name": "primary moult",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 10,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "V",
+        "X"
+      ],
+      "valid_values_descriptions": {
+        "0": "Penna vecchia",
+        "1": "Cresciuta 1/5",
+        "2": "Cresciuta 2/5",
+        "3": "Cresciuta 3/5",
+        "4": "Cresciuta 4/5",
+        "5": "Penna nuova (completamente cresciuta)",
+        "V": "Penna molto vecchia (più di 1 anno)",
+        "X": "Non determinata"
+      },
+      "description": "Ten digits, each in the range 0-5. These digits are arranged from inner to outer primaries",
+      "semantic_domain": "biometrics",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-05-18T19:53:31.700168"
+      ],
+      "valid_values_type": "enumeration"
+    },
+    {
+      "position": 54,
+      "name": "old greater coverts",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 1,
+      "valid_values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "A"
+      ],
+      "valid_values_descriptions": {
+        "0": "Nessuna vecchia copritrice maggiore",
+        "1": "1 vecchia copritrice maggiore",
+        "2": "2 vecchie copritrici maggiori",
+        "3": "3 vecchie copritrici maggiori",
+        "4": "4 vecchie copritrici maggiori",
+        "5": "5 vecchie copritrici maggiori",
+        "6": "6 vecchie copritrici maggiori",
+        "7": "7 vecchie copritrici maggiori",
+        "8": "8 vecchie copritrici maggiori",
+        "9": "9 vecchie copritrici maggiori",
+        "A": "10 o più vecchie copritrici maggiori"
+      },
+      "description": "The number of unmoulted greater coverts retained after post juvenile moult (normally only applicable for passerines)",
+      "semantic_domain": "biometrics",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-05-18T19:54:50.674622"
+      ],
+      "valid_values_type": "enumeration"
+    },
+    {
+      "position": 55,
+      "name": "alula",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 3,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "Three characters to describe the state of the three alula feathers",
+      "semantic_domain": "methodology",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-05-18T19:55:50.420019"
+      ],
+      "valid_values_type": "free_alphanumeric"
+    },
+    {
+      "position": 56,
+      "name": "carpal covert",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 1,
+      "valid_values": [
+        "0",
+        "1"
+      ],
+      "valid_values_descriptions": {
+        "0": "Vecchia / ritenuta",
+        "1": "Nuova / sostituita"
+      },
+      "description": "A single integer to describe state of the moult of the carpal covert",
+      "semantic_domain": "biometrics",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-05-18T19:56:40.332603"
+      ],
+      "valid_values_type": "enumeration"
+    },
+    {
+      "position": 57,
+      "name": "sexing method",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 1,
+      "valid_values": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "L",
+        "P",
+        "S",
+        "T",
+        "U"
+      ],
+      "valid_values_descriptions": {
+        "A": "Comportamentale",
+        "B": "Placca ootecale (brood patch)",
+        "C": "Rigonfiamento cloacale",
+        "D": "Analisi DNA",
+        "E": "Piumaggio",
+        "L": "Laparotomia",
+        "P": "Caratteri di piumaggio specifici",
+        "S": "Canto",
+        "T": "Misurazioni strutturali",
+        "U": "Sconosciuto"
+      },
+      "description": "this is to enable analysts to select data appropriately for analysis where sex is a factor",
+      "semantic_domain": "demographics",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-05-20T18:10:09.290671"
+      ],
+      "valid_values_type": "enumeration"
+    },
+    {
+      "position": 58,
+      "name": "place name",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 250,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "The name of the place where the encounter occurs. This will be the name given by the ringer/finder or as amended by the ringing scheme (250 characters max)",
+      "semantic_domain": "spatial",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-05-20T18:11:59.418833",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-05-20T16:14:23.959Z"
+      ],
+      "valid_values_type": "free_text"
+    },
+    {
+      "position": 59,
+      "name": "remarks",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 500,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "This filed is free for any relevant remarks or other details (500 characters max)",
+      "semantic_domain": "methodology",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-05-20T18:14:03.950429"
+      ],
+      "valid_values_type": "free_text"
+    },
+    {
+      "position": 60,
+      "name": "reference",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 250,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "The scheme's own reference for this bird encounter (250 characters max)",
+      "semantic_domain": "methodology",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-05-20T18:17:25.067145",
+        "Manual edit: Edit via PositionalMatrixEditor at 2026-05-20T16:17:38.404Z"
+      ],
+      "valid_values_type": "free_text"
+    },
+    {
+      "position": 61,
+      "name": "latitude",
+      "canonical_name": null,
+      "data_type": "float",
+      "length": 7,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "Latitude in degrees and decimal points of degrees with a maximum of four decimal places (full stop, not comma)",
+      "semantic_domain": "spatial",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-05-20T18:19:45.789171"
+      ],
+      "valid_values_type": "free_numeric",
+      "valid_values_range": {
+        "min": -90,
+        "max": 90,
+        "unit": "gradi decimali WGS84",
+        "precision": 0.0001
+      }
+    },
+    {
+      "position": 62,
+      "name": "longitude",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 8,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "Longitude in degrees and decimal points of degrees with a maximum of four decimal places (full stop, not comma)",
+      "semantic_domain": "spatial",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-05-20T18:20:42.615423"
+      ],
+      "valid_values_type": "free_numeric",
+      "valid_values_range": {
+        "min": -180,
+        "max": 180,
+        "unit": "gradi decimali WGS84",
+        "precision": 0.0001
+      }
+    },
+    {
+      "position": 63,
+      "name": "current place code",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 4,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "When there are changes such that the Place code becomes obsolete this filed should be used to hold the current value",
+      "semantic_domain": "spatial",
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-05-20T18:22:18.656400"
+      ],
+      "valid_values_type": "external_reference",
+      "valid_values_source": "euring_place_codes",
+      "valid_values_lookup_tool": null
+    },
+    {
+      "position": 64,
+      "name": "more other marks",
+      "canonical_name": null,
+      "data_type": "string",
+      "length": 50,
+      "valid_values": [],
+      "valid_values_descriptions": null,
+      "description": "This filed will be empty unless details of more than one type of other mark need to be given. In that case, details of the multiple marks can be held here (no comma, maximum 50 characters)",
+      "semantic_domain": null,
+      "semantic_meaning": null,
+      "evolution_notes": [
+        "Field added manually on 2026-05-20T18:26:17.468722"
+      ],
+      "valid_values_type": "free_text"
     }
   ],
   "validation_rules": [
