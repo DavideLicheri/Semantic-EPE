@@ -1498,6 +1498,205 @@ async def get_field_info(
     }
 
 
+# ── Semantic Field Editor endpoints ───────────────────────────────────────────
+
+class FieldSemanticUpdateRequest(BaseModel):
+    valid_values_type: Optional[str] = None
+    valid_values: Optional[List[str]] = None
+    valid_values_descriptions: Optional[Dict[str, str]] = None
+    valid_values_source: Optional[str] = None
+    valid_values_lookup_tool: Optional[str] = None
+    valid_values_range: Optional[Dict[str, Any]] = None
+    description: Optional[str] = None
+
+
+class FieldSyncRequest(BaseModel):
+    direction: str  # 'matrix_to_json' | 'json_to_matrix'
+    mode: str       # 'append' | 'update'
+    version: str = "2020"
+
+
+def _resolve_field(version_obj, field_name: str):
+    """Find a field by name or canonical name (case-insensitive)."""
+    norm = field_name.strip().lower().replace("_", " ")
+    for f in version_obj.field_definitions:
+        if f.name.lower() == norm or (f.canonical_name or "").lower() == norm:
+            return f
+    return None
+
+
+def _resolve_version(versions_list, year: int):
+    """Return the version with the most fields for the given year."""
+    candidates = [v for v in versions_list if v.year == year]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda v: len(v.field_definitions))
+
+
+@router.put("/field/{field_name}")
+async def update_field_semantic(
+    field_name: str,
+    request: FieldSemanticUpdateRequest,
+    version: str = "2020",
+    current_user: User = Depends(require_matrix_edit_permission),
+):
+    """Update semantic data (valid_values, descriptions, range, etc.) for a field."""
+    await skos_manager.load_version_model()
+    versions = await skos_manager.get_all_versions()
+
+    try:
+        year = int(version)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid version: {version}")
+
+    target = _resolve_version(versions, year)
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Version {year} not found")
+
+    field = _resolve_field(target, field_name)
+    if not field:
+        raise HTTPException(status_code=404, detail=f"Field '{field_name}' not found in version {year}")
+
+    if request.valid_values_type is not None:
+        try:
+            from ..models.euring_models import ValidValuesType
+            field.valid_values_type = ValidValuesType(request.valid_values_type) if request.valid_values_type else None
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid valid_values_type: {request.valid_values_type}")
+
+    if request.valid_values is not None:
+        field.valid_values = request.valid_values or None
+
+    if request.valid_values_descriptions is not None:
+        field.valid_values_descriptions = request.valid_values_descriptions or None
+
+    if request.valid_values_source is not None:
+        field.valid_values_source = request.valid_values_source or None
+
+    if request.valid_values_lookup_tool is not None:
+        field.valid_values_lookup_tool = request.valid_values_lookup_tool or None
+
+    if request.valid_values_range is not None:
+        field.valid_values_range = request.valid_values_range or None
+
+    if request.description is not None:
+        field.description = request.description
+
+    await skos_manager.update_version(target)
+
+    return {
+        "success": True,
+        "field_name": field.name,
+        "version": f"euring_{year}",
+        "updated_at": datetime.now().isoformat() + "Z",
+        "updated_by": current_user.username,
+    }
+
+
+@router.post("/field/{field_name}/sync")
+async def sync_field_semantic(
+    field_name: str,
+    request: FieldSyncRequest,
+    current_user: User = Depends(require_matrix_edit_permission),
+):
+    """Sync structural ↔ semantic data for a single field."""
+    if request.direction not in ("matrix_to_json", "json_to_matrix"):
+        raise HTTPException(status_code=400, detail="direction must be 'matrix_to_json' or 'json_to_matrix'")
+    if request.mode not in ("append", "update"):
+        raise HTTPException(status_code=400, detail="mode must be 'append' or 'update'")
+
+    await skos_manager.load_version_model()
+    versions = await skos_manager.get_all_versions()
+
+    try:
+        year = int(request.version)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid version: {request.version}")
+
+    target = _resolve_version(versions, year)
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Version {year} not found")
+
+    field = _resolve_field(target, field_name)
+    if not field:
+        raise HTTPException(status_code=404, detail=f"Field '{field_name}' not found in version {year}")
+
+    changes: List[Dict[str, Any]] = []
+
+    def maybe_set(attr: str, new_val, label: str):
+        old_val = getattr(field, attr, None)
+        if old_val is not None and request.mode == "append":
+            return
+        if old_val == new_val:
+            return
+        old_display = old_val.value if hasattr(old_val, "value") else old_val
+        setattr(field, attr, new_val)
+        new_display = new_val.value if hasattr(new_val, "value") else new_val
+        changes.append({"field": label, "before": old_display, "after": new_display})
+
+    if request.direction == "matrix_to_json":
+        from ..models.euring_models import ValidValuesType
+        # Derive valid_values_type hint from data_type
+        numeric_types = {"integer", "float", "numeric"}
+        if field.data_type and field.data_type.lower() in numeric_types:
+            maybe_set("valid_values_type", ValidValuesType.FREE_NUMERIC, "valid_values_type")
+        elif field.valid_values:
+            maybe_set("valid_values_type", ValidValuesType.ENUMERATION, "valid_values_type")
+
+        # Propagate length to valid_values_range if free_numeric
+        vvt = field.valid_values_type
+        vvt_val = vvt.value if hasattr(vvt, "value") else vvt
+        if vvt_val == "free_numeric" and field.length:
+            old_range = field.valid_values_range or {}
+            if "max_length" not in old_range or request.mode == "update":
+                new_range = dict(old_range)
+                new_range["max_length"] = field.length
+                old_display = field.valid_values_range
+                field.valid_values_range = new_range
+                changes.append({"field": "valid_values_range.max_length", "before": old_display, "after": new_range})
+
+    else:  # json_to_matrix
+        from ..models.euring_models import ValidValuesType
+        vvt = field.valid_values_type
+        vvt_val = vvt.value if hasattr(vvt, "value") else vvt
+
+        # Align data_type with valid_values_type
+        if vvt_val == "free_numeric":
+            numeric_types = {"integer", "float", "numeric"}
+            if field.data_type not in numeric_types:
+                maybe_set("data_type", "integer", "data_type")
+        elif vvt_val == "enumeration":
+            if field.data_type not in ("string", "alphanumeric"):
+                maybe_set("data_type", "string", "data_type")
+
+    if changes:
+        await skos_manager.update_version(target)
+
+    return {
+        "success": True,
+        "field_name": field.name,
+        "version": f"euring_{year}",
+        "direction": request.direction,
+        "mode": request.mode,
+        "changes": changes,
+        "updated_by": current_user.username,
+    }
+
+
+@router.post("/reload")
+async def reload_euring_data(current_user: User = Depends(require_matrix_edit_permission)):
+    """Hot-reload all EURING JSON files from disk without restarting ECES."""
+    await skos_manager.reload_version_model()
+    return {
+        "success": True,
+        "message": "EURING data reloaded from disk",
+        "reloaded_at": datetime.now().isoformat() + "Z",
+    }
+
+
+# ── End of Semantic Field Editor endpoints ────────────────────────────────────
+
+
 @router.post("/parse", response_model=EuringParseResponse)
 async def parse_euring_string(request: EuringParseRequest):
     """

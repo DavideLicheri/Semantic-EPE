@@ -539,6 +539,63 @@ export class EuringAPI {
     }
   }
 
+  // ── Semantic Field Editor ────────────────────────────────────────────────
+
+  static async getFieldSemantic(fieldName: string, version: string): Promise<any> {
+    try {
+      const response = await api.get(`/api/euring/field/${encodeURIComponent(fieldName)}`, {
+        params: { version },
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.message || 'Failed to get field semantic data');
+    }
+  }
+
+  static async updateFieldSemantic(fieldName: string, version: string, data: {
+    valid_values_type?: string | null;
+    valid_values?: string[] | null;
+    valid_values_descriptions?: Record<string, string> | null;
+    valid_values_source?: string | null;
+    valid_values_lookup_tool?: string | null;
+    valid_values_range?: Record<string, any> | null;
+    description?: string | null;
+  }): Promise<any> {
+    try {
+      const response = await api.put(
+        `/api/euring/field/${encodeURIComponent(fieldName)}`,
+        data,
+        { params: { version } }
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.message || 'Failed to update field semantic data');
+    }
+  }
+
+  static async syncFieldSemantic(fieldName: string, direction: 'matrix_to_json' | 'json_to_matrix', mode: 'append' | 'update', version: string): Promise<any> {
+    try {
+      const response = await api.post(
+        `/api/euring/field/${encodeURIComponent(fieldName)}/sync`,
+        { direction, mode, version }
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.message || 'Sync failed');
+    }
+  }
+
+  static async reloadEuringData(): Promise<any> {
+    try {
+      const response = await api.post('/api/euring/reload');
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.message || 'Reload failed');
+    }
+  }
+
+  // ── End Semantic Field Editor ─────────────────────────────────────────────
+
   /**
    * Get field description for EURING fields
    */
