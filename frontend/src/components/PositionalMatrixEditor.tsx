@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import EuringAPI from '../services/api';
 import PositionalMatrix from './PositionalMatrix';
 import { useTranslation } from '../hooks/useTranslation';
+import SemanticFieldEditor from './semantic/SemanticFieldEditor';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -96,6 +97,7 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
   const [loading, setLoading] = useState(true);
   const [selectedVersions, setSelectedVersions] = useState<string[]>(['2000', '2020']);
   const [editState, setEditState] = useState<EditState | null>(null);
+  const [activeTab, setActiveTab] = useState<'struttura' | 'semantica' | 'storia'>('struttura');
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   const [saving, setSaving] = useState(false);
   const savingRef = React.useRef(false);
@@ -227,6 +229,7 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
       lookupLoaded: false,
     };
     setEditState(state);
+    setActiveTab('struttura');
     setShowAddField(false);
     loadLookup(fieldName, version);
   };
@@ -419,7 +422,7 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
             padding: '20px', position: 'sticky', top: '20px', maxHeight: '90vh', overflowY: 'auto',
           }}>
             {/* Field header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '2px solid #e9ecef' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '10px', borderBottom: '2px solid #e9ecef' }}>
               <div>
                 <span style={{ fontWeight: 'bold', fontSize: '1.05em' }}>{editState.fieldName}</span>
                 <span style={{ marginLeft: '8px', padding: '3px 10px', backgroundColor: '#e9ecef', borderRadius: '12px', fontSize: '0.8em', color: '#555' }}>
@@ -429,7 +432,53 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
               <button onClick={() => setEditState(null)} style={{ background: '#6c757d', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', padding: '4px 10px' }}>✕</button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {/* Tab navigation */}
+            <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', borderBottom: '2px solid #e9ecef', paddingBottom: '0' }}>
+              {(['struttura', 'semantica', 'storia'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  style={{
+                    padding: '6px 14px',
+                    border: 'none',
+                    borderBottom: activeTab === tab ? '2px solid #007bff' : '2px solid transparent',
+                    background: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.85em',
+                    fontWeight: activeTab === tab ? 700 : 400,
+                    color: activeTab === tab ? '#007bff' : '#6c757d',
+                    marginBottom: '-2px',
+                    textTransform: 'capitalize',
+                  }}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            {/* Semantica tab */}
+            {activeTab === 'semantica' && (
+              <SemanticFieldEditor matrixData={{
+                fieldName: editState.fieldName,
+                version: editState.version,
+                position: editState.position,
+                length: editState.length,
+                data_type: editState.dataType,
+                semantic_domain: editState.semanticDomain || undefined,
+                semantic_meaning: editState.semanticMeaning || undefined,
+                description: editState.description || undefined,
+              }} />
+            )}
+
+            {/* Storia tab */}
+            {activeTab === 'storia' && (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#adb5bd', fontSize: '0.9em' }}>
+                La cronologia delle modifiche sarà disponibile in una versione futura.
+              </div>
+            )}
+
+            {/* Struttura tab content (existing form) */}
+            {activeTab === 'struttura' && <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
               {/* Description */}
               <FormField label={t('editor.field.description')}>
@@ -542,9 +591,9 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
                   </div>
                 )}
               </FormField>
-            </div>
+            </div>}
 
-            {/* Save / cancel */}
+            {/* Save / cancel — always visible */}
             <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
               <button onClick={handleSaveAll}
                 disabled={saving || positionConflicts.length > 0}
