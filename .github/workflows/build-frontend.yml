@@ -1,0 +1,53 @@
+name: Build Frontend
+
+on:
+  push:
+    branches: [main]
+
+# Evita loop: questo job committerà su main con [skip ci],
+# ma aggiungiamo anche il check sull'actor come doppia protezione.
+jobs:
+  build-and-commit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Aggiorna frontend-build/
+        run: |
+          rm -rf frontend-build
+          cp -r frontend/dist frontend-build
+
+      - name: Commit e push (solo se ci sono modifiche)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add frontend-build/
+          if git diff --staged --quiet; then
+            echo "Nessuna modifica in frontend-build/ — commit saltato."
+          else
+            git commit -m "chore: build frontend → frontend-build/ [skip ci]"
+            git push
+          fi
