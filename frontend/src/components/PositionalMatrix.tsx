@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
+import SemanticFieldEditor from './semantic/SemanticFieldEditor';
 
 interface FieldInfo {
   position: number;
@@ -65,6 +66,7 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
   const [hoveredField, setHoveredField] = useState<string | null>(null);
   const [showFieldNames, setShowFieldNames] = useState<boolean>(true);
   const [selectedFieldKey, setSelectedFieldKey] = useState<SelectedFieldKey | null>(null);
+  const [activeTab, setActiveTab] = useState<'struttura' | 'semantica'>('struttura');
   const tableRef = React.useRef<HTMLTableElement>(null);
 
   // Build positional data for each version
@@ -130,6 +132,7 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
 
   const handleFieldSelect = (fieldName: string, version: string) => {
     setSelectedFieldKey({ fieldName, version });
+    setActiveTab('struttura');
   };
 
   const selectedField: SelectedField | null = useMemo(() => {
@@ -204,7 +207,44 @@ const PositionalMatrix: React.FC<PositionalMatrixProps> = ({
               }}>{t('matrix.field.close')}</button>
             </div>
 
-            <FieldPropertiesGrid field={selectedField} editMode={editMode} onEditProperty={onEditProperty} />
+            {/* Tab bar */}
+            <div style={{ display: 'flex', gap: '4px', borderBottom: '2px solid #e9ecef', marginBottom: '16px', paddingBottom: '0' }}>
+              {(['struttura', 'semantica'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  style={{
+                    padding: '6px 16px',
+                    border: 'none',
+                    borderBottom: activeTab === tab ? '2px solid #007bff' : '2px solid transparent',
+                    background: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.85em',
+                    fontWeight: activeTab === tab ? 700 : 400,
+                    color: activeTab === tab ? '#007bff' : '#6c757d',
+                    marginBottom: '-2px',
+                    textTransform: 'capitalize',
+                  }}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            {activeTab === 'struttura' && (
+              <FieldPropertiesGrid field={selectedField} editMode={editMode} onEditProperty={onEditProperty} />
+            )}
+            {activeTab === 'semantica' && (
+              <SemanticFieldEditor matrixData={{
+                fieldName: selectedField.fieldName,
+                version: selectedField.version,
+                position: selectedField.fieldInfo.position,
+                length: selectedField.fieldInfo.length,
+                data_type: selectedField.fieldInfo.data_type,
+                semantic_domain: selectedField.fieldInfo.semantic_domain,
+                description: selectedField.fieldInfo.description,
+              }} />
+            )}
           </>
         ) : (
           <div style={{
