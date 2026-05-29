@@ -1498,6 +1498,79 @@ async def get_field_info(
     }
 
 
+@router.get("/field/{field_name}/lookup")
+async def lookup_field_code(
+    field_name: str,
+    code: str,
+    version: str = "2020",
+    current_user=Depends(get_current_user_optional),
+):
+    """
+    Decode a single code for an EURING field.
+
+    Returns only the description for the given code — much lighter than
+    fetching the full field definition (avoids returning 2052 entries for
+    place_code when only one is needed).
+    """
+    await skos_manager.load_version_model()
+    versions = await skos_manager.get_all_versions()
+
+    deduped: dict[int, any] = {}
+    for v in versions:
+        if v.year not in deduped or len(v.field_definitions) > len(deduped[v.year].field_definitions):
+            deduped[v.year] = v
+
+    try:
+        year = int(version)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid version: {version}. Use 1966, 1979, 2000 or 2020.")
+
+    target = deduped.get(year)
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Version {year} not found.")
+
+    field_name_norm = field_name.strip().lower().replace("_", " ")
+    found = None
+    for f in target.field_definitions:
+        if f.name.lower() == field_name_norm or (f.canonical_name or "").lower() == field_name_norm:
+            found = f
+            break
+
+    if not found:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Field '{field_name}' not found in EURING {year}.",
+        )
+
+    descriptions = found.valid_values_descriptions or {}
+    valid_values = found.valid_values or []
+
+    if code in descriptions:
+        return {
+            "field_name": found.name,
+            "version": f"euring_{year}",
+            "code": code,
+            "description": descriptions[code],
+            "found": True,
+        }
+    elif code in valid_values:
+        return {
+            "field_name": found.name,
+            "version": f"euring_{year}",
+            "code": code,
+            "description": None,
+            "found": True,
+        }
+    else:
+        return {
+            "field_name": found.name,
+            "version": f"euring_{year}",
+            "code": code,
+            "description": None,
+            "found": False,
+        }
+
+
 # ── Semantic Field Editor endpoints ───────────────────────────────────────────
 
 class FieldSemanticUpdateRequest(BaseModel):
