@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ECES (EURING Code Evolution System) is a web application for managing, visualizing, and converting EURING bird ringing codes across four historical versions (1966, 1979, 2000, 2020). It is an internal ISPRA tool, all UI text is hardcoded in Italian (an i18n system was removed due to race condition bugs). The system uses JWT authentication with three roles: `user`, `matrix_editor`, `super_admin`.
 
+**Lizzy** is an AI assistant (qwen2.5:14b on Ollama/Open WebUI) that uses ECES as its sole source of truth for EURING field semantics. ECES exposes dedicated API endpoints consumed by Lizzy's Open WebUI tools (`eces_recognize`, `eces_convert`, `eces_field_info`, `eces_species_lookup`, `ispra_species_lookup`).
+
 ## Commands
 
 ### Backend
@@ -79,14 +81,16 @@ The Vite config sets `base: '/eces/'`, so in production the frontend is served u
   - `usage_logger.py` / `database_service.py` — Log queries to PostgreSQL for analytics
 - **`app/repositories/skos_repository.py`** — Reads/writes EURING JSON files; supports cache invalidation on field edits
 - **`app/auth/`** — JWT with bcrypt. `auth_service.py` handles hashing; `dependencies.py` exposes FastAPI `Depends` guards (`get_current_active_user`, `require_matrix_edit_permission`, `require_super_admin`, `get_current_user_optional`)
-- **`app/models/euring_models.py`** — All Pydantic models: `EuringVersion`, `FieldDefinition`, `ConversionMapping`, `FieldMapping`, `SemanticDomain` enum, etc.
+- **`app/models/euring_models.py`** — All Pydantic models: `EuringVersion`, `FieldDefinition`, `ConversionMapping`, `FieldMapping`, `SemanticDomain` enum, `ValidValuesType` enum, etc.
 
 ### Data Files (`backend/data/`)
 
-- `euring_versions/versions/euring_{1966,1979,2000,2020}.json` — Full field definitions per version (positions, lengths, types, lookup values, semantic domain assignments)
+- `euring_versions/versions/euring_{1966,1979,2000,2020}.json` — Full field definitions per version (positions, lengths, types, lookup values, semantic domain assignments, `valid_values_type`, `valid_values_descriptions`, `valid_values_source`)
 - `euring_versions/conversion_mappings.json` — Field-to-field mapping rules across version pairs
 - `euring_versions/domain_evolutions/` — Per-domain evolution data for the DomainPanel
 - `auth/users.json` — User records with bcrypt-hashed passwords; the `super_admin` default is `admin`/`admin`
+
+`euring_2020.json` contains populated `valid_values_descriptions` for: `place_code` (2052 voci), `current_place_code` (2052), `ringing_scheme` (161), `circumstances` (92). These are sourced from the Python `euring` library and imported via `backend/scripts/import_euring_codes.py`.
 
 ### Frontend Structure
 
@@ -122,6 +126,41 @@ All use the `ECES_` prefix:
 | `ECES_CORS_ORIGINS` | `http://localhost:3000,...` | Comma-separated allowed origins |
 | `ECES_HOST` / `ECES_PORT` | `0.0.0.0` / `8000` | Bind address |
 | `DATABASE_URL` | — | PostgreSQL for analytics; analytics is skipped gracefully if unavailable |
+
+### Field Semantic Model
+
+`FieldDefinition` supports semantic classification of valid values via `valid_values_type` (`ValidValuesType` enum):
+
+| Value | Meaning |
+|---|---|
+| `enumeration` | Closed list with descriptions (sex, age, condition…) |
+| `external_reference` | Large external list (place_code 2052 entries, ringing_scheme 161) |
+| `free_numeric` | Free numeric value with optional range |
+| `free_text` | Free text |
+| `free_alphanumeric` | Free alphanumeric (ring_number…) |
+| `computed` | Derived from other fields (elapsed_time…) |
+
+Additional optional fields on `FieldDefinition`: `valid_values_descriptions` (dict code→label), `valid_values_source` (string), `valid_values_lookup_tool` (string), `valid_values_range` (dict).
+
+### Lookup Endpoint
+
+`GET /api/euring/field/{field_name}/lookup?code=XX&version=2020` decodes a single code without returning the full dictionary. Implemented in `euring_api.py` after `get_field_info`. This is the endpoint used by Lizzy's `eces_field_info(field_name, code=XX)` to avoid sending 2052 entries to the model for place_code lookups.
+
+### Import Script
+
+`backend/scripts/import_euring_codes.py` — standalone script that uses the `euring` Python library to populate `valid_values`, `valid_values_descriptions` for place_code, current_place_code, ringing_scheme, circumstances via `PUT /api/euring/field/{name}`. Run with the venv Python:
+```bash
+/opt/eces/venv/bin/python backend/scripts/import_euring_codes.py
+```
+
+### Production Deployment
+
+No git on the production VM (`/opt/eces/`). Deploy by copying files via `scp`:
+```bash
+scp backend/app/api/euring_api.py amministratore@10.158.251.79:/opt/eces/backend/app/api/euring_api.py
+sudo systemctl restart eces
+```
+The VM is at `10.158.251.79`, access via FortiClient VPN, user `amministratore`, password auth.
 
 ### Known Active Bug
 
