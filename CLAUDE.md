@@ -169,3 +169,28 @@ Batch parsing fails with a Pydantic validation error when 3+ identical EURING st
 ## Testing
 
 Tests use `pytest` + `pytest-asyncio` + `hypothesis`. The test suite is sparse — `tests/test_version_loading.py` covers `VersionLoaderService` and `SKOSManagerImpl` integration. Tests must be run from the `backend/` directory (or with `PYTHONPATH` set to include `backend/`) because imports are relative to that root.
+
+## Lizzy — AI Assistant
+
+Lizzy è l'assistente AI specializzata in inanellamento ornitologico EURING. Gira su qwen2.5:14b via Ollama + Open WebUI sulla stessa VM ISPRA (10.158.251.79).
+
+### Infrastruttura
+- Ollama: porta 11434, CPU-only, override in `/etc/systemd/system/ollama.service.d/override.conf`
+- Open WebUI: Docker container, porta 3000, compose in `~/eces-ai/docker-compose.yml`
+- Modelli disponibili: `qwen2.5:14b` (default), `qwen2.5:32b` (batch), `qwen2.5:3b` (test)
+
+### Strumenti Open WebUI configurati
+| Strumento | Funzione | Endpoint ECES |
+|---|---|---|
+| `eces_recognize` | Riconosce versione stringa EURING | POST /api/euring/recognize |
+| `eces_convert` | Converte tra versioni | POST /api/euring/convert |
+| `eces_field_info` | Semantica campo + lookup puntuale | GET /api/euring/field/{name} + /lookup |
+| `eces_species_lookup` | Nome specie da codice EURING | CSV /app/backend/data/euring_species_codes.csv |
+| `ispra_species_lookup` | Nome italiano ufficiale CNI-ISPRA | SPARQL https://dati.isprambiente.it/sparql |
+
+### Fonte dati specie
+- CSV EURING: `/app/backend/data/euring_species_codes.csv` (3628 specie, aggiornamento mensile via `/etc/cron.monthly/update_euring_species`)
+- SPARQL ISPRA: grafo `https://w3id.org/italia/env/ld/euring/taxon/` — 2274 specie con `vernacularName` italiano
+
+### Principio architetturale
+ECES è l'unica fonte di verità per Lizzy. Lizzy non usa mai la propria memoria per decodificare codici EURING — interroga sempre ECES via `eces_field_info`. Per codici singoli usa il lookup puntuale (`eces_field_info(field_name, code=XX)`) che chiama `GET /api/euring/field/{name}/lookup?code=XX` per evitare di caricare dizionari completi (es. place_code ha 2052 voci).
