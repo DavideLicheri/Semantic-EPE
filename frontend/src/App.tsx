@@ -12,6 +12,7 @@ import { UserManagement } from './components/UserManagement'
 import { UserProfile } from './components/UserProfile'
 import Analytics from './components/Analytics'
 import ISPRAQuery from './components/ISPRAQuery'
+import LizzyButton from './components/LizzyButton'
 import { authService, User } from './services/auth'
 import { useTranslation } from './hooks/useTranslation'
 import { i18n } from './i18n'
@@ -210,6 +211,7 @@ function App() {
           onClose={() => setShowUserProfile(false)} 
         />
       )}
+      <LizzyButton />
     </div>
   )
 }
