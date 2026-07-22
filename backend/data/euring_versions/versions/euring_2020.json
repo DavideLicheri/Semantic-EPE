@@ -401,7 +401,7 @@
       "length": 10,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "A sequence of ten characters, to be coded directly",
+      "description": "A sequence of up to ten alphanumeric characters identifying the ring. Where the ring number has fewer than ten characters, the field is padded with dots (always inserted to the left of the rightmost row of digits). Unknown parts of the number (e.g. worn ring) are coded as '-'. If no metal ring is present, a unique scheme-issued identifier (recommended prefix 'NMR' + 7 digits) is used instead. | Sequenza di massimo dieci caratteri alfanumerici che identifica l'anello. Se il numero ha meno di dieci caratteri, il campo viene riempito con punti (sempre inseriti a sinistra della sequenza numerica più a destra). Le parti sconosciute del numero (es. anello consumato) si codificano con '-'. Se non è presente un anello metallico, si usa un identificativo univoco assegnato dallo schema (prefisso consigliato 'NMR' + 7 cifre).",
       "semantic_domain": "identification_marking",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -540,7 +540,7 @@
       "length": 5,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "Species as reported by the finder, whether or not he has correctly identified the species",
+      "description": "Five-digit EURING species code as reported by the person who handled the bird, whether or not correctly identified. Use 00000 for 'unknown bird', or a group code ending in 9 (e.g. 'gull', 'duck') if only the group is known. The correct species is given in 'species concluded'. | Codice EURING a cinque cifre della specie così come riportata da chi ha maneggiato l'uccello, indipendentemente dal fatto che l'identificazione sia corretta. Si usa 00000 per 'uccello sconosciuto', o un codice di gruppo che termina in 9 (es. 'gabbiano', 'anatra') se è nota solo la famiglia/gruppo. La specie corretta è indicata nel campo 'species concluded'.",
       "semantic_domain": "species",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -559,7 +559,7 @@
       "length": 5,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "Species as concluded by the Scheme.\nThe importance of this filed is to confirm if the Scheme considers the species, given by the person who handled the bird, is correct or not",
+      "description": "Five-digit EURING species code as concluded/confirmed by the ringing scheme, coded the same way as 'species mentioned'. Confirms whether the species reported by the finder is correct; should be the same across all records of a given bird. | Codice EURING a cinque cifre della specie come concluso/confermato dallo schema di inanellamento, codificato come 'species mentioned'. Conferma se la specie riportata dal segnalatore è corretta; dovrebbe essere identico in tutti i record di uno stesso uccello.",
       "semantic_domain": "species",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -975,7 +975,7 @@
       "length": 2,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "-- bird is not a nestling\n00 unknown, not coded\nnn n chicks in the nest",
+      "description": "Only for nestling records, two digits. '--' if the bird is not a nestling. For a brood from one female: 00 = unknown/not coded, 01-12+ = number of chicks in the nest. For a brood from more than one female, add 50 to the chick count (99 = unknown for multi-female broods). | Solo per record di nidiacei, due cifre. '--' se l'uccello non è un nidiaceo. Per una covata di una sola femmina: 00 = sconosciuto/non codificato, 01-12+ = numero di pulcini nel nido. Per una covata di più femmine, si aggiunge 50 al numero di pulcini (99 = sconosciuto per covate multi-femmina).",
       "semantic_domain": "demographics",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -1000,7 +1000,7 @@
       "length": 2,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "-- bird is not a pullus 99 pullus age not recorded 00 pullus age 0 days nn pullus age n days",
+      "description": "Age in days of a pullus (nestling), two digits: '--' if not a pullus, 99 = age not recorded, 00 = 0 days, 01 = 1 day, etc. See 'accuracy of pullus age' for the associated precision. | Età in giorni di un pullus (nidiaceo), due cifre: '--' se non è un pullus, 99 = età non registrata, 00 = 0 giorni, 01 = 1 giorno, ecc. Vedi 'accuracy of pullus age' per la precisione associata.",
       "semantic_domain": "demographics",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -1072,7 +1072,7 @@
       "length": 8,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "The date in days, months and years to be coded",
+      "description": "The date in the format ddmmyyyy (eight digits, no omitted leading zeros), e.g. 5 September 2013 = 05092013. Always enter a best estimate of the real date; use 'accuracy of date' to record any uncertainty. | La data nel formato ddmmyyyy (otto cifre, senza omettere gli zeri iniziali), es. 5 settembre 2013 = 05092013. Inserire sempre la migliore stima della data reale; usare 'accuracy of date' per registrare eventuale incertezza.",
       "semantic_domain": "temporal",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -1136,7 +1136,7 @@
       "length": 4,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "The actual time of the day in hours and minutes, according to a 24 hour clock in local time",
+      "description": "Time of day in 24-hour local time, four characters (e.g. 0008, 1556). Use '----' if unknown/not recorded; if only the hour is known, code the minutes as '--' (e.g. 15--). | Ora del giorno in formato 24 ore, ora locale, quattro caratteri (es. 0008, 1556). Usare '----' se sconosciuta/non registrata; se è noto solo l'ora, codificare i minuti come '--' (es. 15--).",
       "semantic_domain": "temporal",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -5281,7 +5281,7 @@
       "length": 15,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "ABBCCDDWXXXYYZZ representing:\nlatitude A (+ is hemisphere North, - is South)\n            BB (degrees from 0 to 90)\n            CC (minutes from 0 to 59)\n            DD (seconds from 0 to 59)\nlongitude W (+ is hemisphere East, - is West)\n            XXX (degrees from 0 to 180)\n            YY (minutes from 0 to 59)\n            ZZ (seconds from 0 to 59)",
+      "description": "Fifteen-digit field ABBCCDDWXXXYYZZ encoding latitude (A=hemisphere +/-, BB=degrees, CC=minutes, DD=seconds) and longitude (W=hemisphere +/-, XXX=degrees, YY=minutes, ZZ=seconds), datum WGS84. If latitude/longitude are submitted separately, code this field as 15 dots. | Campo di quindici cifre ABBCCDDWXXXYYZZ che codifica latitudine (A=emisfero +/-, BB=gradi, CC=minuti, DD=secondi) e longitudine (W=emisfero +/-, XXX=gradi, YY=minuti, ZZ=secondi), datum WGS84. Se latitudine/longitudine sono forniti nei campi separati, codificare questo campo con 15 punti.",
       "semantic_domain": "spatial",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -5676,7 +5676,7 @@
       "length": 5,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "Calculated by computer as the distance between the current record and the ringing data (loxodrome method preferred)",
+      "description": "Distance in kilometres (5 digits, 00000-99999) between the current record and the first record (ringing data), calculated by computer using the loxodrome method. Not present on the ringing record itself, coded as '-----' (five hyphens). | Distanza in chilometri (5 cifre, 00000-99999) tra il record attuale e il primo record (dati di inanellamento), calcolata automaticamente con il metodo lossodromico. Assente nel record di inanellamento stesso, codificata come '-----' (cinque trattini).",
       "semantic_domain": "spatial",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -5695,7 +5695,7 @@
       "length": 3,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "Calculated by computer as the direction to the current record from the ringing data (given in degrees 000-359)",
+      "description": "Direction in degrees (3 digits, 000-359) from the first record (ringing data) to the current record, calculated by computer using the loxodrome method. Not present on the ringing record itself, coded as '---' (three hyphens). | Direzione in gradi (3 cifre, 000-359) dal primo record (dati di inanellamento) al record attuale, calcolata automaticamente con il metodo lossodromico. Assente nel record di inanellamento stesso, codificata come '---' (tre trattini).",
       "semantic_domain": "spatial",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -5714,7 +5714,7 @@
       "length": 5,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "Calculated by computer as the elapsed time between the current record and ringing data (given in days)",
+      "description": "Elapsed time in days (5 digits, 00000-99999) between the current record and the first record (ringing data), calculated by the scheme before submission. Not present on the ringing record itself, coded as '-----' (five hyphens). | Tempo trascorso in giorni (5 cifre, 00000-99999) tra il record attuale e il primo record (dati di inanellamento), calcolato dallo schema prima dell'invio. Assente nel record di inanellamento stesso, codificato come '-----' (cinque trattini).",
       "semantic_domain": "temporal",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -5733,7 +5733,7 @@
       "length": 6,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "This is the maximum chord measurement, as described by Svewnsson (1992)",
+      "description": "Wing length in millimetres, maximum precision 0.5 mm (normally recorded to the nearest millimetre). This is the maximum chord measurement as described by Svensson (1992). | Lunghezza dell'ala in millimetri, precisione massima 0,5 mm (normalmente registrata all'unità di millimetro più vicina). È la misura della corda massima (maximum chord) descritta da Svensson (1992).",
       "semantic_domain": "biometrics",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -5757,7 +5757,7 @@
       "length": 6,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "Length of the third primary feather (mm) to a maximum precision of 0.5 mm",
+      "description": "Length of the third primary feather in millimetres, maximum precision 0.5 mm. Measured with a 1.4 mm diameter vertical pin at the zero end of the ruler (Berthold & Friedrich 1979; English description in Bairlein 1995). | Lunghezza della terza penna primaria in millimetri, precisione massima 0,5 mm. Misurata con un perno verticale del diametro di 1,4 mm posto allo zero del righello (Berthold & Friedrich 1979; descrizione in inglese in Bairlein 1995).",
       "semantic_domain": "biometrics",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -5815,7 +5815,7 @@
       "length": 8,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "In grams, measured to a maximum precision of 0.1 g",
+      "description": "Body mass in grams, measured to a maximum precision of 0.1 g. | Massa corporea in grammi, misurata con precisione massima di 0,1 g.",
       "semantic_domain": "biometrics",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -5927,7 +5927,7 @@
       "length": 5,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "In millimetres, to a maximum precision of 0,1 mm",
+      "description": "Length of the hind claw in millimetres, maximum precision 0.1 mm. For method details see Svensson (1992). | Lunghezza dell'unghia posteriore in millimetri, precisione massima 0,1 mm. Per i dettagli del metodo vedi Svensson (1992).",
       "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -5951,7 +5951,7 @@
       "length": 5,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "In millimetres, to a maximum precision of 0,1 mm",
+      "description": "Bill length in millimetres, maximum precision 0.1 mm (lengths over 100 mm normally given to the nearest millimetre). If recorded, the method must be coded in 'bill method'. | Lunghezza del becco in millimetri, precisione massima 0,1 mm (le lunghezze superiori a 100 mm si arrotondano normalmente al millimetro). Se registrata, il metodo deve essere indicato nel campo 'bill method'.",
       "semantic_domain": "biometrics",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -6005,7 +6005,7 @@
       "length": 5,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "In millimetres, to a maximum precision of 0,1 mm",
+      "description": "Total head length in millimetres, maximum precision 0.1 mm (lengths over 100 mm normally given to the nearest millimetre). For method details see the BTO Ringers' Manual. | Lunghezza totale della testa in millimetri, precisione massima 0,1 mm (le lunghezze superiori a 100 mm si arrotondano normalmente al millimetro). Per i dettagli del metodo vedi il BTO Ringers' Manual.",
       "semantic_domain": "biometrics",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -6029,7 +6029,7 @@
       "length": 5,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "In millimetres, to a maximum precision of 0,1 mm",
+      "description": "Tarsus length in millimetres, maximum precision 0.1 mm (lengths over 100 mm normally given to the nearest millimetre). If recorded, the method must be coded in 'tarsus method'. | Lunghezza del tarso in millimetri, precisione massima 0,1 mm (le lunghezze superiori a 100 mm si arrotondano normalmente al millimetro). Se registrata, il metodo deve essere indicato nel campo 'tarsus method'.",
       "semantic_domain": "biometrics",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -6081,7 +6081,7 @@
       "length": 5,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "In millimetres, to a maximum precision of 0,1 mm",
+      "description": "Tail length in millimetres, maximum precision 0.1 mm (lengths over 100 mm normally given to the nearest millimetre). For method details see Svensson (1992). | Lunghezza della coda in millimetri, precisione massima 0,1 mm (le lunghezze superiori a 100 mm si arrotondano normalmente al millimetro). Per i dettagli del metodo vedi Svensson (1992).",
       "semantic_domain": "biometrics",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -6105,7 +6105,7 @@
       "length": 5,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "The difference in length between longest and shortest feathers measured along the axis of the tail with the tail closed",
+      "description": "Difference in millimetres (max. precision 0.1 mm, normally to the nearest mm) between the longest and shortest tail feathers, measured along the tail axis with the tail closed; the sign is ignored. For method details see Svensson (1992). | Differenza in millimetri (precisione massima 0,1 mm, normalmente arrotondata al mm) tra la penna più lunga e quella più corta della coda, misurata lungo l'asse della coda a coda chiusa; il segno viene ignorato. Per i dettagli del metodo vedi Svensson (1992).",
       "semantic_domain": "biometrics",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -6263,7 +6263,7 @@
       "length": 2,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "The sum of the (usually 10) primary scores",
+      "description": "Sum of the (usually 10) primary moult scores, two digits (see 'primary moult'). May total 45 instead of 50 for species with a minute outermost primary (e.g. finches), which is ignored for 11-primaried birds. Scores of V or X count as zero. | Somma dei punteggi di muta delle (di solito 10) penne primarie, due cifre (vedi 'primary moult'). Può arrivare a 45 anziché 50 nelle specie con la primaria più esterna minuta (es. fringillidi), che viene ignorata negli uccelli con 11 primarie. I punteggi V o X contano come zero.",
       "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -6369,7 +6369,7 @@
       "length": 3,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "Three characters to describe the state of the three alula feathers",
+      "description": "Three characters describing the moult state of the three alula feathers (or three outermost, if more than three), ordered from smallest to largest feather: 0 = old, 1 = new or growing, U = unknown if new or old. Typical codes: U10, 110, 111. | Tre caratteri che descrivono lo stato di muta delle tre penne dell'alula (o delle tre più esterne, se sono più di tre), ordinati dalla penna più piccola alla più grande: 0 = vecchia, 1 = nuova o in crescita, U = sconosciuto se nuova o vecchia. Codici tipici: U10, 110, 111.",
       "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -6456,7 +6456,7 @@
       "length": 250,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "The name of the place where the encounter occurs. This will be the name given by the ringer/finder or as amended by the ringing scheme (250 characters max)",
+      "description": "Free-text name of the place of encounter, as given by the ringer/finder or amended by the scheme (250 characters max). Used for between-scheme recovery processing only; not stored in the EDB. Multiple levels are separated by semi-colons, widest level first (e.g. 'Paris; Les Halles'). The pipe character '|' must not be used. | Nome libero del luogo dell'incontro, fornito dall'inanellatore/segnalatore o modificato dallo schema (massimo 250 caratteri). Usato solo per l'elaborazione delle segnalazioni tra schemi; non è memorizzato nell'EDB. I livelli multipli sono separati da punto e virgola, dal più ampio al più specifico (es. 'Paris; Les Halles'). Non deve essere usato il carattere pipe '|'.",
       "semantic_domain": "spatial",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -6476,7 +6476,7 @@
       "length": 500,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "This filed is free for any relevant remarks or other details (500 characters max)",
+      "description": "Free-text field for any relevant remarks or details (500 characters max), used for between-scheme recovery processing only; not stored in the EDB. Can hold finder's details needed for processing (subject to data protection legislation) or colour-ring/unconventional mark details. Must not contain the pipe character '|'. | Campo di testo libero per eventuali osservazioni o dettagli rilevanti (massimo 500 caratteri), usato solo per l'elaborazione delle segnalazioni tra schemi; non è memorizzato nell'EDB. Può contenere i dati del segnalatore necessari all'elaborazione (nel rispetto della normativa sulla protezione dei dati) o dettagli su anelli colorati/marche non convenzionali. Non deve contenere il carattere pipe '|'.",
       "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -6495,7 +6495,7 @@
       "length": 250,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "The scheme's own reference for this bird encounter (250 characters max)",
+      "description": "The scheme's own unique reference for this bird encounter (250 characters max), used to identify the encounter even if other details are later corrected. Once set, it must never be altered. Format: the scheme's 3-letter code followed by the scheme's own identifying code (e.g. FRP123456789). | Riferimento univoco assegnato dallo schema a questa segnalazione (massimo 250 caratteri), usato per identificarla anche se altri dettagli del record vengono successivamente corretti. Una volta impostato, non deve mai essere modificato. Formato: codice a 3 lettere dello schema seguito dal codice identificativo proprio dello schema (es. FRP123456789).",
       "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -6515,7 +6515,7 @@
       "length": 7,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "Latitude in degrees and decimal points of degrees with a maximum of four decimal places (full stop, not comma)",
+      "description": "Latitude in degrees with decimal points, up to four decimal places (typically no more than three). Use a full stop as decimal separator, not a comma. Positive in the northern hemisphere, negative in the southern. May be left empty if co-ordinates are given in 'geographical co-ordinates'. | Latitudine in gradi con punto decimale, fino a quattro cifre decimali (tipicamente non più di tre). Usare il punto come separatore decimale, non la virgola. Positiva nell'emisfero nord, negativa nell'emisfero sud. Può essere lasciata vuota se le coordinate sono fornite nel campo 'geographical co-ordinates'.",
       "semantic_domain": "spatial",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -6539,7 +6539,7 @@
       "length": 8,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "Longitude in degrees and decimal points of degrees with a maximum of four decimal places (full stop, not comma)",
+      "description": "Longitude in the same format as latitude (degrees with decimal points, full stop as separator). Negative west of the Greenwich meridian, positive to the east. | Longitudine nello stesso formato della latitudine (gradi con punto decimale, punto come separatore). Negativa a ovest del meridiano di Greenwich, positiva a est.",
       "semantic_domain": "spatial",
       "semantic_meaning": null,
       "evolution_notes": [
@@ -10688,7 +10688,7 @@
       "length": 50,
       "valid_values": [],
       "valid_values_descriptions": null,
-      "description": "This filed will be empty unless details of more than one type of other mark need to be given. In that case, details of the multiple marks can be held here (no comma, maximum 50 characters)",
+      "description": "Free-text field (50 characters max, no comma) used only when more than one type of other mark applies (i.e. 'other marks information' holds MM, OM, OP or OT). Holds the additional mark codes in alphabetical order, pairs of letters separated by a space (not a comma), e.g. 'BC ED LB'. | Campo di testo libero (massimo 50 caratteri, senza virgola) usato solo quando si applica più di un tipo di marca diversa dall'anello metallico (cioè quando 'other marks information' contiene MM, OM, OP o OT). Contiene i codici delle marche aggiuntive in ordine alfabetico, con le coppie di lettere separate da uno spazio (non da una virgola), es. 'BC ED LB'.",
       "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
