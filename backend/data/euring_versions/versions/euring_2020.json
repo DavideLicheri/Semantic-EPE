@@ -6367,15 +6367,23 @@
       "canonical_name": null,
       "data_type": "string",
       "length": 3,
-      "valid_values": [],
-      "valid_values_descriptions": null,
-      "description": "Three characters describing the moult state of the three alula feathers (or three outermost, if more than three), ordered from smallest to largest feather: 0 = old, 1 = new or growing, U = unknown if new or old. Typical codes: U10, 110, 111. | Tre caratteri che descrivono lo stato di muta delle tre penne dell'alula (o delle tre più esterne, se sono più di tre), ordinati dalla penna più piccola alla più grande: 0 = vecchia, 1 = nuova o in crescita, U = sconosciuto se nuova o vecchia. Codici tipici: U10, 110, 111.",
+      "valid_values": [
+        "0",
+        "1",
+        "U"
+      ],
+      "valid_values_descriptions": {
+        "0": "Old. | Vecchia.",
+        "1": "New or growing. | Nuova o in crescita.",
+        "U": "Unknown whether new or old. | Sconosciuto se nuova o vecchia."
+      },
+      "description": "Three characters describing the moult state of the three alula feathers (or three outermost, if more than three), given in order from the smallest to the largest feather. See valid values for the codes used per character. | Tre caratteri che descrivono lo stato di muta delle tre penne dell'alula (o delle tre più esterne, se sono più di tre), indicati in ordine dalla penna più piccola alla più grande. Vedi i valori validi per i codici usati per ogni carattere.",
       "semantic_domain": "methodology",
       "semantic_meaning": null,
       "evolution_notes": [
         "Field added manually on 2026-05-18T19:55:50.420019"
       ],
-      "valid_values_type": "free_alphanumeric",
+      "valid_values_type": "enumeration",
       "valid_values_source": null,
       "valid_values_lookup_tool": null,
       "valid_values_range": null
