@@ -12,6 +12,7 @@ from app.api.euring_api import router as euring_router
 from app.api.auth_api import router as auth_router
 from app.api.analytics_api import router as analytics_router
 from app.api.ispra_api import router as ispra_router
+from app.services.database_service import database_service
 
 
 @asynccontextmanager
@@ -22,12 +23,19 @@ async def lifespan(app: FastAPI):
     print("📊 Loading EURING version data...")
     print("🔍 Initializing recognition engine...")
     print("🔄 Initializing conversion services...")
+    # BUG PREESISTENTE scoperto e corretto il 24/07/2026: database_service.initialize()
+    # (l'unico metodo che crea il connection pool asyncpg) non veniva mai chiamato da
+    # nessuna parte del codice. self.pool restava sempre None, quindi ENABLE_DATABASE_LOGGING=true
+    # non aveva mai avuto effetto: ne' il logging storico su user_queries, ne' (novita' di oggi)
+    # l'archiviazione a faccette in euring_2020_canonical scrivevano davvero sul database.
+    await database_service.initialize()
     print("✅ System ready!")
-    
+
     yield
-    
+
     # Shutdown
     print("🛑 EURING Recognition System shutting down...")
+    await database_service.close()
 
 
 app = FastAPI(
