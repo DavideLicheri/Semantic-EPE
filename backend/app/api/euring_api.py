@@ -1991,8 +1991,10 @@ async def parse_euring_string(
 
         # Log usage analytics + archiviazione (solo utenti autenticati, come /recognize;
         # /parse non loggava affatto prima di questa modifica)
+        print(f"[DEBUG-ARCHIVE] /parse: current_user={current_user!r}", flush=True)
         if current_user:
             try:
+                print(f"[DEBUG-ARCHIVE] /parse: entrando nel blocco di logging/archiviazione", flush=True)
                 log_data = {
                     "status": "success",
                     "detected_version": detected_version,

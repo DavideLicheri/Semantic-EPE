@@ -70,6 +70,7 @@ class ArchiveService:
             parsing non a 64 campi esatti) -- resta comunque nel log
             normale (user_queries), nessun dato viene perso.
         """
+        print(f"[DEBUG-ARCHIVE] archive_string chiamata: source_version={source_version!r}", flush=True)
         try:
             euring_string = (euring_string or "").strip()
             if not euring_string:
@@ -111,12 +112,18 @@ class ArchiveService:
 
             field_positions = {f.name: f.position for f in parser.fields_by_position}
 
+            print(
+                f"[DEBUG-ARCHIVE] parsing pulito ({parsed['field_count']} campi), "
+                f"chiamo upsert_euring_2020_canonical. is_enabled={getattr(database_service, 'is_enabled', 'N/A')!r}",
+                flush=True,
+            )
             canonical_id = await database_service.upsert_euring_2020_canonical(
                 canonical_string=canonical_string,
                 parsed_fields=parsed["fields"],
                 field_count=parsed["field_count"],
                 field_positions=field_positions,
             )
+            print(f"[DEBUG-ARCHIVE] upsert_euring_2020_canonical ha restituito canonical_id={canonical_id!r}", flush=True)
 
             if canonical_id is not None:
                 await database_service.link_unique_string_to_canonical(
@@ -126,6 +133,9 @@ class ArchiveService:
             return canonical_id
 
         except Exception as e:
+            import traceback
+            print(f"[DEBUG-ARCHIVE] ECCEZIONE in archive_string: {e!r}", flush=True)
+            traceback.print_exc()
             logger.error(f"Errore durante l'archiviazione della stringa: {e}")
             return None
 
