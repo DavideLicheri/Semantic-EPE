@@ -370,6 +370,112 @@ class DatabaseService:
             logger.error(f"Failed to cleanup old data: {e}")
             return 0
 
+    async def upsert_euring_2020_canonical(
+        self,
+        canonical_string: str,
+        parsed_fields: Dict[str, Any],
+        field_count: int,
+        field_positions: Dict[str, int],
+    ) -> Optional[int]:
+        """
+        Persiste una stringa EURING 2020 gia' parsata "pulita" (64/64 campi)
+        nell'archivio canonico a faccette.
+
+        Le righe EAV (euring_2020_field_values) vengono inserite SOLO alla
+        prima comparsa di questa stringa esatta (string_hash nuovo): se la
+        stringa e' gia' nota, si aggiornano solo last_seen/occurrence_count
+        su euring_2020_canonical, i valori di campo non cambiano (la stessa
+        stringa produce sempre lo stesso parsing).
+
+        Args:
+            canonical_string: stringa EURING 2020 completa (pipe-delimited)
+            parsed_fields: {field_name: value} da Euring2020PositionParser
+            field_count: numero di segmenti trovati (atteso: 64)
+            field_positions: {field_name: position} per popolare l'EAV
+
+        Returns:
+            id del record in euring_2020_canonical, o None se il logging su
+            database e' disabilitato o in caso di errore (mai un'eccezione:
+            l'archiviazione non deve mai far fallire la richiesta principale).
+        """
+        if not self.pool or not self.is_enabled:
+            return None
+
+        string_hash = hashlib.sha256(canonical_string.encode()).hexdigest()
+
+        try:
+            async with self.pool.acquire() as conn:
+                async with conn.transaction():
+                    existing_id = await conn.fetchval(
+                        "SELECT id FROM euring_2020_canonical WHERE string_hash = $1",
+                        string_hash,
+                    )
+
+                    if existing_id is not None:
+                        await conn.execute(
+                            """
+                            UPDATE euring_2020_canonical
+                            SET last_seen = NOW(), occurrence_count = occurrence_count + 1
+                            WHERE id = $1
+                            """,
+                            existing_id,
+                        )
+                        return existing_id
+
+                    canonical_id = await conn.fetchval(
+                        """
+                        INSERT INTO euring_2020_canonical
+                            (canonical_string, string_hash, parsed_fields, field_count)
+                        VALUES ($1, $2, $3, $4)
+                        RETURNING id
+                        """,
+                        canonical_string,
+                        string_hash,
+                        json.dumps(parsed_fields, ensure_ascii=False),
+                        field_count,
+                    )
+
+                    field_rows = [
+                        (canonical_id, field_positions[name], name, value)
+                        for name, value in parsed_fields.items()
+                        if name in field_positions
+                    ]
+                    if field_rows:
+                        await conn.executemany(
+                            """
+                            INSERT INTO euring_2020_field_values
+                                (canonical_id, field_position, field_name, field_value)
+                            VALUES ($1, $2, $3, $4)
+                            """,
+                            field_rows,
+                        )
+
+                    return canonical_id
+
+        except Exception as e:
+            logger.error(f"Failed to upsert euring_2020_canonical: {e}")
+            return None
+
+    async def link_unique_string_to_canonical(self, input_string: str, canonical_id: int) -> None:
+        """
+        Collega una riga di unique_strings (dedup grezza, qualsiasi versione)
+        al record canonico 2020 corrispondente.
+        """
+        if not self.pool or not self.is_enabled or canonical_id is None:
+            return
+
+        string_hash = hashlib.sha256(input_string.encode()).hexdigest()
+
+        try:
+            async with self.pool.acquire() as conn:
+                await conn.execute(
+                    "UPDATE unique_strings SET canonical_id = $1 WHERE string_hash = $2",
+                    canonical_id,
+                    string_hash,
+                )
+        except Exception as e:
+            logger.error(f"Failed to link unique_strings to canonical: {e}")
+
     async def _update_unique_strings(self, conn, query_data: Dict[str, Any]):
         """
         Aggiorna la tabella unique_strings per tracciare stringhe duplicate

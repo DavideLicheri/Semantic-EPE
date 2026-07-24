@@ -26,6 +26,7 @@ from ..auth.dependencies import (
 from ..auth.models import User
 from ..services.usage_logger import usage_logger
 from ..services.field_translator import field_translator
+from ..services.archive_service import archive_service
 
 # Initialize services
 recognition_engine = RecognitionEngineImpl()
@@ -327,10 +328,18 @@ async def recognize_euring(
                     result=log_data,
                     processing_time=int(processing_time)
                 ))
+                # Archiviazione asincrona nell'archivio canonico a faccette
+                # (non blocca la risposta; se non si archivia non e' un errore,
+                # vedi archive_service.py)
+                if response.version:
+                    asyncio.create_task(archive_service.archive_string(
+                        request.euring_string.strip(),
+                        response.version
+                    ))
             except Exception as log_error:
                 # Don't let logging errors affect the main response
                 print(f"Logging error: {log_error}")
-        
+
         return response
         
     except Exception as e:
@@ -364,26 +373,29 @@ async def recognize_euring(
 
 
 @router.post("/convert", response_model=EuringConversionResponse)
-async def convert_euring(request: EuringConversionRequest):
+async def convert_euring(
+    request: EuringConversionRequest,
+    current_user: Optional[User] = Depends(get_current_user_optional)
+):
     """
     Convert EURING code between versions
-    
+
     Converts an EURING code from one version to another using semantic mapping.
     """
     start_time = datetime.now()
-    
+
     try:
         # Validate input
         if not request.euring_string or not request.euring_string.strip():
             raise HTTPException(status_code=400, detail="EURING string cannot be empty")
-        
+
         valid_versions = ['1966', '1979', '2000', '2020']
         if request.source_version not in valid_versions:
             raise HTTPException(status_code=400, detail=f"Invalid source version: {request.source_version}")
-        
+
         if request.target_version not in valid_versions:
             raise HTTPException(status_code=400, detail=f"Invalid target version: {request.target_version}")
-        
+
         # Perform conversion
         if request.use_semantic:
             result = conversion_service.convert_semantic(
@@ -397,10 +409,10 @@ async def convert_euring(request: EuringConversionRequest):
                 request.source_version,
                 request.target_version
             )
-        
+
         # Calculate processing time
         processing_time = (datetime.now() - start_time).total_seconds() * 1000
-        
+
         # Prepare response
         response = EuringConversionResponse(
             success=result.get('success', False),
@@ -412,12 +424,44 @@ async def convert_euring(request: EuringConversionRequest):
             semantic_data=result.get('semantic_data') if request.use_semantic else None,
             processing_time_ms=processing_time
         )
-        
+
         if not result.get('success'):
             response.error = result.get('error', 'Conversion failed')
-        
+
+        # Log usage analytics + archiviazione (solo utenti autenticati, come /recognize;
+        # /convert non loggava affatto prima di questa modifica)
+        if current_user:
+            try:
+                log_data = {
+                    "status": "success" if response.success else "error",
+                    "detected_version": request.source_version,
+                    "processing_time_ms": processing_time
+                }
+                asyncio.create_task(usage_logger.log_query(
+                    user=current_user,
+                    query_type="conversion",
+                    input_string=request.euring_string.strip(),
+                    result=log_data,
+                    processing_time=int(processing_time)
+                ))
+                if response.success:
+                    # Si archiviano sia la stringa sorgente sia quella convertita
+                    # (sono due stringhe EURING distinte, ciascuna deduplicata/
+                    # archiviata a se' se si normalizza correttamente a 2020)
+                    asyncio.create_task(archive_service.archive_string(
+                        request.euring_string.strip(),
+                        f"euring_{request.source_version}"
+                    ))
+                    if response.converted_string:
+                        asyncio.create_task(archive_service.archive_string(
+                            response.converted_string,
+                            f"euring_{request.target_version}"
+                        ))
+            except Exception as log_error:
+                print(f"Logging error: {log_error}")
+
         return response
-        
+
     except Exception as e:
         processing_time = (datetime.now() - start_time).total_seconds() * 1000
         return EuringConversionResponse(
@@ -1835,103 +1879,137 @@ async def reload_euring_data(current_user: User = Depends(require_matrix_edit_pe
 
 
 @router.post("/parse", response_model=EuringParseResponse)
-async def parse_euring_string(request: EuringParseRequest):
+async def parse_euring_string(
+    request: EuringParseRequest,
+    current_user: Optional[User] = Depends(get_current_user_optional)
+):
     """
     Parse a single EURING string into field-value pairs
-    
-    Provides detailed field-by-field breakdown similar to EPE,
-    with automatic version recognition and EPE-compatible parsing.
-    
+
+    Provides detailed field-by-field breakdown, with automatic version
+    recognition and version-appropriate parsing:
+      - euring_2020: Euring2020PositionParser (pipe-delimited, position/name
+        from euring_2020.json -- see that module for why this replaced the
+        EPE-compatible parser here, which used a different, incompatible
+        fixed-width-no-separator layout)
+      - euring_2000: Euring2000EpeCompatibleParser (fixed-width, EPE-proven)
+      - euring_1979 / euring_1966: their own dedicated parsers (previously
+        not wired up here -- this endpoint used to return hardcoded example
+        data for these two versions)
+
     Requirements: New functionality for string parsing interface
     """
     start_time = datetime.now()
-    
+
     try:
         euring_string = request.euring_string.strip()
-        
+
         if not euring_string:
             raise HTTPException(status_code=400, detail="EURING string cannot be empty")
-        
+
         # Initialize services
         await skos_manager.load_version_model()
-        
+
         # Step 1: Recognize version
         recognition_result = await recognition_engine.recognize_version(euring_string)
-        
+
         if not recognition_result or not recognition_result.detected_version:
             raise HTTPException(status_code=400, detail="Could not recognize EURING version")
-        
+
         detected_version = recognition_result.detected_version.id
         confidence = recognition_result.confidence
-        
-        # Step 2: Parse using appropriate parser
+
+        # FIX MINIMO 24/07/2026 (approvato da Davide, indagine approfondita
+        # rimandata - vedi TODO in design_archivio_faccette.md): esiste un
+        # secondo file di definizione versione, euring_2020_official.json,
+        # incompleto (15/64 campi) e probabilmente un prototipo abbandonato,
+        # che a volte "ruba" il match nel recognition_engine per vere
+        # stringhe EURING 2020 con confidenza bassa. Qui lo trattiamo come
+        # alias di euring_2020 solo ai fini di routing/parsing/archiviazione,
+        # senza toccare euring_2020_official.json stesso.
+        if detected_version == "euring_2020_official":
+            detected_version = "euring_2020"
+
+        # Step 2: Parse using the parser appropriate for the detected version
         parsed_fields = {}
         epe_compatible = False
-        
-        # Try EPE parser for EURING 2000/2020 strings (they are often similar format)
-        if detected_version in ["euring_2000", "euring_2020"]:
-            # Use EPE-compatible parser for EURING 2000/2020
+        is_clean = True  # significativo solo per euring_2020, vedi sotto
+
+        if detected_version == "euring_2020":
+            from ..services.parsers.euring_2020_position_parser import Euring2020PositionParser
+            version_model_2020 = await skos_manager.get_version_by_id("euring_2020")
+            if not version_model_2020:
+                raise HTTPException(status_code=400, detail="Version euring_2020 not available for parsing")
+            parser = Euring2020PositionParser(version_model_2020)
+            parse_result = parser.parse(euring_string)
+            is_clean = parse_result["is_clean"]
+            parsed_fields = dict(parse_result["fields"])
+            if not is_clean:
+                # Non blocchiamo la risposta: si restituisce comunque il meglio
+                # che si riesce a mappare, con un avviso esplicito. L'eventuale
+                # archiviazione a faccette (separata) resta invece rigorosa:
+                # solo i parsing puliti (64/64 campi) entrano nell'archivio.
+                parsed_fields["_parsing_warning"] = (
+                    f"{parse_result['field_count']}/{parse_result['expected_field_count']} "
+                    f"campi trovati: {'; '.join(parse_result['errors'])}"
+                )
+
+        elif detected_version == "euring_2000":
             from ..services.parsers.euring_2000_epe_compatible_parser import Euring2000EpeCompatibleParser
             parser = Euring2000EpeCompatibleParser()
-            
             try:
-                parse_result = parser.to_dict(euring_string)
-                parsed_fields = parse_result
+                parsed_fields = parser.to_dict(euring_string)
                 epe_compatible = True
-                # If EPE parsing succeeds, treat as EURING 2000 for consistency
-                detected_version = "euring_2000"
             except Exception as e:
-                # If EPE parsing fails, fall back to basic parsing with example fields
-                print(f"EPE parsing failed for {detected_version}: {e}")
-                parsed_fields = {
-                    "version": detected_version,
-                    "original_string": euring_string,
-                    "note": f"EPE parsing failed, using basic parsing for {detected_version}",
-                    "epe_error": str(e),
-                    # Add example fields to demonstrate translation
-                    "Osservatorio": "TEST",
-                    "Sesso riportato": "M",
-                    "Età conclusa": "1", 
-                    "Latitudine": "45.123",
-                    "Longitudine": "12.456",
-                    "Giorno": "15",
-                    "Mese": "05",
-                    "Anno": "2023",
-                    "Verifica dell'anello metallico": "1",
-                    "Circostanze presunte": "0"
-                }
-        
+                raise HTTPException(status_code=400, detail=f"EURING 2000 parsing failed: {e}")
+
+        elif detected_version == "euring_1979":
+            from ..services.parsers.euring_1979_parser import Euring1979Parser
+            parser = Euring1979Parser()
+            try:
+                parsed_fields = parser.to_dict(euring_string)
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"EURING 1979 parsing failed: {e}")
+
+        elif detected_version == "euring_1966":
+            from ..services.parsers.euring_1966_parser import Euring1966Parser
+            parser = Euring1966Parser()
+            try:
+                parsed_fields = parser.to_dict(euring_string)
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"EURING 1966 parsing failed: {e}")
+
         else:
-            # Use standard parsers for other versions
-            version_model = await skos_manager.get_version_by_id(detected_version)
-            if not version_model:
-                raise HTTPException(status_code=400, detail=f"Version {detected_version} not supported for parsing")
-            
-            # Basic field extraction with some example fields for translation demonstration
-            parsed_fields = {
-                "version": detected_version,
-                "original_string": euring_string,
-                "note": f"Detailed parsing for {detected_version} not yet implemented",
-                # Add some example fields to demonstrate translation
-                "Osservatorio": "TEST",
-                "Sesso riportato": "M",
-                "Età conclusa": "1",
-                "Latitudine": "45.123",
-                "Longitudine": "12.456",
-                "Giorno": "15",
-                "Mese": "05",
-                "Anno": "2023",
-                "Verifica dell'anello metallico": "1",
-                "Circostanze presunte": "0"
-            }
-        
+            raise HTTPException(status_code=400, detail=f"Version {detected_version} not supported for parsing")
+
         # Step 3: Apply field translation based on language parameter
         if request.language and request.language != 'it':
             parsed_fields = field_translator.translate_parsed_fields(parsed_fields, request.language)
-        
+
         # Calculate processing time
         processing_time = (datetime.now() - start_time).total_seconds() * 1000
-        
+
+        # Log usage analytics + archiviazione (solo utenti autenticati, come /recognize;
+        # /parse non loggava affatto prima di questa modifica)
+        if current_user:
+            try:
+                log_data = {
+                    "status": "success",
+                    "detected_version": detected_version,
+                    "confidence": confidence,
+                    "processing_time_ms": processing_time
+                }
+                asyncio.create_task(usage_logger.log_query(
+                    user=current_user,
+                    query_type="validation",
+                    input_string=euring_string,
+                    result=log_data,
+                    processing_time=int(processing_time)
+                ))
+                asyncio.create_task(archive_service.archive_string(euring_string, detected_version))
+            except Exception as log_error:
+                print(f"Logging error: {log_error}")
+
         return EuringParseResponse(
             success=True,
             euring_string=euring_string,
@@ -1943,7 +2021,7 @@ async def parse_euring_string(request: EuringParseRequest):
             processing_time_ms=processing_time,
             error=None
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:

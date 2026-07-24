@@ -9,13 +9,24 @@ from .auth_service import AuthService
 from .models import User, UserRole
 
 # Security scheme
-security = HTTPBearer()
+# auto_error=False: senza questo, HTTPBearer solleva "Not authenticated" da solo
+# quando manca l'header Authorization, PRIMA che get_current_user_optional possa
+# restituire None come dovrebbe -- rendendo "optional" inutile in pratica (bug
+# preesistente, scoperto il 24/07/2026 testando /convert e /parse dopo averci
+# aggiunto get_current_user_optional). Con auto_error=False la scelta se
+# richiedere o meno l'autenticazione la fanno le funzioni sotto.
+security = HTTPBearer(auto_error=False)
 
 # Auth service instance
 auth_service = AuthService()
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
+async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> User:
     """Get current authenticated user"""
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated"
+        )
     token_data = auth_service.verify_token(credentials.credentials)
     user = auth_service.get_user(token_data.username)
     
