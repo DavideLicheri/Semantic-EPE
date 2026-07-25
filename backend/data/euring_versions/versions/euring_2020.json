@@ -10795,10 +10795,10 @@
     }
   ],
   "format_specification": {
-    "total_length": 102,
+    "total_length": 169,
+    "total_length_note": "Valore approssimativo/rappresentativo, non esatto: il formato e' pipe-delimited a 64 campi di lunghezza variabile (non a larghezza fissa), quindi non esiste un total_length univocamente corretto. 169 e' la lunghezza di una stringa reale a 64 campi verificata il 23-24/07/2026 (centro IAB), usata qui solo per migliorare il punteggio di recognition_engine.py (che pesa questo valore al 20-30% e prima usava 102, un residuo probabilmente ereditato da un formato precedente). Il vecchio validation_pattern (22 campi a larghezza fissa, incompatibile col formato pipe reale a 64 campi) e' stato rimosso il 24/07/2026 perche' non validava mai nessuna stringa 2020 reale.",
     "field_separator": "|",
-    "encoding": "utf-8",
-    "validation_pattern": "^[0-9]{5}\\|[A-Z]{3}[0-9]{5}\\|[0-9]\\|[0-9]{5}\\|[1-9]\\|[1-9]\\|[0-9]{8}\\|[0-9]{4}\\|[+-]?[0-9]+\\.[0-9]+\\|[+-]?[0-9]+\\.[0-9]+\\|[0-9]\\|[0-9]{2}\\|[0-9]{2}\\|[0-9]\\|[0-9]\\|[0-9]+\\.[0-9]\\|[0-9]+\\.[0-9]\\|[0-9]\\|[0-9]\\|[0-9]\\|[0-9]\\|[0-9]$"
+    "encoding": "utf-8"
   },
   "semantic_domains": null
 }

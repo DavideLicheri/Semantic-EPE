@@ -75,15 +75,6 @@ class ArchiveService:
             if not euring_string:
                 return None
 
-            # FIX MINIMO 24/07/2026 (vedi stesso commento in euring_api.py
-            # /parse e TODO "Indagine #2" in design_archivio_faccette.md):
-            # euring_2020_official e' un secondo file di definizione versione
-            # incompleto che a volte viene rilevato al posto di euring_2020
-            # per vere stringhe 2020. Qui lo trattiamo come alias solo per
-            # non perdere archiviazione quando arriva da /recognize.
-            if source_version == "euring_2020_official":
-                source_version = "euring_2020"
-
             if source_version == "euring_2020":
                 canonical_string = euring_string
             else:

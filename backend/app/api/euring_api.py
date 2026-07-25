@@ -1919,17 +1919,6 @@ async def parse_euring_string(
         detected_version = recognition_result.detected_version.id
         confidence = recognition_result.confidence
 
-        # FIX MINIMO 24/07/2026 (approvato da Davide, indagine approfondita
-        # rimandata - vedi TODO in design_archivio_faccette.md): esiste un
-        # secondo file di definizione versione, euring_2020_official.json,
-        # incompleto (15/64 campi) e probabilmente un prototipo abbandonato,
-        # che a volte "ruba" il match nel recognition_engine per vere
-        # stringhe EURING 2020 con confidenza bassa. Qui lo trattiamo come
-        # alias di euring_2020 solo ai fini di routing/parsing/archiviazione,
-        # senza toccare euring_2020_official.json stesso.
-        if detected_version == "euring_2020_official":
-            detected_version = "euring_2020"
-
         # Step 2: Parse using the parser appropriate for the detected version
         parsed_fields = {}
         epe_compatible = False
