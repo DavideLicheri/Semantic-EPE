@@ -98,6 +98,23 @@ export class EuringAPI {
   }
 
   /**
+   * Ricerca a faccette nell'archivio canonico EURING 2020
+   */
+  static async searchArchive(
+    filters: Record<string, string>,
+    page: number = 1,
+    pageSize: number = 20
+  ): Promise<any> {
+    try {
+      const params = { ...filters, page, page_size: pageSize };
+      const response = await api.get('/api/euring/archive/search', { params });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.message || 'Ricerca archivio fallita');
+    }
+  }
+
+  /**
    * Convert EURING code between versions
    */
   static async convert(request: ConversionRequest): Promise<ConversionResponse> {

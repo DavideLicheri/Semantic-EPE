@@ -476,6 +476,118 @@ class DatabaseService:
         except Exception as e:
             logger.error(f"Failed to link unique_strings to canonical: {e}")
 
+    async def search_canonical_2020(
+        self, filters: Dict[str, str], page: int, page_size: int
+    ) -> Dict[str, Any]:
+        """
+        Ricerca a faccette sull'archivio canonico EURING 2020.
+
+        filters: {field_name: field_value}, un solo valore per campo (AND tra
+        campi diversi). Il pattern (field_name, field_value) IN (...) GROUP BY
+        canonical_id HAVING COUNT(DISTINCT field_name) = N e' il modo standard
+        per esprimere "un canonical_id deve avere una riga EAV corrispondente
+        per OGNI filtro" senza self-join multipli.
+        """
+        if not self.pool:
+            return {"total": 0, "results": []}
+
+        offset = max(0, (page - 1) * page_size)
+
+        try:
+            async with self.pool.acquire() as conn:
+                if filters:
+                    pairs = list(filters.items())
+                    placeholders = ", ".join(
+                        f"(${i * 2 + 1}, ${i * 2 + 2})" for i in range(len(pairs))
+                    )
+                    params: List[Any] = []
+                    for name, value in pairs:
+                        params.extend([name, value])
+
+                    id_subquery = f"""
+                        SELECT canonical_id FROM euring_2020_field_values
+                        WHERE (field_name, field_value) IN ({placeholders})
+                        GROUP BY canonical_id
+                        HAVING COUNT(DISTINCT field_name) = {len(pairs)}
+                    """
+
+                    total = await conn.fetchval(
+                        f"SELECT COUNT(*) FROM ({id_subquery}) sub", *params
+                    )
+                    rows = await conn.fetch(
+                        f"""
+                        SELECT c.id, c.canonical_string, c.field_count,
+                               c.first_seen, c.last_seen, c.occurrence_count
+                        FROM euring_2020_canonical c
+                        WHERE c.id IN ({id_subquery})
+                        ORDER BY c.first_seen DESC
+                        LIMIT ${len(params) + 1} OFFSET ${len(params) + 2}
+                        """,
+                        *params,
+                        page_size,
+                        offset,
+                    )
+                else:
+                    total = await conn.fetchval(
+                        "SELECT COUNT(*) FROM euring_2020_canonical"
+                    )
+                    rows = await conn.fetch(
+                        """
+                        SELECT id, canonical_string, field_count,
+                               first_seen, last_seen, occurrence_count
+                        FROM euring_2020_canonical
+                        ORDER BY first_seen DESC
+                        LIMIT $1 OFFSET $2
+                        """,
+                        page_size,
+                        offset,
+                    )
+
+                return {
+                    "total": total or 0,
+                    "results": [dict(r) for r in rows],
+                }
+        except Exception as e:
+            logger.error(f"Failed to search euring_2020_canonical: {e}")
+            return {"total": 0, "results": []}
+
+    async def facet_counts_2020(
+        self, field_names: List[str], filters: Dict[str, str]
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Conteggi per faccetta su un elenco curato di campi (vedi
+        ARCHIVE_FACET_FIELDS in euring_api.py). Prima versione: calcolati
+        sull'intero archivio, NON ricalcolati in base ai filtri gia' attivi
+        (semplificazione nota -- una vera implementazione "drill down"
+        escluderebbe il filtro sul campo stesso quando conta le sue faccette).
+        """
+        if not self.pool:
+            return {}
+
+        try:
+            async with self.pool.acquire() as conn:
+                result: Dict[str, List[Dict[str, Any]]] = {}
+                for field_name in field_names:
+                    rows = await conn.fetch(
+                        """
+                        SELECT field_value, COUNT(*) as cnt
+                        FROM euring_2020_field_values
+                        WHERE field_name = $1
+                          AND field_value IS NOT NULL AND field_value != ''
+                        GROUP BY field_value
+                        ORDER BY cnt DESC
+                        LIMIT 20
+                        """,
+                        field_name,
+                    )
+                    result[field_name] = [
+                        {"value": r["field_value"], "count": r["cnt"]} for r in rows
+                    ]
+                return result
+        except Exception as e:
+            logger.error(f"Failed to compute facet counts: {e}")
+            return {}
+
     async def _update_unique_strings(self, conn, query_data: Dict[str, Any]):
         """
         Aggiorna la tabella unique_strings per tracciare stringhe duplicate

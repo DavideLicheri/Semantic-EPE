@@ -2,7 +2,7 @@
 EURING API Endpoints
 REST API for EURING code recognition and conversion
 """
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, Request
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import asyncio
@@ -27,6 +27,7 @@ from ..auth.models import User
 from ..services.usage_logger import usage_logger
 from ..services.field_translator import field_translator
 from ..services.archive_service import archive_service
+from ..services.database_service import database_service
 
 # Initialize services
 recognition_engine = RecognitionEngineImpl()
@@ -2026,6 +2027,58 @@ async def parse_euring_string(
             processing_time_ms=processing_time,
             error=str(e)
         )
+
+
+# Campi usati per calcolare i conteggi a faccetta nella GUI di ricerca
+# dell'archivio. Prima versione: elenco curato, non tutti i 64 campi --
+# calcolare i conteggi per tutti i campi ad ogni richiesta sarebbe troppo
+# costoso senza una vista materializzata dedicata (non ancora fatta).
+# I conteggi sono calcolati sull'intero archivio, non ricalcolati in base
+# ai filtri gia' attivi (semplificazione nota per questa prima versione).
+ARCHIVE_FACET_FIELDS = [
+    "ringing scheme",
+    "species concluded",
+    "sex concluded",
+    "age concluded",
+    "condition",
+    "circumstances",
+]
+
+
+@router.get("/archive/search")
+async def search_archive(request: Request, page: int = 1, page_size: int = 20):
+    """
+    Ricerca a faccette nell'archivio canonico EURING 2020 (euring_2020_canonical
+    + euring_2020_field_values, popolati da /recognize, /convert, /parse per gli
+    utenti autenticati -- vedi archive_service.py).
+
+    Filtri: qualunque parametro di query diverso da page/page_size viene trattato
+    come coppia field_name=field_value da euring_2020.json (es. ?sex+concluded=M).
+    Un solo valore per campo in questa prima versione (AND tra campi diversi,
+    non OR all'interno dello stesso campo).
+    """
+    reserved = {"page", "page_size"}
+    filters = {
+        key: value
+        for key, value in request.query_params.items()
+        if key not in reserved and value
+    }
+    page = max(1, page)
+    page_size = min(max(1, page_size), 100)
+
+    try:
+        result = await database_service.search_canonical_2020(filters, page, page_size)
+        facets = await database_service.facet_counts_2020(ARCHIVE_FACET_FIELDS, filters)
+        return {
+            "success": True,
+            "total": result["total"],
+            "page": page,
+            "page_size": page_size,
+            "results": result["results"],
+            "facets": facets,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore nella ricerca dell'archivio: {e}")
 
 
 @router.post("/parse/batch", response_model=EuringBatchParseResponse)
