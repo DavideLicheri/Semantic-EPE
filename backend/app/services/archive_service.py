@@ -54,7 +54,10 @@ class ArchiveService:
             self._parser = Euring2020PositionParser(euring_2020)
         return self._parser
 
-    async def archive_string(self, euring_string: str, source_version: str) -> Optional[int]:
+    async def archive_string(
+        self, euring_string: str, source_version: str,
+        owner_username: Optional[str] = None
+    ) -> Optional[int]:
         """
         Tenta di archiviare una stringa nell'archivio canonico 2020 a faccette.
 
@@ -62,6 +65,14 @@ class ArchiveService:
             euring_string: la stringa cosi' come ricevuta, in source_version
             source_version: uno tra 'euring_1966', 'euring_1979',
                 'euring_2000', 'euring_2020'
+            owner_username: chi ha sottomesso questa stringa (current_user.username
+                dal punto di chiamata in euring_api.py). Usato SOLO al primo
+                inserimento di un canonical_id (ownership/visibilita', punti 6-11
+                della discussione 25/07/2026, HANDOFF.md) -- le occorrenze
+                successive della stessa stringa non cambiano il proprietario
+                originale. None se non disponibile (non dovrebbe succedere nei
+                3 punti di chiamata attuali, tutti dietro autenticazione, ma la
+                funzione non deve fallire se capita).
 
         Returns:
             canonical_id se archiviata con successo, altrimenti None.
@@ -107,6 +118,7 @@ class ArchiveService:
                 parsed_fields=parsed["fields"],
                 field_count=parsed["field_count"],
                 field_positions=field_positions,
+                owner_username=owner_username,
             )
 
             if canonical_id is not None:

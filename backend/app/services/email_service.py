@@ -149,5 +149,70 @@ ISPRA - DG SINA
             logger.error(f"Failed to send role change notification: {e}")
             return False
 
+    def send_contact_request_notification(
+        self, owner_email: str, owner_full_name: str,
+        requester_username: str, alias_id: int, message: Optional[str] = None
+    ) -> bool:
+        """
+        Notifica il proprietario di una richiesta di contatto per eventi non
+        condivisi legati a un anello (HANDOFF.md, punti 9-10, migrazione 003,
+        tabella contact_requests). L'identita' del proprietario NON viene mai
+        comunicata al richiedente da nessun'altra parte del sistema -- questa
+        email e' l'unico posto in cui il proprietario stesso viene informato,
+        e solo lui decide se condividere il dato e/o rivelarsi (due decisioni
+        indipendenti, vedi contact_requests.shared / identity_revealed).
+        """
+        if not self.email_enabled:
+            logger.info(
+                f"Email disabled - Would notify: contact request for alias {alias_id} "
+                f"from {requester_username} to {owner_email}"
+            )
+            return True
+
+        try:
+            msg = MIMEMultipart()
+            msg['From'] = self.from_email
+            msg['To'] = owner_email
+            msg['Subject'] = "ECES - Richiesta di contatto per un tuo record archiviato"
+
+            custom_message = f"\nMessaggio dal richiedente:\n\"{message}\"\n" if message else ""
+
+            body = f"""
+Ciao {owner_full_name},
+
+L'utente '{requester_username}' ha richiesto di essere messo in contatto con te riguardo ad alcuni eventi che hai archiviato in ECES per l'anello con alias interno #{alias_id} (l'anello reale non viene mai esposto ad altri utenti).
+{custom_message}
+Puoi decidere autonomamente e in modo indipendente:
+  1. Se condividere questi dati con '{requester_username}' (renderli visibili a lui specificamente)
+  2. Se rivelare o meno la tua identita' a '{requester_username}'
+
+Nessuna delle due scelte e' obbligatoria, e sono indipendenti tra loro: puoi condividere il dato restando anonimo, o viceversa.
+
+🌐 Accedi a ECES per rispondere alla richiesta: http://localhost:3001
+
+---
+Sistema ECES - EURING Code Evolution System
+ISPRA - DG SINA
+"""
+
+            msg.attach(MIMEText(body, 'plain', 'utf-8'))
+
+            if self.smtp_username and self.smtp_password:
+                server = smtplib.SMTP(self.smtp_server, self.smtp_port)
+                server.starttls()
+                server.login(self.smtp_username, self.smtp_password)
+                server.send_message(msg)
+                server.quit()
+
+                logger.info(f"Contact request notification sent for alias {alias_id}")
+                return True
+            else:
+                logger.warning("SMTP credentials not configured - email not sent")
+                return False
+
+        except Exception as e:
+            logger.error(f"Failed to send contact request notification: {e}")
+            return False
+
 # Global email service instance
 email_service = EmailService()

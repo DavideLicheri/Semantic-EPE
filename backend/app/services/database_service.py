@@ -376,6 +376,7 @@ class DatabaseService:
         parsed_fields: Dict[str, Any],
         field_count: int,
         field_positions: Dict[str, int],
+        owner_username: Optional[str] = None,
     ) -> Optional[int]:
         """
         Persiste una stringa EURING 2020 gia' parsata "pulita" (64/64 campi)
@@ -387,11 +388,29 @@ class DatabaseService:
         su euring_2020_canonical, i valori di campo non cambiano (la stessa
         stringa produce sempre lo stesso parsing).
 
+        Al primo inserimento vengono anche risolti (HANDOFF.md, punti 6-11,
+        migrazione 003):
+          - alias_id: upsert su ring_alias per (ringing scheme, identification
+            number) estratti da parsed_fields -- calcolato indipendentemente
+            dalla visibilita' (punto 10).
+          - owner_username / visibility (default 'private').
+          - auto-condivisione (punto 7): se per lo stesso alias esistono gia'
+            record con un owner_username DIVERSO, sia i record esistenti che
+            quello nuovo passano a visibility='shared' e vengono collegati in
+            euring_2020_shared_with, in entrambe le direzioni. Un record gia'
+            'public' non viene MAI declassato a 'shared' da questa logica.
+
+        Le occorrenze successive della stessa identica stringa NON toccano
+        owner_username/visibility/alias_id (gia' fissati al primo inserimento).
+
         Args:
             canonical_string: stringa EURING 2020 completa (pipe-delimited)
             parsed_fields: {field_name: value} da Euring2020PositionParser
             field_count: numero di segmenti trovati (atteso: 64)
             field_positions: {field_name: position} per popolare l'EAV
+            owner_username: chi ha sottomesso questa stringa (None se non
+                disponibile -- il record risultera' senza proprietario finche'
+                non viene backfillato)
 
         Returns:
             id del record in euring_2020_canonical, o None se il logging su
@@ -422,18 +441,92 @@ class DatabaseService:
                         )
                         return existing_id
 
+                    # --- Nuovo record: risolvi alias + ownership/visibilita' ---
+                    alias_id: Optional[int] = None
+                    visibility = "private"
+                    other_owner_rows: List[Any] = []
+
+                    ringing_scheme = parsed_fields.get("ringing scheme")
+                    identification_number = parsed_fields.get("identification number")
+
+                    if ringing_scheme and identification_number:
+                        alias_id = await conn.fetchval(
+                            """
+                            INSERT INTO ring_alias (ringing_scheme, identification_number)
+                            VALUES ($1, $2)
+                            ON CONFLICT (ringing_scheme, identification_number)
+                            DO UPDATE SET ringing_scheme = EXCLUDED.ringing_scheme
+                            RETURNING alias_id
+                            """,
+                            ringing_scheme.strip(),
+                            identification_number.strip(),
+                        )
+
+                        if owner_username:
+                            other_owner_rows = await conn.fetch(
+                                """
+                                SELECT DISTINCT id, owner_username
+                                FROM euring_2020_canonical
+                                WHERE alias_id = $1
+                                  AND owner_username IS NOT NULL
+                                  AND owner_username != $2
+                                """,
+                                alias_id,
+                                owner_username,
+                            )
+                            if other_owner_rows:
+                                visibility = "shared"
+                                for row in other_owner_rows:
+                                    # Non declassare mai un record gia' pubblico.
+                                    await conn.execute(
+                                        """
+                                        UPDATE euring_2020_canonical
+                                        SET visibility = 'shared'
+                                        WHERE id = $1 AND visibility != 'public'
+                                        """,
+                                        row["id"],
+                                    )
+                                    await conn.execute(
+                                        """
+                                        INSERT INTO euring_2020_shared_with
+                                            (canonical_id, shared_with_username)
+                                        VALUES ($1, $2)
+                                        ON CONFLICT DO NOTHING
+                                        """,
+                                        row["id"],
+                                        owner_username,
+                                    )
+
                     canonical_id = await conn.fetchval(
                         """
                         INSERT INTO euring_2020_canonical
-                            (canonical_string, string_hash, parsed_fields, field_count)
-                        VALUES ($1, $2, $3, $4)
+                            (canonical_string, string_hash, parsed_fields, field_count,
+                             owner_username, visibility, alias_id)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7)
                         RETURNING id
                         """,
                         canonical_string,
                         string_hash,
                         json.dumps(parsed_fields, ensure_ascii=False),
                         field_count,
+                        owner_username,
+                        visibility,
+                        alias_id,
                     )
+
+                    # Condividi il nuovo record con gli altri proprietari trovati
+                    # per lo stesso alias (direzione opposta rispetto a sopra).
+                    for row in other_owner_rows:
+                        await conn.execute(
+                            """
+                            INSERT INTO euring_2020_shared_with
+                                (canonical_id, shared_with_username)
+                            VALUES ($1, $2)
+                            ON CONFLICT DO NOTHING
+                            """,
+                            canonical_id,
+                            row["owner_username"],
+                        )
 
                     field_rows = [
                         (canonical_id, field_positions[name], name, value)
@@ -477,7 +570,8 @@ class DatabaseService:
             logger.error(f"Failed to link unique_strings to canonical: {e}")
 
     async def search_canonical_2020(
-        self, filters: Dict[str, str], page: int, page_size: int
+        self, filters: Dict[str, str], page: int, page_size: int,
+        requesting_username: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Ricerca a faccette sull'archivio canonico EURING 2020.
@@ -487,6 +581,14 @@ class DatabaseService:
         canonical_id HAVING COUNT(DISTINCT field_name) = N e' il modo standard
         per esprimere "un canonical_id deve avere una riga EAV corrispondente
         per OGNI filtro" senza self-join multipli.
+
+        requesting_username: se fornito, i risultati sono limitati ai record
+        pubblici, propri, o condivisi con questo utente. Se None (utente
+        anonimo), SOLO i record pubblici. **Bug di privacy corretto
+        30/07/2026**: prima di questa modifica il metodo ignorava del tutto
+        owner_username/visibility e restituiva sempre l'intero archivio a
+        chiunque, indipendentemente da chi chiamava /archive/search
+        (HANDOFF.md, punti 6-11).
         """
         if not self.pool:
             return {"total": 0, "results": []}
@@ -495,53 +597,60 @@ class DatabaseService:
 
         try:
             async with self.pool.acquire() as conn:
-                if filters:
-                    pairs = list(filters.items())
+                pairs = list(filters.items()) if filters else []
+                field_params: List[Any] = []
+                for name, value in pairs:
+                    field_params.extend([name, value])
+
+                if requesting_username:
+                    vis_idx = len(field_params) + 1
+                    visibility_clause = f"""(
+                        c.visibility = 'public'
+                        OR c.owner_username = ${vis_idx}
+                        OR EXISTS (
+                            SELECT 1 FROM euring_2020_shared_with sw
+                            WHERE sw.canonical_id = c.id AND sw.shared_with_username = ${vis_idx}
+                        )
+                    )"""
+                    visibility_params = [requesting_username]
+                else:
+                    visibility_clause = "c.visibility = 'public'"
+                    visibility_params = []
+
+                if pairs:
                     placeholders = ", ".join(
                         f"(${i * 2 + 1}, ${i * 2 + 2})" for i in range(len(pairs))
                     )
-                    params: List[Any] = []
-                    for name, value in pairs:
-                        params.extend([name, value])
-
                     id_subquery = f"""
                         SELECT canonical_id FROM euring_2020_field_values
                         WHERE (field_name, field_value) IN ({placeholders})
                         GROUP BY canonical_id
                         HAVING COUNT(DISTINCT field_name) = {len(pairs)}
                     """
-
-                    total = await conn.fetchval(
-                        f"SELECT COUNT(*) FROM ({id_subquery}) sub", *params
-                    )
-                    rows = await conn.fetch(
-                        f"""
-                        SELECT c.id, c.canonical_string, c.field_count,
-                               c.first_seen, c.last_seen, c.occurrence_count
-                        FROM euring_2020_canonical c
-                        WHERE c.id IN ({id_subquery})
-                        ORDER BY c.first_seen DESC
-                        LIMIT ${len(params) + 1} OFFSET ${len(params) + 2}
-                        """,
-                        *params,
-                        page_size,
-                        offset,
-                    )
+                    where_clause = f"c.id IN ({id_subquery}) AND {visibility_clause}"
                 else:
-                    total = await conn.fetchval(
-                        "SELECT COUNT(*) FROM euring_2020_canonical"
-                    )
-                    rows = await conn.fetch(
-                        """
-                        SELECT id, canonical_string, field_count,
-                               first_seen, last_seen, occurrence_count
-                        FROM euring_2020_canonical
-                        ORDER BY first_seen DESC
-                        LIMIT $1 OFFSET $2
-                        """,
-                        page_size,
-                        offset,
-                    )
+                    where_clause = visibility_clause
+
+                all_params = field_params + visibility_params
+
+                total = await conn.fetchval(
+                    f"SELECT COUNT(*) FROM euring_2020_canonical c WHERE {where_clause}",
+                    *all_params,
+                )
+                rows = await conn.fetch(
+                    f"""
+                    SELECT c.id, c.canonical_string, c.field_count,
+                           c.first_seen, c.last_seen, c.occurrence_count,
+                           c.visibility, c.alias_id
+                    FROM euring_2020_canonical c
+                    WHERE {where_clause}
+                    ORDER BY c.first_seen DESC
+                    LIMIT ${len(all_params) + 1} OFFSET ${len(all_params) + 2}
+                    """,
+                    *all_params,
+                    page_size,
+                    offset,
+                )
 
                 return {
                     "total": total or 0,
@@ -552,33 +661,56 @@ class DatabaseService:
             return {"total": 0, "results": []}
 
     async def facet_counts_2020(
-        self, field_names: List[str], filters: Dict[str, str]
+        self, field_names: List[str], filters: Dict[str, str],
+        requesting_username: Optional[str] = None,
     ) -> Dict[str, List[Dict[str, Any]]]:
         """
         Conteggi per faccetta su un elenco curato di campi (vedi
         ARCHIVE_FACET_FIELDS in euring_api.py). Prima versione: calcolati
-        sull'intero archivio, NON ricalcolati in base ai filtri gia' attivi
-        (semplificazione nota -- una vera implementazione "drill down"
-        escluderebbe il filtro sul campo stesso quando conta le sue faccette).
+        sull'intero archivio VISIBILE a requesting_username (non ricalcolati
+        in base ai filtri gia' attivi -- semplificazione nota, una vera
+        implementazione "drill down" escluderebbe il filtro sul campo stesso
+        quando conta le sue faccette).
+
+        requesting_username: stessa semantica di search_canonical_2020 --
+        None = solo record pubblici (bug di privacy corretto 30/07/2026,
+        prima i conteggi includevano anche i record privati/condivisi altrui).
         """
         if not self.pool:
             return {}
+
+        if requesting_username:
+            visibility_clause = """(
+                c.visibility = 'public'
+                OR c.owner_username = $2
+                OR EXISTS (
+                    SELECT 1 FROM euring_2020_shared_with sw
+                    WHERE sw.canonical_id = c.id AND sw.shared_with_username = $2
+                )
+            )"""
+        else:
+            visibility_clause = "c.visibility = 'public'"
 
         try:
             async with self.pool.acquire() as conn:
                 result: Dict[str, List[Dict[str, Any]]] = {}
                 for field_name in field_names:
+                    params: List[Any] = [field_name]
+                    if requesting_username:
+                        params.append(requesting_username)
                     rows = await conn.fetch(
-                        """
-                        SELECT field_value, COUNT(*) as cnt
-                        FROM euring_2020_field_values
-                        WHERE field_name = $1
-                          AND field_value IS NOT NULL AND field_value != ''
-                        GROUP BY field_value
+                        f"""
+                        SELECT fv.field_value, COUNT(*) as cnt
+                        FROM euring_2020_field_values fv
+                        JOIN euring_2020_canonical c ON c.id = fv.canonical_id
+                        WHERE fv.field_name = $1
+                          AND fv.field_value IS NOT NULL AND fv.field_value != ''
+                          AND {visibility_clause}
+                        GROUP BY fv.field_value
                         ORDER BY cnt DESC
                         LIMIT 20
                         """,
-                        field_name,
+                        *params,
                     )
                     result[field_name] = [
                         {"value": r["field_value"], "count": r["cnt"]} for r in rows
@@ -587,6 +719,262 @@ class DatabaseService:
         except Exception as e:
             logger.error(f"Failed to compute facet counts: {e}")
             return {}
+
+    async def get_visible_events_for_alias(
+        self, alias_id: int, requesting_username: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Eventi per un dato alias_id (anello) visibili PER INTERO a
+        requesting_username: pubblici, propri, o condivisi con lui.
+
+        Coppia con count_all_events_for_alias: la differenza tra i due e' il
+        numero da mostrare nel placeholder "N eventi non condivisi con te"
+        (HANDOFF.md, punti 9-10).
+        """
+        if not self.pool:
+            return []
+
+        try:
+            async with self.pool.acquire() as conn:
+                rows = await conn.fetch(
+                    """
+                    SELECT c.id, c.canonical_string, c.field_count, c.owner_username,
+                           c.visibility, c.first_seen, c.last_seen, c.occurrence_count
+                    FROM euring_2020_canonical c
+                    WHERE c.alias_id = $1
+                      AND (
+                        c.visibility = 'public'
+                        OR c.owner_username = $2
+                        OR EXISTS (
+                            SELECT 1 FROM euring_2020_shared_with sw
+                            WHERE sw.canonical_id = c.id
+                              AND sw.shared_with_username = $2
+                        )
+                      )
+                    ORDER BY c.first_seen
+                    """,
+                    alias_id,
+                    requesting_username,
+                )
+                return [dict(r) for r in rows]
+        except Exception as e:
+            logger.error(f"Failed to get visible events for alias {alias_id}: {e}")
+            return []
+
+    async def count_all_events_for_alias(self, alias_id: int) -> int:
+        """
+        Conteggio TOTALE di eventi per un dato alias_id, senza filtro di
+        visibilita' e senza restituire alcun contenuto -- il numero grezzo
+        da cui sottrarre len(get_visible_events_for_alias(...)) per ottenere
+        il conteggio del placeholder "N eventi non condivisi con te".
+        """
+        if not self.pool:
+            return 0
+
+        try:
+            async with self.pool.acquire() as conn:
+                total = await conn.fetchval(
+                    "SELECT COUNT(*) FROM euring_2020_canonical WHERE alias_id = $1",
+                    alias_id,
+                )
+                return total or 0
+        except Exception as e:
+            logger.error(f"Failed to count events for alias {alias_id}: {e}")
+            return 0
+
+    async def get_hidden_owners_for_alias(
+        self, alias_id: int, requesting_username: str
+    ) -> List[str]:
+        """
+        Proprietari DISTINTI dei record per questo alias_id che NON sono
+        visibili a requesting_username -- serve solo per instradare
+        internamente le richieste di contatto (contact_requests), MAI da
+        restituire in una risposta API al richiedente (HANDOFF.md, punto 6:
+        l'identita' del proprietario non va mai esposta a chi non e' gia'
+        stato autorizzato dal proprietario stesso).
+        """
+        if not self.pool:
+            return []
+
+        try:
+            async with self.pool.acquire() as conn:
+                rows = await conn.fetch(
+                    """
+                    SELECT DISTINCT owner_username
+                    FROM euring_2020_canonical c
+                    WHERE c.alias_id = $1
+                      AND c.owner_username IS NOT NULL
+                      AND c.owner_username != $2
+                      AND NOT (
+                        c.visibility = 'public'
+                        OR EXISTS (
+                            SELECT 1 FROM euring_2020_shared_with sw
+                            WHERE sw.canonical_id = c.id
+                              AND sw.shared_with_username = $2
+                        )
+                      )
+                    """,
+                    alias_id,
+                    requesting_username,
+                )
+                return [r["owner_username"] for r in rows]
+        except Exception as e:
+            logger.error(f"Failed to get hidden owners for alias {alias_id}: {e}")
+            return []
+
+    async def create_contact_request(
+        self, alias_id: int, requester_username: str, owner_username: str,
+        message: Optional[str] = None
+    ) -> Optional[int]:
+        """
+        Crea una richiesta di contatto verso owner_username per alias_id, se
+        non ne esiste gia' una in stato 'pending' identica (evita spam da
+        richieste ripetute). Ritorna l'id della richiesta creata, o None se
+        gia' esisteva una pendente identica / errore / servizio disabilitato.
+        """
+        if not self.pool or not self.is_enabled:
+            return None
+
+        try:
+            async with self.pool.acquire() as conn:
+                existing = await conn.fetchval(
+                    """
+                    SELECT id FROM contact_requests
+                    WHERE alias_id = $1 AND requester_username = $2
+                      AND owner_username = $3 AND status = 'pending'
+                    """,
+                    alias_id, requester_username, owner_username,
+                )
+                if existing is not None:
+                    return None
+
+                return await conn.fetchval(
+                    """
+                    INSERT INTO contact_requests
+                        (alias_id, requester_username, owner_username, message)
+                    VALUES ($1, $2, $3, $4)
+                    RETURNING id
+                    """,
+                    alias_id, requester_username, owner_username, message,
+                )
+        except Exception as e:
+            logger.error(f"Failed to create contact request: {e}")
+            return None
+
+    async def list_contact_requests_for_owner(self, owner_username: str) -> List[Dict[str, Any]]:
+        """Richieste ricevute da owner_username, piu' recenti prima. Include requester_username (visibile all'owner, non e' l'informazione protetta)."""
+        if not self.pool:
+            return []
+        try:
+            async with self.pool.acquire() as conn:
+                rows = await conn.fetch(
+                    """
+                    SELECT id, alias_id, requester_username, message, status,
+                           shared, identity_revealed, created_at, responded_at
+                    FROM contact_requests
+                    WHERE owner_username = $1
+                    ORDER BY created_at DESC
+                    """,
+                    owner_username,
+                )
+                return [dict(r) for r in rows]
+        except Exception as e:
+            logger.error(f"Failed to list contact requests for owner {owner_username}: {e}")
+            return []
+
+    async def list_contact_requests_for_requester(self, requester_username: str) -> List[Dict[str, Any]]:
+        """
+        Richieste inviate da requester_username. owner_username NON viene mai
+        incluso qui (punto 6) -- solo esito (shared/identity_revealed) e stato.
+        """
+        if not self.pool:
+            return []
+        try:
+            async with self.pool.acquire() as conn:
+                rows = await conn.fetch(
+                    """
+                    SELECT id, alias_id, message, status, shared,
+                           identity_revealed, created_at, responded_at
+                    FROM contact_requests
+                    WHERE requester_username = $1
+                    ORDER BY created_at DESC
+                    """,
+                    requester_username,
+                )
+                return [dict(r) for r in rows]
+        except Exception as e:
+            logger.error(f"Failed to list contact requests for requester {requester_username}: {e}")
+            return []
+
+    async def respond_to_contact_request(
+        self, request_id: int, owner_username: str, shared: bool, identity_revealed: bool
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Applica la risposta del proprietario a una richiesta di contatto.
+        Se shared=true, il richiedente viene aggiunto a euring_2020_shared_with
+        per TUTTI i record di questo alias_id di proprieta' di owner_username,
+        e la loro visibilita' passa a 'shared' se era 'private' (mai declassata
+        se gia' 'public'). Verifica che request_id appartenga davvero a
+        owner_username prima di applicare qualunque modifica.
+        """
+        if not self.pool:
+            return None
+
+        try:
+            async with self.pool.acquire() as conn:
+                async with conn.transaction():
+                    row = await conn.fetchrow(
+                        """
+                        SELECT id, alias_id, requester_username, owner_username, status
+                        FROM contact_requests
+                        WHERE id = $1 AND owner_username = $2
+                        """,
+                        request_id, owner_username,
+                    )
+                    if row is None:
+                        return None
+
+                    await conn.execute(
+                        """
+                        UPDATE contact_requests
+                        SET status = 'responded', shared = $2,
+                            identity_revealed = $3, responded_at = NOW()
+                        WHERE id = $1
+                        """,
+                        request_id, shared, identity_revealed,
+                    )
+
+                    if shared:
+                        canonical_ids = await conn.fetch(
+                            """
+                            SELECT id FROM euring_2020_canonical
+                            WHERE alias_id = $1 AND owner_username = $2
+                            """,
+                            row["alias_id"], owner_username,
+                        )
+                        for c in canonical_ids:
+                            await conn.execute(
+                                """
+                                UPDATE euring_2020_canonical
+                                SET visibility = 'shared'
+                                WHERE id = $1 AND visibility != 'public'
+                                """,
+                                c["id"],
+                            )
+                            await conn.execute(
+                                """
+                                INSERT INTO euring_2020_shared_with
+                                    (canonical_id, shared_with_username)
+                                VALUES ($1, $2)
+                                ON CONFLICT DO NOTHING
+                                """,
+                                c["id"], row["requester_username"],
+                            )
+
+                    return {"id": request_id, "shared": shared, "identity_revealed": identity_revealed}
+        except Exception as e:
+            logger.error(f"Failed to respond to contact request {request_id}: {e}")
+            return None
 
     async def _update_unique_strings(self, conn, query_data: Dict[str, Any]):
         """

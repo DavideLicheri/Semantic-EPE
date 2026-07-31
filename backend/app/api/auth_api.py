@@ -6,9 +6,9 @@ from fastapi.security import HTTPBearer
 
 from ..auth.auth_service import AuthService
 from ..auth.models import (
-    UserLogin, Token, User, UserCreate, UserRole, 
+    UserLogin, Token, User, UserCreate, UserRole,
     UserRegistration, UserRoleUpdate, UserListResponse, RegistrationResponse,
-    PasswordChange, PasswordChangeResponse
+    PasswordChange, PasswordChangeResponse, ConsentUpdate, ConsentUpdateResponse
 )
 from ..auth.dependencies import get_current_active_user, require_super_admin, require_admin
 from ..services.email_service import email_service
@@ -59,7 +59,8 @@ async def create_user(
         full_name=user_data.full_name,
         password=user_data.password,
         role=user_data.role,
-        department=user_data.department
+        department=user_data.department,
+        consents_to_aggregate_analysis=user_data.consents_to_aggregate_analysis
     )
 
 @router.get("/permissions")
@@ -80,6 +81,33 @@ async def get_user_permissions(current_user: User = Depends(get_current_active_u
             "can_access_admin": current_user.role in [UserRole.ADMIN, UserRole.SUPER_ADMIN]
         }
     }
+
+@router.put("/consent", response_model=ConsentUpdateResponse)
+async def update_consent(
+    consent_data: ConsentUpdate,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Aggiorna il proprio consenso all'uso aggregato/anonimo dei dati per la
+    conoscenza semantica di Lizzy (HANDOFF.md, punto 17). Revocabile in
+    qualunque momento -- l'effetto riguarda solo le sottomissioni future.
+    """
+    try:
+        auth_service.update_consent(
+            username=current_user.username,
+            consents=consent_data.consents_to_aggregate_analysis
+        )
+        return ConsentUpdateResponse(
+            success=True,
+            message="Preferenza di consenso aggiornata",
+            consents_to_aggregate_analysis=consent_data.consents_to_aggregate_analysis
+        )
+    except HTTPException as e:
+        return ConsentUpdateResponse(
+            success=False,
+            message=e.detail,
+            consents_to_aggregate_analysis=current_user.consents_to_aggregate_analysis
+        )
 
 @router.post("/logout")
 async def logout(current_user: User = Depends(get_current_active_user)):
@@ -118,7 +146,8 @@ async def register_user(
             email=registration_data.email,
             full_name=registration_data.full_name,
             password=registration_data.password,
-            department=registration_data.department
+            department=registration_data.department,
+            consents_to_aggregate_analysis=registration_data.consents_to_aggregate_analysis
         )
         
         # Send email notification in background

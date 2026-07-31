@@ -81,3 +81,8 @@ backend/data/usage/
 
 # Claude worktrees
 .claude/worktrees/
+
+# Note di sessione/design -- solo locali, mai su GitHub (contengono IP VM,
+# credenziali di default, dettagli SSH -- decisione 30/07/2026)
+HANDOFF.md
+design_archivio_faccette.md

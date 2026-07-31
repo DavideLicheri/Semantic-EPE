@@ -44,7 +44,8 @@ class AuthService:
                     "department": "ISPRA - DG SINA",
                     "password_hash": self.get_password_hash("admin"),  # Simple default password
                     "is_active": True,
-                    "created_at": datetime.now().isoformat()
+                    "created_at": datetime.now().isoformat(),
+                    "consents_to_aggregate_analysis": False  # opt-in, default negato anche per admin
                 }
             }
             
@@ -151,18 +152,19 @@ class AuthService:
         del user_data["password_hash"]
         return User(**user_data)
     
-    def create_user(self, username: str, email: str, full_name: str, 
-                   password: str, role: UserRole = UserRole.USER, 
-                   department: str = None) -> User:
+    def create_user(self, username: str, email: str, full_name: str,
+                   password: str, role: UserRole = UserRole.USER,
+                   department: str = None,
+                   consents_to_aggregate_analysis: bool = False) -> User:
         """Create new user (Super Admin only)"""
         users = self._load_users()
-        
+
         if username in users:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Username already exists"
             )
-        
+
         user_data = {
             "id": username,
             "username": username,
@@ -172,7 +174,8 @@ class AuthService:
             "department": department,
             "password_hash": self.get_password_hash(password),
             "is_active": True,
-            "created_at": datetime.now().isoformat()
+            "created_at": datetime.now().isoformat(),
+            "consents_to_aggregate_analysis": consents_to_aggregate_analysis
         }
         
         users[username] = user_data
@@ -198,18 +201,19 @@ class AuthService:
         """Check if user can edit matrix (Super Admin only)"""
         return user_role == UserRole.SUPER_ADMIN
     
-    def register_user(self, username: str, email: str, full_name: str, 
-                     password: str, department: str = None) -> User:
+    def register_user(self, username: str, email: str, full_name: str,
+                     password: str, department: str = None,
+                     consents_to_aggregate_analysis: bool = False) -> User:
         """Register new user with viewer role (public registration)"""
         users = self._load_users()
-        
+
         # Check if username already exists
         if username in users:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Username già esistente"
             )
-        
+
         # Check if email already exists
         for user_data in users.values():
             if user_data.get("email") == email:
@@ -217,7 +221,7 @@ class AuthService:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Email già registrata"
                 )
-        
+
         # Create new user with viewer role
         user_data = {
             "id": username,
@@ -230,7 +234,10 @@ class AuthService:
             "is_active": True,
             "created_at": datetime.now().isoformat(),
             "registration_ip": None,  # Can be added later
-            "email_verified": False
+            "email_verified": False,
+            # Opt-in esplicito (punto 17): il valore arriva dalla checkbox nel
+            # form di registrazione, default False se non specificato.
+            "consents_to_aggregate_analysis": consents_to_aggregate_analysis
         }
         
         users[username] = user_data
@@ -324,6 +331,29 @@ class AuthService:
         del user_dict["password_hash"]
         return User(**user_dict)
     
+    def update_consent(self, username: str, consents: bool) -> User:
+        """
+        Aggiorna il consenso all'uso aggregato/anonimo dei dati (punto 17).
+        Revocabile in qualunque momento dall'utente stesso -- l'effetto
+        riguarda solo le sottomissioni future (non retroattivo sui contatori
+        gia' aggregati, che non possono essere "disaggregati").
+        """
+        users = self._load_users()
+
+        if username not in users:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Utente non trovato"
+            )
+
+        users[username]["consents_to_aggregate_analysis"] = consents
+        users[username]["consent_updated_at"] = datetime.now().isoformat()
+        self._save_users(users)
+
+        user_dict = users[username].copy()
+        del user_dict["password_hash"]
+        return User(**user_dict)
+
     def change_password(self, username: str, current_password: str, new_password: str) -> bool:
         """Change user password"""
         users = self._load_users()

@@ -28,6 +28,12 @@ from ..services.usage_logger import usage_logger
 from ..services.field_translator import field_translator
 from ..services.archive_service import archive_service
 from ..services.database_service import database_service
+from ..services.email_service import email_service
+from ..auth.auth_service import AuthService
+
+# Istanza propria, non condivisa con quella di auth_api.py -- stesso pattern
+# di instanziazione gia' in uso nel resto del codice (vedi archive_service.py).
+_auth_service_for_contacts = AuthService()
 
 # Initialize services
 recognition_engine = RecognitionEngineImpl()
@@ -335,7 +341,8 @@ async def recognize_euring(
                 if response.version:
                     asyncio.create_task(archive_service.archive_string(
                         request.euring_string.strip(),
-                        response.version
+                        response.version,
+                        owner_username=current_user.username
                     ))
             except Exception as log_error:
                 # Don't let logging errors affect the main response
@@ -451,12 +458,14 @@ async def convert_euring(
                     # archiviata a se' se si normalizza correttamente a 2020)
                     asyncio.create_task(archive_service.archive_string(
                         request.euring_string.strip(),
-                        f"euring_{request.source_version}"
+                        f"euring_{request.source_version}",
+                        owner_username=current_user.username
                     ))
                     if response.converted_string:
                         asyncio.create_task(archive_service.archive_string(
                             response.converted_string,
-                            f"euring_{request.target_version}"
+                            f"euring_{request.target_version}",
+                            owner_username=current_user.username
                         ))
             except Exception as log_error:
                 print(f"Logging error: {log_error}")
@@ -1996,7 +2005,10 @@ async def parse_euring_string(
                     result=log_data,
                     processing_time=int(processing_time)
                 ))
-                asyncio.create_task(archive_service.archive_string(euring_string, detected_version))
+                asyncio.create_task(archive_service.archive_string(
+                    euring_string, detected_version,
+                    owner_username=current_user.username
+                ))
             except Exception as log_error:
                 print(f"Logging error: {log_error}")
 
@@ -2046,7 +2058,10 @@ ARCHIVE_FACET_FIELDS = [
 
 
 @router.get("/archive/search")
-async def search_archive(request: Request, page: int = 1, page_size: int = 20):
+async def search_archive(
+    request: Request, page: int = 1, page_size: int = 20,
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
     """
     Ricerca a faccette nell'archivio canonico EURING 2020 (euring_2020_canonical
     + euring_2020_field_values, popolati da /recognize, /convert, /parse per gli
@@ -2056,6 +2071,12 @@ async def search_archive(request: Request, page: int = 1, page_size: int = 20):
     come coppia field_name=field_value da euring_2020.json (es. ?sex+concluded=M).
     Un solo valore per campo in questa prima versione (AND tra campi diversi,
     non OR all'interno dello stesso campo).
+
+    Visibilita' (HANDOFF.md, punti 6-11, corretto 30/07/2026 -- PRIMA di questa
+    modifica l'endpoint ignorava del tutto owner_username/visibility e
+    restituiva l'intero archivio a chiunque): utente anonimo vede solo i
+    record pubblici; utente autenticato vede pubblici + propri + condivisi
+    con lui.
     """
     reserved = {"page", "page_size"}
     filters = {
@@ -2065,10 +2086,15 @@ async def search_archive(request: Request, page: int = 1, page_size: int = 20):
     }
     page = max(1, page)
     page_size = min(max(1, page_size), 100)
+    requesting_username = current_user.username if current_user else None
 
     try:
-        result = await database_service.search_canonical_2020(filters, page, page_size)
-        facets = await database_service.facet_counts_2020(ARCHIVE_FACET_FIELDS, filters)
+        result = await database_service.search_canonical_2020(
+            filters, page, page_size, requesting_username=requesting_username
+        )
+        facets = await database_service.facet_counts_2020(
+            ARCHIVE_FACET_FIELDS, filters, requesting_username=requesting_username
+        )
         return {
             "success": True,
             "total": result["total"],
@@ -2079,6 +2105,128 @@ async def search_archive(request: Request, page: int = 1, page_size: int = 20):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Errore nella ricerca dell'archivio: {e}")
+
+
+# ============================================================================
+# Richieste di contatto verso il proprietario di eventi non condivisi
+# (HANDOFF.md, punti 9-10, esteso il 30/07/2026, migrazione 003)
+#
+# IMPORTANTE: owner_username non deve MAI comparire in una risposta rivolta
+# al richiedente, in nessuno di questi endpoint -- e' l'invariante centrale
+# del punto 6 (l'identita' del proprietario resta nascosta a meno che lui
+# stesso non scelga di rivelarsi rispondendo, vedi identity_revealed).
+# ============================================================================
+
+class ContactRequestCreate(BaseModel):
+    message: Optional[str] = None
+
+class ContactRequestRespond(BaseModel):
+    shared: bool
+    identity_revealed: bool
+
+
+@router.post("/archive/alias/{alias_id}/contact-request")
+async def create_contact_request(
+    alias_id: int,
+    body: ContactRequestCreate,
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Richiede il contatto con il/i proprietari di eventi legati a questo
+    alias_id (anello) che non sono visibili all'utente corrente -- il
+    pulsante dietro al placeholder "N eventi non condivisi con te".
+
+    Crea una richiesta per OGNI proprietario nascosto distinto e invia una
+    notifica email a ciascuno (via email_service, stesso meccanismo gia' in
+    uso per le notifiche di registrazione/cambio ruolo). L'identita' dei
+    proprietari non viene mai restituita in questa risposta.
+    """
+    try:
+        hidden_owners = await database_service.get_hidden_owners_for_alias(
+            alias_id, current_user.username
+        )
+        if not hidden_owners:
+            return {
+                "success": True,
+                "requests_created": 0,
+                "message": "Nessun evento nascosto trovato per questo anello.",
+            }
+
+        requests_created = 0
+        for owner_username in hidden_owners:
+            request_id = await database_service.create_contact_request(
+                alias_id=alias_id,
+                requester_username=current_user.username,
+                owner_username=owner_username,
+                message=body.message,
+            )
+            if request_id is None:
+                continue  # gia' una richiesta pendente identica, o servizio disabilitato
+            requests_created += 1
+
+            owner_user = _auth_service_for_contacts.get_user(owner_username)
+            if owner_user:
+                email_service.send_contact_request_notification(
+                    owner_email=owner_user.email,
+                    owner_full_name=owner_user.full_name,
+                    requester_username=current_user.username,
+                    alias_id=alias_id,
+                    message=body.message,
+                )
+
+        return {"success": True, "requests_created": requests_created}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore nella richiesta di contatto: {e}")
+
+
+@router.get("/archive/contact-requests")
+async def list_received_contact_requests(current_user: User = Depends(get_current_active_user)):
+    """Richieste di contatto ricevute come proprietario (richiedente visibile: non è l'informazione protetta)."""
+    try:
+        requests = await database_service.list_contact_requests_for_owner(current_user.username)
+        return {"success": True, "requests": requests}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore nel recupero delle richieste: {e}")
+
+
+@router.get("/archive/contact-requests/sent")
+async def list_sent_contact_requests(current_user: User = Depends(get_current_active_user)):
+    """Richieste di contatto inviate come richiedente. owner_username non è mai incluso (punto 6)."""
+    try:
+        requests = await database_service.list_contact_requests_for_requester(current_user.username)
+        return {"success": True, "requests": requests}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore nel recupero delle richieste: {e}")
+
+
+@router.post("/archive/contact-requests/{request_id}/respond")
+async def respond_to_contact_request(
+    request_id: int,
+    body: ContactRequestRespond,
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Risposta del proprietario a una richiesta di contatto: due decisioni
+    indipendenti, condividere il dato (shared) e/o rivelare la propria
+    identita' (identity_revealed) -- si puo' fare l'una senza l'altra.
+    """
+    try:
+        result = await database_service.respond_to_contact_request(
+            request_id=request_id,
+            owner_username=current_user.username,
+            shared=body.shared,
+            identity_revealed=body.identity_revealed,
+        )
+        if result is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Richiesta non trovata o non di tua competenza",
+            )
+        return {"success": True, **result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore nella risposta alla richiesta: {e}")
 
 
 @router.post("/parse/batch", response_model=EuringBatchParseResponse)
