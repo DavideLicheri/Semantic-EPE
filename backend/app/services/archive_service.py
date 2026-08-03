@@ -31,21 +31,27 @@ from .conversion_service import EuringConversionService
 from .skos_manager import SKOSManagerImpl
 from .parsers.euring_2020_position_parser import Euring2020PositionParser
 from .database_service import database_service
+from .phenology_utils import parse_euring_date_to_pentad
+from ..auth.auth_service import AuthService
 
 logger = logging.getLogger(__name__)
 
 
 class ArchiveService:
     def __init__(self):
-        # Istanze proprie di conversion_service/skos_manager, non condivise con
-        # quelle create in euring_api.py -- stesso pattern di instanziazione
-        # gia' in uso nel resto del codice (non c'e' oggi una vera dependency
-        # injection). Costo noto e accettato: la cache interna di
-        # SKOSManagerImpl viene popolata una seconda volta (dati read-only,
+        # Istanze proprie di conversion_service/skos_manager/auth_service, non
+        # condivise con quelle create in euring_api.py -- stesso pattern di
+        # instanziazione gia' in uso nel resto del codice (non c'e' oggi una
+        # vera dependency injection). Costo noto e accettato: la cache interna
+        # di SKOSManagerImpl viene popolata una seconda volta (dati read-only,
         # nessun problema di correttezza, solo un parse JSON in piu' all'avvio).
         self._conversion_service = EuringConversionService()
         self._skos_manager = SKOSManagerImpl()
         self._parser: Optional[Euring2020PositionParser] = None
+        # Usato SOLO per verificare consents_to_aggregate_analysis del
+        # proprietario prima di incrementare i contatori aggregati di Lizzy
+        # (punto 14a/16-17, migrazione 004) -- mai per altro in questo servizio.
+        self._auth_service = AuthService()
 
     async def _get_parser(self) -> Euring2020PositionParser:
         if self._parser is None:
@@ -113,7 +119,7 @@ class ArchiveService:
 
             field_positions = {f.name: f.position for f in parser.fields_by_position}
 
-            canonical_id = await database_service.upsert_euring_2020_canonical(
+            upsert_result = await database_service.upsert_euring_2020_canonical(
                 canonical_string=canonical_string,
                 parsed_fields=parsed["fields"],
                 field_count=parsed["field_count"],
@@ -121,16 +127,70 @@ class ArchiveService:
                 owner_username=owner_username,
             )
 
-            if canonical_id is not None:
-                await database_service.link_unique_string_to_canonical(
-                    euring_string, canonical_id
-                )
+            if upsert_result is None:
+                return None
+
+            canonical_id, is_new = upsert_result
+
+            await database_service.link_unique_string_to_canonical(
+                euring_string, canonical_id
+            )
+
+            # Contatori aggregati e anonimi per Lizzy (punto 14a, migrazione 004):
+            # SOLO alla prima comparsa di questa stringa esatta (is_new -- non
+            # ad ogni resottomissione dello stesso evento) e SOLO se il
+            # proprietario ha esplicitamente dato consenso all'uso aggregato
+            # (punto 16-17). Il conteggio non contiene mai canonical_id, utente,
+            # o stringa -- solo specie+luogo+pentade+schema.
+            if is_new and owner_username:
+                await self._maybe_increment_lizzy_stats(parsed["fields"], owner_username)
 
             return canonical_id
 
         except Exception as e:
             logger.error(f"Errore durante l'archiviazione della stringa: {e}")
             return None
+
+    async def _maybe_increment_lizzy_stats(
+        self, parsed_fields: Dict[str, Any], owner_username: str
+    ) -> None:
+        """
+        Incrementa lizzy_species_place_pentad_stats SOLO se: (a) il
+        proprietario ha consents_to_aggregate_analysis=true in
+        data/auth/users.json (verifica qui in Python, non via join SQL -- il
+        consenso non vive in Postgres), e (b) tutti i campi necessari sono
+        presenti e validi (specie, luogo, schema, data parsabile in pentade).
+        Nessuna eccezione propagata: un errore qui non deve mai far fallire
+        l'archiviazione principale (stesso principio di archive_string).
+        """
+        try:
+            owner = self._auth_service.get_user(owner_username)
+            if not owner or not owner.consents_to_aggregate_analysis:
+                return
+
+            species_code = (
+                parsed_fields.get("species concluded")
+                or parsed_fields.get("species mentioned")
+            )
+            place_code = parsed_fields.get("current place code")
+            ringing_scheme = parsed_fields.get("ringing scheme")
+            pentad = parse_euring_date_to_pentad(parsed_fields.get("date"))
+
+            if not (species_code and place_code and ringing_scheme and pentad):
+                logger.info(
+                    "Contatore Lizzy saltato: campi specie/luogo/schema/data "
+                    "mancanti o data non parsabile."
+                )
+                return
+
+            await database_service.increment_lizzy_stats(
+                species_code=species_code.strip(),
+                place_code=place_code.strip(),
+                pentad=pentad,
+                ringing_scheme=ringing_scheme.strip(),
+            )
+        except Exception as e:
+            logger.error(f"Errore durante l'incremento dei contatori Lizzy: {e}")
 
 
 # Istanza globale del servizio

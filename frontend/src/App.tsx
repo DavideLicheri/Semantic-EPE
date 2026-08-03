@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import RecognitionPanel from './components/RecognitionPanel'
 import ConversionPanel from './components/ConversionPanel'
 import DomainPanel from './components/DomainPanel'
@@ -13,6 +13,7 @@ import { UserProfile } from './components/UserProfile'
 import Analytics from './components/Analytics'
 import ISPRAQuery from './components/ISPRAQuery'
 import ArchivePanel from './components/ArchivePanel'
+import ContactRequestsPanel from './components/ContactRequestsPanel'
 import LizzyButton from './components/LizzyButton'
 import { authService, User } from './services/auth'
 import { useTranslation } from './hooks/useTranslation'
@@ -20,14 +21,88 @@ import { i18n } from './i18n'
 import epeLogo from './assets/images/epeLogo.jpg'
 import './App.css'
 
+type TabKey = 'recognize' | 'convert' | 'domains' | 'navigator' | 'matrix' | 'editor' | 'users' | 'analytics' | 'ispra' | 'archive' | 'contacts'
+
+interface NavTab {
+  key: TabKey
+  label: string
+}
+
+interface NavGroup {
+  id: string
+  label: string
+  tabs: NavTab[]
+}
+
 function App() {
   const { t } = useTranslation()
-  const [activeTab, setActiveTab] = useState<'recognize' | 'convert' | 'domains' | 'navigator' | 'matrix' | 'editor' | 'users' | 'analytics' | 'ispra' | 'archive'>('recognize')
+  const [activeTab, setActiveTab] = useState<TabKey>('recognize')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [showRegister, setShowRegister] = useState(false)
   const [showUserProfile, setShowUserProfile] = useState(false)
+  const [openMenu, setOpenMenu] = useState<string | null>(null)
+  const navRef = useRef<HTMLElement>(null)
+
+  // Voci di menu raggruppate per cluster funzionale (troppe tab singole in fila
+  // erano diventate difficili da scansionare -- discusso con Davide 03/08/2026).
+  // Ogni gruppo si apre come dropdown dal proprio pulsante di categoria.
+  const navGroups: NavGroup[] = useMemo(() => {
+    const groups: NavGroup[] = [
+      {
+        id: 'operations',
+        label: 'Operazioni EURING',
+        tabs: [
+          { key: 'recognize', label: t('nav.recognition') },
+          { key: 'convert', label: t('nav.conversion') },
+          { key: 'navigator', label: t('nav.navigator') },
+        ],
+      },
+      {
+        id: 'analysis',
+        label: 'Analisi',
+        tabs: [
+          { key: 'matrix', label: t('nav.matrix') },
+          { key: 'domains', label: t('nav.domains') },
+          { key: 'ispra', label: 'EPE ISPRA' },
+        ],
+      },
+      {
+        id: 'archive',
+        label: 'Archivio & Comunità',
+        tabs: [
+          { key: 'archive', label: 'Archivio' },
+          { key: 'contacts', label: 'Richieste di contatto' },
+        ],
+      },
+    ]
+
+    const adminTabs: NavTab[] = []
+    if (currentUser?.role === 'matrix_editor' || currentUser?.role === 'super_admin') {
+      adminTabs.push({ key: 'editor', label: t('nav.editor') })
+    }
+    if (currentUser?.role === 'super_admin') {
+      adminTabs.push({ key: 'users', label: t('nav.users') })
+      adminTabs.push({ key: 'analytics', label: t('nav.analytics') })
+    }
+    if (adminTabs.length > 0) {
+      groups.push({ id: 'admin', label: 'Amministrazione', tabs: adminTabs })
+    }
+
+    return groups
+  }, [t, currentUser?.role])
+
+  // Chiude il dropdown aperto se si clicca fuori dalla barra di navigazione.
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(event.target as Node)) {
+        setOpenMenu(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -119,73 +194,38 @@ function App() {
         </div>
       </header>
 
-      <nav className="tab-navigation">
-        <button
-          className={`tab-button ${activeTab === 'recognize' ? 'active' : ''}`}
-          onClick={() => setActiveTab('recognize')}
-        >
-          {t('nav.recognition')}
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'convert' ? 'active' : ''}`}
-          onClick={() => setActiveTab('convert')}
-        >
-          {t('nav.conversion')}
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'navigator' ? 'active' : ''}`}
-          onClick={() => setActiveTab('navigator')}
-        >
-          {t('nav.navigator')}
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'matrix' ? 'active' : ''}`}
-          onClick={() => setActiveTab('matrix')}
-        >
-          {t('nav.matrix')}
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'domains' ? 'active' : ''}`}
-          onClick={() => setActiveTab('domains')}
-        >
-          {t('nav.domains')}
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'ispra' ? 'active' : ''}`}
-          onClick={() => setActiveTab('ispra')}
-        >
-          EPE ISPRA
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'archive' ? 'active' : ''}`}
-          onClick={() => setActiveTab('archive')}
-        >
-          Archivio
-        </button>
-        {(currentUser?.role === 'matrix_editor' || currentUser?.role === 'super_admin') && (
-          <button
-            className={`tab-button ${activeTab === 'editor' ? 'active' : ''}`}
-            onClick={() => setActiveTab('editor')}
-          >
-            {t('nav.editor')}
-          </button>
-        )}
-        {currentUser?.role === 'super_admin' && (
-          <>
-            <button
-              className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
-              onClick={() => setActiveTab('users')}
-            >
-              {t('nav.users')}
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'analytics' ? 'active' : ''}`}
-              onClick={() => setActiveTab('analytics')}
-            >
-              {t('nav.analytics')}
-            </button>
-          </>
-        )}
+      <nav className="tab-navigation" ref={navRef}>
+        {navGroups.map((group) => {
+          const isGroupActive = group.tabs.some((tab) => tab.key === activeTab)
+          const isOpen = openMenu === group.id
+          return (
+            <div className="nav-group" key={group.id}>
+              <button
+                className={`tab-button nav-group-button ${isGroupActive ? 'active' : ''}`}
+                onClick={() => setOpenMenu(isOpen ? null : group.id)}
+              >
+                {group.label}
+                <span className="nav-group-caret">▾</span>
+              </button>
+              {isOpen && (
+                <div className="nav-dropdown">
+                  {group.tabs.map((tabItem) => (
+                    <button
+                      key={tabItem.key}
+                      className={`nav-dropdown-item ${activeTab === tabItem.key ? 'active' : ''}`}
+                      onClick={() => {
+                        setActiveTab(tabItem.key)
+                        setOpenMenu(null)
+                      }}
+                    >
+                      {tabItem.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </nav>
 
       <main className="app-main">
@@ -209,6 +249,8 @@ function App() {
           <ISPRAQuery />
         ) : activeTab === 'archive' ? (
           <ArchivePanel />
+        ) : activeTab === 'contacts' ? (
+          <ContactRequestsPanel />
         ) : (
           <DomainPanel />
         )}

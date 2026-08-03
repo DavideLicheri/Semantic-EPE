@@ -181,3 +181,94 @@
   background: #999999;
   cursor: default;
 }
+
+.visibility-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.visibility-public {
+  background: #e6f4ea;
+  color: #1e7b34;
+}
+
+.visibility-private {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.visibility-shared {
+  background: #fff3cd;
+  color: #8a6d00;
+}
+
+.archive-detail-btn {
+  background: #FFFFFF;
+  color: #663333;
+  border: solid 1px #663333;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.archive-detail-row td {
+  background: #fdfaf3;
+}
+
+.archive-detail-content {
+  font-size: 13px;
+  padding: 6px 4px;
+}
+
+.archive-hidden-note {
+  margin-top: 8px;
+  color: #8a6d00;
+}
+
+.contact-request-form {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 420px;
+}
+
+.contact-request-form textarea {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px;
+  border: solid 1px #ccc;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.contact-request-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.contact-request-actions button {
+  background: #663333;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.contact-request-actions button:disabled {
+  background: #999;
+  cursor: default;
+}
+
+.archive-contact-result {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #1e7b34;
+}

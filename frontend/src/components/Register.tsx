@@ -12,6 +12,7 @@ interface RegistrationData {
   password: string;
   confirmPassword: string;
   department?: string;
+  consents_to_aggregate_analysis: boolean;
 }
 
 interface RegisterProps {
@@ -26,7 +27,8 @@ export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
     full_name: '',
     password: '',
     confirmPassword: '',
-    department: ''
+    department: '',
+    consents_to_aggregate_analysis: false
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -61,7 +63,8 @@ export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
           email: formData.email,
           full_name: formData.full_name,
           password: formData.password,
-          department: formData.department || 'ISPRA'
+          department: formData.department || 'ISPRA',
+          consents_to_aggregate_analysis: formData.consents_to_aggregate_analysis
         }),
       });
 
@@ -83,6 +86,13 @@ export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
+    });
+  };
+
+  const handleConsentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      consents_to_aggregate_analysis: e.target.checked
     });
   };
 
@@ -227,6 +237,19 @@ export const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
               disabled={loading}
               placeholder={t('register.confirm.placeholder2')}
             />
+          </div>
+
+          <div className="form-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                name="consents_to_aggregate_analysis"
+                checked={formData.consents_to_aggregate_analysis}
+                onChange={handleConsentChange}
+                disabled={loading}
+              />
+              {t('register.consent.label')}
+            </label>
           </div>
 
           {error && (

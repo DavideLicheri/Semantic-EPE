@@ -155,6 +155,27 @@
   color: white !important;
 }
 
+/* Consent Section */
+.consent-section {
+  margin-bottom: 32px;
+}
+
+.consent-section h3 {
+  margin: 0 0 16px 0;
+  color: #374151;
+  font-size: 1.25rem;
+  font-weight: 600;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 8px;
+}
+
+.consent-description {
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
 /* Password Change Section */
 .password-change-section h3 {
   margin: 0 0 16px 0;

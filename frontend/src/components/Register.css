@@ -1,4 +1,21 @@
 /* Register Component Styles */
+.checkbox-label {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: normal !important;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto !important;
+  margin: 0;
+  flex-shrink: 0;
+}
+
 .register-container {
   min-height: 100vh;
   display: flex;

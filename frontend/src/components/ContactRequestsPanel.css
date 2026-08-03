@@ -1,0 +1,155 @@
+.contact-requests-panel {
+  background: #FFFAF0;
+  border: solid 1px #000000;
+  border-radius: 6px;
+  padding: 1.25rem;
+  color: #333;
+}
+
+.contact-requests-header {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: solid 2px #663333;
+}
+
+.contact-requests-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #663333;
+}
+
+.contact-requests-subtitle {
+  font-size: 13px;
+  color: #666;
+}
+
+.contact-requests-loading {
+  text-align: center;
+  color: #666;
+  padding: 2rem 0;
+}
+
+.contact-requests-section {
+  margin-top: 1.25rem;
+}
+
+.contact-requests-section h3 {
+  font-size: 15px;
+  color: #663333;
+  margin-bottom: 0.5rem;
+}
+
+.contact-requests-empty {
+  color: #999;
+  font-size: 13px;
+  padding: 0.5rem 0;
+}
+
+.contact-requests-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: #FFFFFF;
+  border: solid 1px #000000;
+  border-radius: 4px;
+}
+
+.contact-requests-table thead tr {
+  background: #f5f5f5;
+  border-bottom: solid 1px #000000;
+}
+
+.contact-requests-table th {
+  text-align: left;
+  padding: 8px 10px;
+  font-weight: 500;
+  color: #663333;
+}
+
+.contact-requests-table td {
+  padding: 8px 10px;
+  border-bottom: solid 1px #eee;
+}
+
+.contact-requests-message-cell {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.status-pending {
+  background: #fff3cd;
+  color: #8a6d00;
+}
+
+.status-responded {
+  background: #e6f4ea;
+  color: #1e7b34;
+}
+
+.contact-requests-btn {
+  background: #FFFFFF;
+  color: #663333;
+  border: solid 1px #663333;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.contact-requests-detail-row td {
+  background: #fdfaf3;
+}
+
+.respond-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px 4px;
+  max-width: 480px;
+}
+
+.respond-form .checkbox-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.respond-form .checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.respond-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.respond-form-actions button {
+  background: #663333;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.respond-form-actions button:disabled {
+  background: #999;
+  cursor: default;
+}

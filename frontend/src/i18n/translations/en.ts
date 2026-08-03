@@ -380,6 +380,13 @@ export const enTranslations = {
   'profile.role.admin': '🔧 Admin',
   'profile.role.user': '👤 User',
   'profile.role.viewer': '👁️ Viewer',
+  'profile.consent.title': '🤖 Contribution to Lizzy\'s knowledge',
+  'profile.consent.description': 'Do you authorize ECES to include, anonymously and in aggregate form (never the ring number, never your name), the new EURING strings you submit in the statistical counters used by Lizzy (species, place, time of year, ringing scheme)? You can revoke consent at any time; revoking does not change counts already recorded.',
+  'profile.consent.checkbox': 'I authorize the aggregated, anonymous use of my data for Lizzy',
+  'profile.consent.save': 'Save preference',
+  'profile.consent.saving': 'Saving...',
+  'profile.consent.success': 'Consent preference updated',
+  'profile.consent.error': 'Error updating consent preference',
 
   // Register component (detailed)
   'register.success.title': 'Registration Complete!',
@@ -405,6 +412,7 @@ export const enTranslations = {
   'register.password.placeholder2': 'At least 6 characters',
   'register.confirm.label2': 'Confirm Password *',
   'register.confirm.placeholder2': 'Repeat password',
+  'register.consent.label': 'I authorize the aggregated, anonymous use of my data for Lizzy\'s semantic knowledge (optional, revocable anytime from your profile)',
   'register.submit': 'Register for the System',
   'register.submitting': 'Registering...',
   'register.back_to_login': '← Back to Login',

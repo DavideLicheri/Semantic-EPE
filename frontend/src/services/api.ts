@@ -115,6 +115,70 @@ export class EuringAPI {
   }
 
   /**
+   * Riepilogo eventi per un anello (alias_id): visibili vs totali -- per il
+   * placeholder "N eventi non condivisi con te" (HANDOFF.md, punti 9-10).
+   */
+  static async getAliasSummary(aliasId: number): Promise<any> {
+    try {
+      const response = await api.get(`/api/euring/archive/alias/${aliasId}/summary`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.message || 'Riepilogo alias fallito');
+    }
+  }
+
+  /**
+   * Richiede il contatto con il/i proprietari di eventi nascosti per un
+   * dato alias_id. L'identita' dei proprietari non viene mai restituita qui.
+   */
+  static async createContactRequest(aliasId: number, message?: string): Promise<any> {
+    try {
+      const response = await api.post(
+        `/api/euring/archive/alias/${aliasId}/contact-request`,
+        { message: message || null }
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.message || 'Richiesta di contatto fallita');
+    }
+  }
+
+  /** Richieste di contatto ricevute (come proprietario) */
+  static async listReceivedContactRequests(): Promise<any> {
+    try {
+      const response = await api.get('/api/euring/archive/contact-requests');
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.message || 'Recupero richieste fallito');
+    }
+  }
+
+  /** Richieste di contatto inviate (come richiedente) -- mai include l'identita' del proprietario */
+  static async listSentContactRequests(): Promise<any> {
+    try {
+      const response = await api.get('/api/euring/archive/contact-requests/sent');
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.message || 'Recupero richieste fallito');
+    }
+  }
+
+  /** Risposta del proprietario: due decisioni indipendenti (shared, identity_revealed) */
+  static async respondToContactRequest(
+    requestId: number, shared: boolean, identityRevealed: boolean
+  ): Promise<any> {
+    try {
+      const response = await api.post(
+        `/api/euring/archive/contact-requests/${requestId}/respond`,
+        { shared, identity_revealed: identityRevealed }
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.message || 'Risposta alla richiesta fallita');
+    }
+  }
+
+  /**
    * Convert EURING code between versions
    */
   static async convert(request: ConversionRequest): Promise<ConversionResponse> {

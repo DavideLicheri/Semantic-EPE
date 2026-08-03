@@ -2107,6 +2107,76 @@ async def search_archive(
         raise HTTPException(status_code=500, detail=f"Errore nella ricerca dell'archivio: {e}")
 
 
+@router.get("/archive/alias/{alias_id}/summary")
+async def get_alias_summary(
+    alias_id: int,
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
+    """
+    Riepilogo per un anello (alias_id): quanti eventi sono visibili per
+    intero all'utente corrente vs quanti totali esistono per quell'alias --
+    la differenza e' il numero da mostrare nel placeholder "N eventi non
+    condivisi con te" (HANDOFF.md, punti 9-10). Nessun contenuto dei record
+    nascosti viene esposto, solo il conteggio.
+
+    Utente anonimo: requesting_username=None, quindi "visibili" = solo
+    pubblici (stessa semantica di /archive/search).
+    """
+    requesting_username = current_user.username if current_user else None
+
+    try:
+        visible = await database_service.get_visible_events_for_alias(
+            alias_id, requesting_username
+        )
+        total = await database_service.count_all_events_for_alias(alias_id)
+        return {
+            "success": True,
+            "alias_id": alias_id,
+            "visible_events": visible,
+            "visible_count": len(visible),
+            "total_count": total,
+            "hidden_count": max(0, total - len(visible)),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore nel riepilogo dell'alias: {e}")
+
+
+@router.get("/lizzy/species-place-pentad-stats")
+async def lizzy_species_place_pentad_stats(
+    species_code: str, place_code: str, pentad: int
+):
+    """
+    Consultazione dei contatori aggregati e anonimi per Lizzy (HANDOFF.md,
+    punto 14a, migrazione 004): quante volte questa combinazione
+    specie+luogo+pentade e' gia' stata osservata, e da quanti schemi di
+    inanellamento distinti proviene il dato.
+
+    Nessun giudizio di "raro"/"plausibile" qui -- solo i numeri grezzi (nessuna
+    soglia fissa di "sufficienza" e' stata introdotta, decisione 30/07/2026:
+    la dichiarazione di provenienza sostituisce una soglia arbitraria).
+    Dato interamente anonimo e aggregato, nessun endpoint di autenticazione
+    richiesto -- non contiene mai contenuto di record, utenti, o stringhe.
+    """
+    if not (1 <= pentad <= 73):
+        raise HTTPException(status_code=400, detail="pentad deve essere tra 1 e 73")
+
+    try:
+        stats = await database_service.get_lizzy_species_place_pentad_stats(
+            species_code=species_code.strip(),
+            place_code=place_code.strip(),
+            pentad=pentad,
+        )
+        return {
+            "success": True,
+            "species_code": species_code,
+            "place_code": place_code,
+            "pentad": pentad,
+            **stats,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore nella consultazione dei contatori Lizzy: {e}")
+
+
 # ============================================================================
 # Richieste di contatto verso il proprietario di eventi non condivisi
 # (HANDOFF.md, punti 9-10, esteso il 30/07/2026, migrazione 003)

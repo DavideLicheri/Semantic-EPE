@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { Fragment, useState, useEffect, useCallback } from 'react';
 import { EuringAPI } from '../services/api';
+import { authService } from '../services/auth';
 import './ArchivePanel.css';
 
 interface FacetValue {
   value: string;
   count: number;
 }
+
+type Visibility = 'public' | 'private' | 'shared';
 
 interface CanonicalRow {
   id: number;
@@ -14,6 +17,8 @@ interface CanonicalRow {
   first_seen: string;
   last_seen: string;
   occurrence_count: number;
+  visibility: Visibility;
+  alias_id: number | null;
 }
 
 interface SearchResponse {
@@ -24,6 +29,20 @@ interface SearchResponse {
   results: CanonicalRow[];
   facets: Record<string, FacetValue[]>;
 }
+
+interface AliasSummary {
+  success: boolean;
+  alias_id: number;
+  visible_count: number;
+  total_count: number;
+  hidden_count: number;
+}
+
+const VISIBILITY_LABELS: Record<Visibility, string> = {
+  public: 'Pubblico',
+  private: 'Privato',
+  shared: 'Condiviso',
+};
 
 const FACET_LABELS: Record<string, string> = {
   'ringing scheme': 'Scheme di inanellamento',
@@ -42,6 +61,16 @@ const ArchivePanel = () => {
   const [data, setData] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
+  const [aliasSummaries, setAliasSummaries] = useState<Record<number, AliasSummary>>({});
+  const [summaryLoading, setSummaryLoading] = useState<Record<number, boolean>>({});
+  const [contactFormOpenFor, setContactFormOpenFor] = useState<number | null>(null);
+  const [contactMessage, setContactMessage] = useState('');
+  const [contactSending, setContactSending] = useState(false);
+  const [contactResult, setContactResult] = useState<Record<number, string>>({});
+
+  const isAuthenticated = authService.isAuthenticated();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -76,6 +105,51 @@ const ArchivePanel = () => {
   const clearFilters = () => {
     setPage(1);
     setFilters({});
+  };
+
+  const toggleRowDetail = async (row: CanonicalRow) => {
+    if (expandedRowId === row.id) {
+      setExpandedRowId(null);
+      return;
+    }
+    setExpandedRowId(row.id);
+    setContactFormOpenFor(null);
+    setContactMessage('');
+
+    if (row.alias_id != null && !aliasSummaries[row.id] && !summaryLoading[row.id]) {
+      setSummaryLoading((prev) => ({ ...prev, [row.id]: true }));
+      try {
+        const summary = await EuringAPI.getAliasSummary(row.alias_id);
+        setAliasSummaries((prev) => ({ ...prev, [row.id]: summary }));
+      } catch {
+        // silenzioso in UI: il badge di visibilità resta comunque leggibile
+      } finally {
+        setSummaryLoading((prev) => ({ ...prev, [row.id]: false }));
+      }
+    }
+  };
+
+  const sendContactRequest = async (row: CanonicalRow) => {
+    if (row.alias_id == null) return;
+    setContactSending(true);
+    try {
+      const response = await EuringAPI.createContactRequest(row.alias_id, contactMessage || undefined);
+      setContactResult((prev) => ({
+        ...prev,
+        [row.id]: response?.success !== false
+          ? 'Richiesta di contatto inviata.'
+          : (response?.message || 'Invio della richiesta non riuscito.'),
+      }));
+      setContactFormOpenFor(null);
+      setContactMessage('');
+    } catch (err: any) {
+      setContactResult((prev) => ({
+        ...prev,
+        [row.id]: err.message || 'Invio della richiesta non riuscito.',
+      }));
+    } finally {
+      setContactSending(false);
+    }
   };
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
@@ -136,22 +210,103 @@ const ArchivePanel = () => {
                       <th>Campi</th>
                       <th>Prima vista</th>
                       <th>Occorrenze</th>
+                      <th>Visibilità</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {(data?.results || []).map((row) => (
-                      <tr key={row.id}>
-                        <td className="archive-string-cell" title={row.canonical_string}>
-                          {row.canonical_string}
-                        </td>
-                        <td>{row.field_count}</td>
-                        <td>{new Date(row.first_seen).toLocaleDateString('it-IT')}</td>
-                        <td>{row.occurrence_count}</td>
-                      </tr>
-                    ))}
+                    {(data?.results || []).map((row) => {
+                      const summary = aliasSummaries[row.id];
+                      const isExpanded = expandedRowId === row.id;
+                      return (
+                        <Fragment key={row.id}>
+                          <tr>
+                            <td className="archive-string-cell" title={row.canonical_string}>
+                              {row.canonical_string}
+                            </td>
+                            <td>{row.field_count}</td>
+                            <td>{new Date(row.first_seen).toLocaleDateString('it-IT')}</td>
+                            <td>{row.occurrence_count}</td>
+                            <td>
+                              <span className={`visibility-badge visibility-${row.visibility}`}>
+                                {VISIBILITY_LABELS[row.visibility] || row.visibility}
+                              </span>
+                            </td>
+                            <td>
+                              {row.alias_id != null && (
+                                <button
+                                  className="archive-detail-btn"
+                                  onClick={() => toggleRowDetail(row)}
+                                >
+                                  {isExpanded ? 'Chiudi' : 'Dettagli anello'}
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                          {isExpanded && (
+                            <tr key={`${row.id}-detail`} className="archive-detail-row">
+                              <td colSpan={6}>
+                                {summaryLoading[row.id] && <div>Caricamento riepilogo anello...</div>}
+                                {!summaryLoading[row.id] && summary && (
+                                  <div className="archive-detail-content">
+                                    <div>
+                                      Eventi visibili per te: <strong>{summary.visible_count}</strong> su{' '}
+                                      <strong>{summary.total_count}</strong> totali per questo anello.
+                                    </div>
+                                    {summary.hidden_count > 0 && (
+                                      <div className="archive-hidden-note">
+                                        {summary.hidden_count} evento/i non condivisi con te.
+                                        {isAuthenticated ? (
+                                          contactFormOpenFor === row.id ? (
+                                            <div className="contact-request-form">
+                                              <textarea
+                                                value={contactMessage}
+                                                onChange={(e) => setContactMessage(e.target.value)}
+                                                placeholder="Messaggio facoltativo per il/i proprietario/i..."
+                                                rows={2}
+                                              />
+                                              <div className="contact-request-actions">
+                                                <button
+                                                  onClick={() => sendContactRequest(row)}
+                                                  disabled={contactSending}
+                                                >
+                                                  {contactSending ? 'Invio...' : 'Invia richiesta'}
+                                                </button>
+                                                <button
+                                                  onClick={() => setContactFormOpenFor(null)}
+                                                  disabled={contactSending}
+                                                >
+                                                  Annulla
+                                                </button>
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <button
+                                              className="archive-detail-btn"
+                                              onClick={() => setContactFormOpenFor(row.id)}
+                                            >
+                                              Richiedi contatto
+                                            </button>
+                                          )
+                                        ) : (
+                                          <span> Accedi per richiedere il contatto con il proprietario.</span>
+                                        )}
+                                      </div>
+                                    )}
+                                    {contactResult[row.id] && (
+                                      <div className="archive-contact-result">{contactResult[row.id]}</div>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      );
+                    })}
                     {data && data.results.length === 0 && (
                       <tr>
-                        <td colSpan={4} className="archive-empty">
+                        <td colSpan={6} className="archive-empty">
                           Nessuna stringa trovata con questi filtri.
                         </td>
                       </tr>

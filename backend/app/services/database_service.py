@@ -7,7 +7,7 @@ import asyncpg
 import json
 import hashlib
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime, date, timedelta
 from pathlib import Path
 import os
@@ -377,7 +377,7 @@ class DatabaseService:
         field_count: int,
         field_positions: Dict[str, int],
         owner_username: Optional[str] = None,
-    ) -> Optional[int]:
+    ) -> Optional[Tuple[int, bool]]:
         """
         Persiste una stringa EURING 2020 gia' parsata "pulita" (64/64 campi)
         nell'archivio canonico a faccette.
@@ -413,9 +413,12 @@ class DatabaseService:
                 non viene backfillato)
 
         Returns:
-            id del record in euring_2020_canonical, o None se il logging su
-            database e' disabilitato o in caso di errore (mai un'eccezione:
-            l'archiviazione non deve mai far fallire la richiesta principale).
+            Tupla (id, is_new) -- is_new=True solo se questa e' la prima volta
+            che questa esatta stringa viene archiviata (rilevante per non
+            incrementare due volte i contatori aggregati di Lizzy, vedi
+            archive_service.py). None se il logging su database e' disabilitato
+            o in caso di errore (mai un'eccezione: l'archiviazione non deve mai
+            far fallire la richiesta principale).
         """
         if not self.pool or not self.is_enabled:
             return None
@@ -439,7 +442,7 @@ class DatabaseService:
                             """,
                             existing_id,
                         )
-                        return existing_id
+                        return existing_id, False
 
                     # --- Nuovo record: risolvi alias + ownership/visibilita' ---
                     alias_id: Optional[int] = None
@@ -543,7 +546,7 @@ class DatabaseService:
                             field_rows,
                         )
 
-                    return canonical_id
+                    return canonical_id, True
 
         except Exception as e:
             logger.error(f"Failed to upsert euring_2020_canonical: {e}")
@@ -720,42 +723,134 @@ class DatabaseService:
             logger.error(f"Failed to compute facet counts: {e}")
             return {}
 
+    async def increment_lizzy_stats(
+        self, species_code: str, place_code: str, pentad: int, ringing_scheme: str
+    ) -> None:
+        """
+        Incrementa (o crea) il contatore aggregato e anonimo per una
+        combinazione specie+luogo+pentade+schema (HANDOFF.md, punto 14a,
+        migrazione 004). Nessun riferimento a canonical_id/utente/stringa in
+        questa tabella -- solo il codice applicativo chiamante (vedi
+        archive_service._maybe_increment_lizzy_stats) e' responsabile di
+        verificare il consenso PRIMA di chiamare questo metodo.
+        """
+        if not self.pool or not self.is_enabled:
+            return
+
+        try:
+            async with self.pool.acquire() as conn:
+                await conn.execute(
+                    """
+                    INSERT INTO lizzy_species_place_pentad_stats
+                        (species_code, place_code, pentad, ringing_scheme, occurrence_count)
+                    VALUES ($1, $2, $3, $4, 1)
+                    ON CONFLICT (species_code, place_code, pentad, ringing_scheme)
+                    DO UPDATE SET occurrence_count = lizzy_species_place_pentad_stats.occurrence_count + 1
+                    """,
+                    species_code,
+                    place_code,
+                    pentad,
+                    ringing_scheme,
+                )
+        except Exception as e:
+            logger.error(f"Failed to increment lizzy stats: {e}")
+
+    async def get_lizzy_species_place_pentad_stats(
+        self, species_code: str, place_code: str, pentad: int
+    ) -> Dict[str, Any]:
+        """
+        Consultazione per Lizzy (punto 14a): conteggio totale per una
+        combinazione specie+luogo+pentade, sommato su tutti gli schemi, PIU'
+        il numero di schemi distinti dietro quel conteggio -- la
+        "dichiarazione di provenienza" decisa il 30/07/2026 al posto di una
+        soglia fissa di "sufficienza" (nessun giudizio di plausibilita' qui:
+        solo i numeri grezzi, l'interpretazione resta a chi consuma questo
+        dato).
+        """
+        if not self.pool:
+            return {"total_occurrences": 0, "distinct_schemes": 0, "schemes": []}
+
+        try:
+            async with self.pool.acquire() as conn:
+                rows = await conn.fetch(
+                    """
+                    SELECT ringing_scheme, occurrence_count
+                    FROM lizzy_species_place_pentad_stats
+                    WHERE species_code = $1 AND place_code = $2 AND pentad = $3
+                    ORDER BY occurrence_count DESC
+                    """,
+                    species_code,
+                    place_code,
+                    pentad,
+                )
+                total = sum(r["occurrence_count"] for r in rows)
+                return {
+                    "total_occurrences": total,
+                    "distinct_schemes": len(rows),
+                    "schemes": [
+                        {"ringing_scheme": r["ringing_scheme"], "count": r["occurrence_count"]}
+                        for r in rows
+                    ],
+                }
+        except Exception as e:
+            logger.error(f"Failed to get lizzy stats: {e}")
+            return {"total_occurrences": 0, "distinct_schemes": 0, "schemes": []}
+
     async def get_visible_events_for_alias(
-        self, alias_id: int, requesting_username: str
+        self, alias_id: int, requesting_username: Optional[str]
     ) -> List[Dict[str, Any]]:
         """
         Eventi per un dato alias_id (anello) visibili PER INTERO a
         requesting_username: pubblici, propri, o condivisi con lui.
+        requesting_username=None (utente anonimo) -> solo pubblici.
 
         Coppia con count_all_events_for_alias: la differenza tra i due e' il
         numero da mostrare nel placeholder "N eventi non condivisi con te"
         (HANDOFF.md, punti 9-10).
+
+        Non restituisce mai owner_username grezzo (potrebbe essere di un
+        altro utente per i record pubblici/condivisi) -- solo un flag
+        `is_own` calcolato, coerente con l'invariante del punto 6.
         """
         if not self.pool:
             return []
 
         try:
             async with self.pool.acquire() as conn:
-                rows = await conn.fetch(
-                    """
-                    SELECT c.id, c.canonical_string, c.field_count, c.owner_username,
-                           c.visibility, c.first_seen, c.last_seen, c.occurrence_count
-                    FROM euring_2020_canonical c
-                    WHERE c.alias_id = $1
-                      AND (
-                        c.visibility = 'public'
-                        OR c.owner_username = $2
-                        OR EXISTS (
-                            SELECT 1 FROM euring_2020_shared_with sw
-                            WHERE sw.canonical_id = c.id
-                              AND sw.shared_with_username = $2
-                        )
-                      )
-                    ORDER BY c.first_seen
-                    """,
-                    alias_id,
-                    requesting_username,
-                )
+                if requesting_username:
+                    rows = await conn.fetch(
+                        """
+                        SELECT c.id, c.canonical_string, c.field_count,
+                               (c.owner_username = $2) AS is_own,
+                               c.visibility, c.first_seen, c.last_seen, c.occurrence_count
+                        FROM euring_2020_canonical c
+                        WHERE c.alias_id = $1
+                          AND (
+                            c.visibility = 'public'
+                            OR c.owner_username = $2
+                            OR EXISTS (
+                                SELECT 1 FROM euring_2020_shared_with sw
+                                WHERE sw.canonical_id = c.id
+                                  AND sw.shared_with_username = $2
+                            )
+                          )
+                        ORDER BY c.first_seen
+                        """,
+                        alias_id,
+                        requesting_username,
+                    )
+                else:
+                    rows = await conn.fetch(
+                        """
+                        SELECT c.id, c.canonical_string, c.field_count,
+                               false AS is_own,
+                               c.visibility, c.first_seen, c.last_seen, c.occurrence_count
+                        FROM euring_2020_canonical c
+                        WHERE c.alias_id = $1 AND c.visibility = 'public'
+                        ORDER BY c.first_seen
+                        """,
+                        alias_id,
+                    )
                 return [dict(r) for r in rows]
         except Exception as e:
             logger.error(f"Failed to get visible events for alias {alias_id}: {e}")

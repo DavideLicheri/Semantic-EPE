@@ -380,6 +380,13 @@ export const itTranslations = {
   'profile.role.admin': '🔧 Admin',
   'profile.role.user': '👤 User',
   'profile.role.viewer': '👁️ Viewer',
+  'profile.consent.title': '🤖 Contributo alla conoscenza di Lizzy',
+  'profile.consent.description': 'Autorizzi ECES a includere, in forma anonima e aggregata (mai il numero di anello, mai il tuo nome), le nuove stringhe EURING che inserisci nei contatori statistici usati da Lizzy (specie, luogo, periodo dell\'anno, schema di inanellamento)? Puoi revocare il consenso in qualsiasi momento; la revoca non modifica i conteggi già effettuati.',
+  'profile.consent.checkbox': 'Autorizzo l\'uso aggregato e anonimo dei miei dati per Lizzy',
+  'profile.consent.save': 'Salva preferenza',
+  'profile.consent.saving': 'Salvataggio...',
+  'profile.consent.success': 'Preferenza di consenso aggiornata',
+  'profile.consent.error': 'Errore durante l\'aggiornamento del consenso',
 
   // Register component (detailed)
   'register.success.title': 'Registrazione Completata!',
@@ -405,6 +412,7 @@ export const itTranslations = {
   'register.password.placeholder2': 'Almeno 6 caratteri',
   'register.confirm.label2': 'Conferma Password *',
   'register.confirm.placeholder2': 'Ripeti la password',
+  'register.consent.label': 'Autorizzo l\'uso aggregato e anonimo dei miei dati per la conoscenza semantica di Lizzy (facoltativo, revocabile in qualsiasi momento dal profilo)',
   'register.submit': 'Registrati al Sistema',
   'register.submitting': 'Registrazione in corso...',
   'register.back_to_login': '← Torna al Login',

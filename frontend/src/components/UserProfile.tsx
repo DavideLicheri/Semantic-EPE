@@ -20,6 +20,12 @@ export const UserProfile: React.FC<UserProfileProps> = ({ currentUser, onClose }
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showPasswords, setShowPasswords] = useState(false);
 
+  const [consentValue, setConsentValue] = useState<boolean>(
+    currentUser.consents_to_aggregate_analysis ?? false
+  );
+  const [consentLoading, setConsentLoading] = useState(false);
+  const [consentMessage, setConsentMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   const locale = i18n.getLanguage() === 'it' ? 'it-IT' : 'en-GB';
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -69,6 +75,28 @@ export const UserProfile: React.FC<UserProfileProps> = ({ currentUser, onClose }
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConsentSave = async () => {
+    setConsentLoading(true);
+    setConsentMessage(null);
+
+    try {
+      const response = await authService.updateConsent(consentValue);
+
+      if (response.success) {
+        setConsentMessage({ type: 'success', text: t('profile.consent.success') });
+      } else {
+        setConsentMessage({ type: 'error', text: response.message || t('profile.consent.error') });
+      }
+    } catch (error) {
+      setConsentMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : t('profile.consent.error')
+      });
+    } finally {
+      setConsentLoading(false);
     }
   };
 
@@ -128,6 +156,40 @@ export const UserProfile: React.FC<UserProfileProps> = ({ currentUser, onClose }
                   <span>{new Date(currentUser.last_login).toLocaleString(locale)}</span>
                 </div>
               )}
+            </div>
+          </div>
+
+          <div className="consent-section">
+            <h3>{t('profile.consent.title')}</h3>
+            <p className="consent-description">{t('profile.consent.description')}</p>
+
+            {consentMessage && (
+              <div className={`message ${consentMessage.type}`}>
+                {consentMessage.text}
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={consentValue}
+                  onChange={(e) => setConsentValue(e.target.checked)}
+                  disabled={consentLoading}
+                />
+                {t('profile.consent.checkbox')}
+              </label>
+            </div>
+
+            <div className="form-actions">
+              <button
+                type="button"
+                onClick={handleConsentSave}
+                className="submit-button"
+                disabled={consentLoading || consentValue === (currentUser.consents_to_aggregate_analysis ?? false)}
+              >
+                {consentLoading ? t('profile.consent.saving') : t('profile.consent.save')}
+              </button>
             </div>
           </div>
 

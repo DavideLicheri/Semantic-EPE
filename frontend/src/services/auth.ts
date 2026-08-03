@@ -12,6 +12,17 @@ export interface User {
   is_active: boolean;
   created_at: string;
   last_login?: string;
+  consents_to_aggregate_analysis?: boolean;
+}
+
+export interface ConsentUpdateRequest {
+  consents: boolean;
+}
+
+export interface ConsentUpdateResponse {
+  success: boolean;
+  consents_to_aggregate_analysis: boolean;
+  message?: string;
 }
 
 export interface LoginRequest {
@@ -214,6 +225,40 @@ class AuthService {
     }
 
     return response.json();
+  }
+
+  // Aggiorna il consenso all'analisi aggregata anonima (Lizzy)
+  async updateConsent(consents: boolean): Promise<ConsentUpdateResponse> {
+    const token = this.getToken();
+
+    if (!token) {
+      throw new Error('No authentication token');
+    }
+
+    const response = await fetch(`${this.baseURL}/consent`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ consents_to_aggregate_analysis: consents }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Aggiornamento consenso fallito');
+    }
+
+    const result: ConsentUpdateResponse = await response.json();
+
+    // Aggiorna anche la copia locale dell'utente cosi' la UI resta coerente
+    const user = this.getUser();
+    if (user) {
+      user.consents_to_aggregate_analysis = result.consents_to_aggregate_analysis;
+      localStorage.setItem(this.userKey, JSON.stringify(user));
+    }
+
+    return result;
   }
 }
 
