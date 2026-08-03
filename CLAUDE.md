@@ -162,10 +162,6 @@ sudo systemctl restart eces
 ```
 The VM is at `<VM_IP>`, access via FortiClient VPN, user `<VM_USER>`, password auth.
 
-### Known Active Bug
-
-Batch parsing fails with a Pydantic validation error when 3+ identical EURING strings are submitted (`EuringBatchParseResponse` is missing `euring_string` for duplicate entries). Workaround: use distinct strings or parse individually. Fix target: `backend/app/models/euring_models.py` (`EuringBatchParseResponse`) and the batch handler in `euring_api.py`.
-
 ## Testing
 
 Tests use `pytest` + `pytest-asyncio` + `hypothesis`. The test suite is sparse — `tests/test_version_loading.py` covers `VersionLoaderService` and `SKOSManagerImpl` integration. Tests must be run from the `backend/` directory (or with `PYTHONPATH` set to include `backend/`) because imports are relative to that root.

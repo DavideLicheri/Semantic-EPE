@@ -172,7 +172,14 @@ class ArchiveService:
                 parsed_fields.get("species concluded")
                 or parsed_fields.get("species mentioned")
             )
-            place_code = parsed_fields.get("current place code")
+            # "current place code" e' un campo di correzione raro (usato solo
+            # quando il "place code" originale diventa obsoleto, vedi
+            # euring_2020.json field_definitions) -- quasi sempre vuoto.
+            # "place code" e' il luogo effettivo dell'evento/osservazione,
+            # il campo giusto per la fenologia. Bug trovato e corretto
+            # 03/08/2026 verificando con dati reali che il contatore non si
+            # sarebbe mai popolato altrimenti.
+            place_code = parsed_fields.get("current place code") or parsed_fields.get("place code")
             ringing_scheme = parsed_fields.get("ringing scheme")
             pentad = parse_euring_date_to_pentad(parsed_fields.get("date"))
 
