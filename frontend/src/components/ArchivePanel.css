@@ -230,6 +230,62 @@
   color: #8a6d00;
 }
 
+.life-history {
+  margin-top: 10px;
+}
+
+.life-history-title {
+  font-weight: 500;
+  color: #663333;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.life-history-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  font-size: 12px;
+  border-left: solid 3px #ddd;
+  margin-bottom: 4px;
+}
+
+.life-history-full {
+  border-left-color: #663333;
+  background: #fdfaf3;
+}
+
+.life-history-hidden {
+  border-left-color: #ccc;
+  background: #f7f7f7;
+  color: #777;
+  font-style: italic;
+}
+
+.life-history-date {
+  font-family: monospace;
+  color: #555;
+  min-width: 80px;
+}
+
+.life-history-string {
+  font-family: monospace;
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.life-history-own {
+  color: #1e7b34;
+  font-weight: 500;
+}
+
+.life-history-placeholder {
+  white-space: nowrap;
+}
+
 .contact-request-form {
   margin-top: 8px;
   display: flex;

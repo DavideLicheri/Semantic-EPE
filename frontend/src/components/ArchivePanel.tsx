@@ -30,12 +30,34 @@ interface SearchResponse {
   facets: Record<string, FacetValue[]>;
 }
 
+interface LifeHistoryFullEvent {
+  kind: 'full';
+  id: number;
+  canonical_string: string;
+  field_count: number;
+  visibility: Visibility;
+  is_own: boolean;
+  first_seen: string | null;
+  last_seen: string | null;
+  occurrence_count: number;
+}
+
+interface LifeHistoryHiddenEvent {
+  kind: 'hidden';
+  year: string | null;
+  country: string | null;
+  species_code: string | null;
+}
+
+type LifeHistoryEvent = LifeHistoryFullEvent | LifeHistoryHiddenEvent;
+
 interface AliasSummary {
   success: boolean;
   alias_id: number;
   visible_count: number;
   total_count: number;
   hidden_count: number;
+  life_history: LifeHistoryEvent[];
 }
 
 const VISIBILITY_LABELS: Record<Visibility, string> = {
@@ -253,6 +275,33 @@ const ArchivePanel = () => {
                                       Eventi visibili per te: <strong>{summary.visible_count}</strong> su{' '}
                                       <strong>{summary.total_count}</strong> totali per questo anello.
                                     </div>
+                                    {summary.life_history && summary.life_history.length > 0 && (
+                                      <div className="life-history">
+                                        <div className="life-history-title">Storia di vita dell'anello</div>
+                                        {summary.life_history.map((ev, idx) =>
+                                          ev.kind === 'full' ? (
+                                            <div className="life-history-item life-history-full" key={`full-${ev.id}`}>
+                                              <span className="life-history-date">
+                                                {ev.first_seen ? new Date(ev.first_seen).toLocaleDateString('it-IT') : '?'}
+                                              </span>
+                                              <span className={`visibility-badge visibility-${ev.visibility}`}>
+                                                {VISIBILITY_LABELS[ev.visibility] || ev.visibility}
+                                              </span>
+                                              <span className="life-history-string" title={ev.canonical_string}>
+                                                {ev.canonical_string}
+                                              </span>
+                                              {ev.is_own && <span className="life-history-own">(tuo)</span>}
+                                            </div>
+                                          ) : (
+                                            <div className="life-history-item life-history-hidden" key={`hidden-${idx}`}>
+                                              <span className="life-history-placeholder">
+                                                {ev.year || '????'} · {ev.country || '??'} · specie {ev.species_code || '?'} — non condiviso
+                                              </span>
+                                            </div>
+                                          )
+                                        )}
+                                      </div>
+                                    )}
                                     {summary.hidden_count > 0 && (
                                       <div className="archive-hidden-note">
                                         {summary.hidden_count} evento/i non condivisi con te.

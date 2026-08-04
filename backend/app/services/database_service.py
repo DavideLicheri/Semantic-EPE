@@ -877,6 +877,120 @@ class DatabaseService:
             logger.error(f"Failed to count events for alias {alias_id}: {e}")
             return 0
 
+    async def get_alias_life_history(
+        self, alias_id: int, requesting_username: Optional[str]
+    ) -> List[Dict[str, Any]]:
+        """
+        Storia di vita di un anello (alias_id) per la UI dell'archivio:
+        eventi visibili per intero a requesting_username, alternati -- in
+        ordine cronologico per data evento -- a segnaposto anonimizzati
+        (anno, nazione, specie) per gli eventi non visibili. Deciso con
+        Davide 03/08/2026, indipendente dal redesign del meccanismo di
+        condivisione (si applica a "qualunque evento che non vedo per
+        intero", a prescindere dal motivo).
+
+        Per gli eventi nascosti si restituiscono SOLO tre informazioni,
+        estratte da `parsed_fields` (gia' presente su ogni riga, nessun
+        bisogno di toccare la tabella EAV): anno (prime 4 cifre del campo
+        'date', formato DDMMYYYY), nazione (primi 2 caratteri del campo
+        'place code', che per definizione EURING identificano sempre il
+        paese), specie ('species concluded' o 'species mentioned' come
+        fallback). Mai numero di anello, mai proprietario, mai altri campi.
+        La specie e' inclusa anche nei segnaposto apposta: serve a
+        intercettare errori di trascrizione (specie diversa tra eventi
+        dello stesso alias fisico e' un segnale di anello letto/trascritto
+        male da qualche parte).
+        """
+        if not self.pool:
+            return []
+
+        try:
+            async with self.pool.acquire() as conn:
+                if requesting_username:
+                    rows = await conn.fetch(
+                        """
+                        SELECT c.id, c.canonical_string, c.field_count,
+                               (c.owner_username = $2) AS is_own,
+                               c.visibility, c.first_seen, c.last_seen, c.occurrence_count,
+                               (
+                                 c.visibility = 'public'
+                                 OR c.owner_username = $2
+                                 OR EXISTS (
+                                     SELECT 1 FROM euring_2020_shared_with sw
+                                     WHERE sw.canonical_id = c.id
+                                       AND sw.shared_with_username = $2
+                                 )
+                               ) AS is_visible,
+                               c.parsed_fields->>'date' AS event_date,
+                               c.parsed_fields->>'place code' AS place_code,
+                               COALESCE(
+                                   c.parsed_fields->>'species concluded',
+                                   c.parsed_fields->>'species mentioned'
+                               ) AS species_code
+                        FROM euring_2020_canonical c
+                        WHERE c.alias_id = $1
+                        """,
+                        alias_id,
+                        requesting_username,
+                    )
+                else:
+                    rows = await conn.fetch(
+                        """
+                        SELECT c.id, c.canonical_string, c.field_count,
+                               false AS is_own,
+                               c.visibility, c.first_seen, c.last_seen, c.occurrence_count,
+                               (c.visibility = 'public') AS is_visible,
+                               c.parsed_fields->>'date' AS event_date,
+                               c.parsed_fields->>'place code' AS place_code,
+                               COALESCE(
+                                   c.parsed_fields->>'species concluded',
+                                   c.parsed_fields->>'species mentioned'
+                               ) AS species_code
+                        FROM euring_2020_canonical c
+                        WHERE c.alias_id = $1
+                        """,
+                        alias_id,
+                    )
+
+                events = []
+                for r in rows:
+                    event_date = (r["event_date"] or "").strip()
+                    sort_key = None
+                    if len(event_date) == 8 and event_date.isdigit():
+                        # DDMMYYYY -> YYYYMMDD, per ordinare cronologicamente
+                        sort_key = event_date[4:8] + event_date[2:4] + event_date[0:2]
+
+                    if r["is_visible"]:
+                        events.append({
+                            "kind": "full",
+                            "id": r["id"],
+                            "canonical_string": r["canonical_string"],
+                            "field_count": r["field_count"],
+                            "visibility": r["visibility"],
+                            "is_own": r["is_own"],
+                            "first_seen": r["first_seen"].isoformat() if r["first_seen"] else None,
+                            "last_seen": r["last_seen"].isoformat() if r["last_seen"] else None,
+                            "occurrence_count": r["occurrence_count"],
+                            "sort_key": sort_key,
+                        })
+                    else:
+                        place_code = (r["place_code"] or "").strip()
+                        events.append({
+                            "kind": "hidden",
+                            "year": event_date[4:8] if sort_key else None,
+                            "country": place_code[:2] if len(place_code) >= 2 else None,
+                            "species_code": r["species_code"],
+                            "sort_key": sort_key,
+                        })
+
+                events.sort(key=lambda e: (e["sort_key"] is None, e["sort_key"] or ""))
+                for e in events:
+                    e.pop("sort_key", None)
+                return events
+        except Exception as e:
+            logger.error(f"Failed to get life history for alias {alias_id}: {e}")
+            return []
+
     async def get_hidden_owners_for_alias(
         self, alias_id: int, requesting_username: str
     ) -> List[str]:

@@ -2117,7 +2117,15 @@ async def get_alias_summary(
     intero all'utente corrente vs quanti totali esistono per quell'alias --
     la differenza e' il numero da mostrare nel placeholder "N eventi non
     condivisi con te" (HANDOFF.md, punti 9-10). Nessun contenuto dei record
-    nascosti viene esposto, solo il conteggio.
+    nascosti viene esposto tramite `visible_events`/`total_count`.
+
+    `life_history` (aggiunto 03/08/2026): la stessa lista di eventi, ma in
+    ordine cronologico per data evento e con un segnaposto (anno, nazione,
+    specie -- mai numero di anello o proprietario) al posto degli eventi
+    nascosti, invece del semplice conteggio. Pensato per dare un assaggio
+    utile della "storia di vita" dell'anello senza violare la privacy di
+    chi non ha condiviso -- indipendente dal meccanismo di condivisione
+    (si applica a qualunque evento non visibile, a prescindere dal motivo).
 
     Utente anonimo: requesting_username=None, quindi "visibili" = solo
     pubblici (stessa semantica di /archive/search).
@@ -2129,6 +2137,9 @@ async def get_alias_summary(
             alias_id, requesting_username
         )
         total = await database_service.count_all_events_for_alias(alias_id)
+        life_history = await database_service.get_alias_life_history(
+            alias_id, requesting_username
+        )
         return {
             "success": True,
             "alias_id": alias_id,
@@ -2136,6 +2147,7 @@ async def get_alias_summary(
             "visible_count": len(visible),
             "total_count": total,
             "hidden_count": max(0, total - len(visible)),
+            "life_history": life_history,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Errore nel riepilogo dell'alias: {e}")
