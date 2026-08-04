@@ -956,9 +956,19 @@ class DatabaseService:
                 for r in rows:
                     event_date = (r["event_date"] or "").strip()
                     sort_key = None
+                    event_date_display = None
                     if len(event_date) == 8 and event_date.isdigit():
                         # DDMMYYYY -> YYYYMMDD, per ordinare cronologicamente
                         sort_key = event_date[4:8] + event_date[2:4] + event_date[0:2]
+                        # DDMMYYYY -> DD/MM/YYYY per la UI. Questa e' la data
+                        # EFFETTIVA dell'evento EURING (campo 'date'), non va
+                        # confusa con first_seen/last_seen che sono timestamp
+                        # di quando la stringa e' stata archiviata in ECES --
+                        # possono differire anche di anni (bug trovato da
+                        # Davide 04/08/2026: due eventi di anni diversi
+                        # mostravano la stessa "prima vista" perche' importati
+                        # nello stesso giorno di test).
+                        event_date_display = f"{event_date[0:2]}/{event_date[2:4]}/{event_date[4:8]}"
 
                     if r["is_visible"]:
                         events.append({
@@ -968,6 +978,7 @@ class DatabaseService:
                             "field_count": r["field_count"],
                             "visibility": r["visibility"],
                             "is_own": r["is_own"],
+                            "event_date": event_date_display,
                             "first_seen": r["first_seen"].isoformat() if r["first_seen"] else None,
                             "last_seen": r["last_seen"].isoformat() if r["last_seen"] else None,
                             "occurrence_count": r["occurrence_count"],

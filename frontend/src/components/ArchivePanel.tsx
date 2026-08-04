@@ -37,6 +37,7 @@ interface LifeHistoryFullEvent {
   field_count: number;
   visibility: Visibility;
   is_own: boolean;
+  event_date: string | null;
   first_seen: string | null;
   last_seen: string | null;
   occurrence_count: number;
@@ -281,8 +282,19 @@ const ArchivePanel = () => {
                                         {summary.life_history.map((ev, idx) =>
                                           ev.kind === 'full' ? (
                                             <div className="life-history-item life-history-full" key={`full-${ev.id}`}>
-                                              <span className="life-history-date">
-                                                {ev.first_seen ? new Date(ev.first_seen).toLocaleDateString('it-IT') : '?'}
+                                              <span
+                                                className="life-history-date"
+                                                title={
+                                                  ev.event_date
+                                                    ? undefined
+                                                    : 'Data evento non disponibile: mostrata la data di archiviazione in ECES'
+                                                }
+                                              >
+                                                {ev.event_date
+                                                  ? ev.event_date
+                                                  : ev.first_seen
+                                                  ? `(archiviato ${new Date(ev.first_seen).toLocaleDateString('it-IT')})`
+                                                  : '?'}
                                               </span>
                                               <span className={`visibility-badge visibility-${ev.visibility}`}>
                                                 {VISIBILITY_LABELS[ev.visibility] || ev.visibility}
