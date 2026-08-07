@@ -104,7 +104,11 @@ const PositionalMatrixEditor: React.FC<PositionalMatrixEditorProps> = ({ current
   const [showAddField, setShowAddField] = useState(false);
   const [newField, setNewField] = useState({ name: '', position: 1, length: 1, dataType: 'string', description: '', version: '2000' });
 
-  const canEdit = currentUser?.role === 'matrix_editor' || currentUser?.role === 'super_admin';
+  // "matrix_editor" non e' mai esistito come ruolo lato backend (vedi
+  // app/auth/models.py::UserRole) -- editing della matrice riservato a
+  // super_admin (auth_service.can_edit_matrix), rimosso riferimento morto
+  // il 04/08/2026.
+  const canEdit = currentUser?.role === 'super_admin';
   const [confirmDelete, setConfirmDelete] = useState<{ fieldName: string; version: string } | null>(null);
 
   // Semantic domains — translated labels

@@ -79,7 +79,10 @@ function App() {
     ]
 
     const adminTabs: NavTab[] = []
-    if (currentUser?.role === 'matrix_editor' || currentUser?.role === 'super_admin') {
+    // Editing matrice riservato a super_admin (auth_service.can_edit_matrix);
+    // "matrix_editor" non e' un ruolo backend reale, rimosso riferimento
+    // morto il 04/08/2026.
+    if (currentUser?.role === 'super_admin') {
       adminTabs.push({ key: 'editor', label: t('nav.editor') })
     }
     if (currentUser?.role === 'super_admin') {
