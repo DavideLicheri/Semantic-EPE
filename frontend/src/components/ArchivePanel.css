@@ -328,3 +328,104 @@
   font-size: 12px;
   color: #1e7b34;
 }
+
+.sharing-error {
+  color: #b3261e;
+}
+
+.sharing-manager {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: solid 1px #eee;
+}
+
+.sharing-manager-title {
+  font-weight: 500;
+  color: #663333;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.sharing-public-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.sharing-public-toggle input {
+  accent-color: #663333;
+}
+
+.sharing-row {
+  background: #fdfaf3;
+  border: solid 1px #eee;
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.sharing-row-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.sharing-username {
+  font-weight: 500;
+  color: #663333;
+}
+
+.sharing-their-state {
+  color: #666;
+}
+
+.sharing-mutual-badge {
+  background: #e6f4ea;
+  color: #1e7b34;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.sharing-message {
+  width: 100%;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 5px;
+  border: solid 1px #ccc;
+  border-radius: 4px;
+  resize: vertical;
+  margin-bottom: 6px;
+  box-sizing: border-box;
+}
+
+.sharing-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.sharing-actions button {
+  background: #FFFFFF;
+  color: #663333;
+  border: solid 1px #663333;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sharing-actions button.sharing-active {
+  background: #663333;
+  color: #FFFFFF;
+}
+
+.sharing-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

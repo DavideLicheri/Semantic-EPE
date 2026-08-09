@@ -13,7 +13,6 @@ import { UserProfile } from './components/UserProfile'
 import Analytics from './components/Analytics'
 import ISPRAQuery from './components/ISPRAQuery'
 import ArchivePanel from './components/ArchivePanel'
-import ContactRequestsPanel from './components/ContactRequestsPanel'
 import LizzyButton from './components/LizzyButton'
 import { authService, User } from './services/auth'
 import { useTranslation } from './hooks/useTranslation'
@@ -21,7 +20,7 @@ import { i18n } from './i18n'
 import epeLogo from './assets/images/epeLogo.jpg'
 import './App.css'
 
-type TabKey = 'recognize' | 'convert' | 'domains' | 'navigator' | 'matrix' | 'editor' | 'users' | 'analytics' | 'ispra' | 'archive' | 'contacts'
+type TabKey = 'recognize' | 'convert' | 'domains' | 'navigator' | 'matrix' | 'editor' | 'users' | 'analytics' | 'ispra' | 'archive'
 
 interface NavTab {
   key: TabKey
@@ -73,7 +72,6 @@ function App() {
         label: 'Archivio & Comunità',
         tabs: [
           { key: 'archive', label: 'Archivio' },
-          { key: 'contacts', label: 'Richieste di contatto' },
         ],
       },
     ]
@@ -252,8 +250,6 @@ function App() {
           <ISPRAQuery />
         ) : activeTab === 'archive' ? (
           <ArchivePanel />
-        ) : activeTab === 'contacts' ? (
-          <ContactRequestsPanel />
         ) : (
           <DomainPanel />
         )}

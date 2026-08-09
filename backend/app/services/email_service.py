@@ -149,23 +149,23 @@ ISPRA - DG SINA
             logger.error(f"Failed to send role change notification: {e}")
             return False
 
-    def send_contact_request_notification(
+    def send_alias_touched_notification(
         self, owner_email: str, owner_full_name: str,
-        requester_username: str, alias_id: int, message: Optional[str] = None
+        toucher_username: str, alias_id: int
     ) -> bool:
         """
-        Notifica il proprietario di una richiesta di contatto per eventi non
-        condivisi legati a un anello (HANDOFF.md, punti 9-10, migrazione 003,
-        tabella contact_requests). L'identita' del proprietario NON viene mai
-        comunicata al richiedente da nessun'altra parte del sistema -- questa
-        email e' l'unico posto in cui il proprietario stesso viene informato,
-        e solo lui decide se condividere il dato e/o rivelarsi (due decisioni
-        indipendenti, vedi contact_requests.shared / identity_revealed).
+        Notifica generica al proprietario quando un ALTRO utente sottomette
+        un evento collegato a uno stesso alias (redesign condivisione,
+        HANDOFF.md/migrazione 005, 07/08/2026 -- sostituisce la condivisione
+        automatica di migrazione 003). Mai il contenuto del dato altrui, solo
+        il fatto che esiste e chi l'ha toccato -- serve a chi riceve per
+        poter eventualmente scegliere di condividere il PROPRIO dato con
+        quella persona specifica (alias_sharing_intent), mai obbligatorio.
         """
         if not self.email_enabled:
             logger.info(
-                f"Email disabled - Would notify: contact request for alias {alias_id} "
-                f"from {requester_username} to {owner_email}"
+                f"Email disabled - Would notify: alias {alias_id} touched by "
+                f"{toucher_username}, owner {owner_email}"
             )
             return True
 
@@ -173,22 +173,16 @@ ISPRA - DG SINA
             msg = MIMEMultipart()
             msg['From'] = self.from_email
             msg['To'] = owner_email
-            msg['Subject'] = "ECES - Richiesta di contatto per un tuo record archiviato"
-
-            custom_message = f"\nMessaggio dal richiedente:\n\"{message}\"\n" if message else ""
+            msg['Subject'] = "ECES - Un altro utente ha inserito dati su un tuo anello"
 
             body = f"""
 Ciao {owner_full_name},
 
-L'utente '{requester_username}' ha richiesto di essere messo in contatto con te riguardo ad alcuni eventi che hai archiviato in ECES per l'anello con alias interno #{alias_id} (l'anello reale non viene mai esposto ad altri utenti).
-{custom_message}
-Puoi decidere autonomamente e in modo indipendente:
-  1. Se condividere questi dati con '{requester_username}' (renderli visibili a lui specificamente)
-  2. Se rivelare o meno la tua identita' a '{requester_username}'
+L'utente '{toucher_username}' ha archiviato in ECES un evento collegato a un anello per cui hai gia' dati tuoi (alias interno #{alias_id} -- l'anello reale non viene mai esposto ad altri utenti).
 
-Nessuna delle due scelte e' obbligatoria, e sono indipendenti tra loro: puoi condividere il dato restando anonimo, o viceversa.
+Questo e' solo un avviso: nessun dato e' stato condiviso automaticamente, il tuo resta privato finche' non decidi tu. Se vuoi, puoi scegliere di condividere il tuo dato specificamente con '{toucher_username}' (efficace solo se anche lui/lei fa la stessa scelta verso di te), oppure renderlo pubblico, dalla pagina dell'archivio in ECES.
 
-🌐 Accedi a ECES per rispondere alla richiesta: http://localhost:3001
+🌐 Accedi a ECES: http://localhost:3001
 
 ---
 Sistema ECES - EURING Code Evolution System
@@ -204,14 +198,14 @@ ISPRA - DG SINA
                 server.send_message(msg)
                 server.quit()
 
-                logger.info(f"Contact request notification sent for alias {alias_id}")
+                logger.info(f"Alias touched notification sent for alias {alias_id}")
                 return True
             else:
                 logger.warning("SMTP credentials not configured - email not sent")
                 return False
 
         except Exception as e:
-            logger.error(f"Failed to send contact request notification: {e}")
+            logger.error(f"Failed to send alias touched notification: {e}")
             return False
 
 # Global email service instance

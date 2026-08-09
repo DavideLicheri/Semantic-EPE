@@ -28,12 +28,6 @@ from ..services.usage_logger import usage_logger
 from ..services.field_translator import field_translator
 from ..services.archive_service import archive_service
 from ..services.database_service import database_service
-from ..services.email_service import email_service
-from ..auth.auth_service import AuthService
-
-# Istanza propria, non condivisa con quella di auth_api.py -- stesso pattern
-# di instanziazione gia' in uso nel resto del codice (vedi archive_service.py).
-_auth_service_for_contacts = AuthService()
 
 # Initialize services
 recognition_engine = RecognitionEngineImpl()
@@ -2190,125 +2184,115 @@ async def lizzy_species_place_pentad_stats(
 
 
 # ============================================================================
-# Richieste di contatto verso il proprietario di eventi non condivisi
-# (HANDOFF.md, punti 9-10, esteso il 30/07/2026, migrazione 003)
+# Condivisione mirata reciproca e visibilita' pubblica, per (alias,
+# proprietario) -- redesign 07/08/2026, migrazione 005. Sostituisce il
+# vecchio meccanismo "richiedi contatto" (contact_requests, migrazione 003):
+# quello si e' rivelato di fatto irraggiungibile in scenari reali, perche'
+# la condivisione automatica precedente scattava sempre prima che una
+# richiesta potesse avere senso (vedi HANDOFF.md, indagine 03/08/2026).
 #
-# IMPORTANTE: owner_username non deve MAI comparire in una risposta rivolta
-# al richiedente, in nessuno di questi endpoint -- e' l'invariante centrale
-# del punto 6 (l'identita' del proprietario resta nascosta a meno che lui
-# stesso non scelga di rivelarsi rispondendo, vedi identity_revealed).
+# Tutti e tre gli endpoint sotto richiedono che l'utente corrente possieda
+# GIA' un proprio record su alias_id (verificato server-side in
+# database_service._owns_alias) -- solo un proprietario dello stesso anello
+# puo' vedere chi sono gli altri proprietari o impostare scelte di
+# condivisione/pubblicazione. Nessun endpoint per "estranei senza dati
+# propri sull'alias": quel caso e' coperto solo dalla vista pubblica/
+# mascherata (search_canonical_2020/facet_counts_2020/get_alias_life_history).
 # ============================================================================
 
-class ContactRequestCreate(BaseModel):
+class AliasPublicUpdate(BaseModel):
+    is_public: bool
+
+class AliasSharingUpdate(BaseModel):
+    to_username: str
+    state: str  # 'offered' | 'declined'
     message: Optional[str] = None
 
-class ContactRequestRespond(BaseModel):
-    shared: bool
-    identity_revealed: bool
 
-
-@router.post("/archive/alias/{alias_id}/contact-request")
-async def create_contact_request(
+@router.get("/archive/alias/{alias_id}/sharing-status")
+async def get_alias_sharing_status(
     alias_id: int,
-    body: ContactRequestCreate,
     current_user: User = Depends(get_current_active_user),
 ):
     """
-    Richiede il contatto con il/i proprietari di eventi legati a questo
-    alias_id (anello) che non sono visibili all'utente corrente -- il
-    pulsante dietro al placeholder "N eventi non condivisi con te".
-
-    Crea una richiesta per OGNI proprietario nascosto distinto e invia una
-    notifica email a ciascuno (via email_service, stesso meccanismo gia' in
-    uso per le notifiche di registrazione/cambio ruolo). L'identita' dei
-    proprietari non viene mai restituita in questa risposta.
+    Stato delle proprie scelte di condivisione per questo alias: il proprio
+    flag "pubblico" e, per ciascun altro proprietario dello stesso alias, lo
+    stato reciproco (la mia scelta verso di lui, la sua verso di me, se la
+    reciprocita' e' gia' raggiunta). Popola la UI di gestione condivisione in
+    ArchivePanel.
     """
     try:
-        hidden_owners = await database_service.get_hidden_owners_for_alias(
-            alias_id, current_user.username
-        )
-        if not hidden_owners:
-            return {
-                "success": True,
-                "requests_created": 0,
-                "message": "Nessun evento nascosto trovato per questo anello.",
-            }
-
-        requests_created = 0
-        for owner_username in hidden_owners:
-            request_id = await database_service.create_contact_request(
-                alias_id=alias_id,
-                requester_username=current_user.username,
-                owner_username=owner_username,
-                message=body.message,
-            )
-            if request_id is None:
-                continue  # gia' una richiesta pendente identica, o servizio disabilitato
-            requests_created += 1
-
-            owner_user = _auth_service_for_contacts.get_user(owner_username)
-            if owner_user:
-                email_service.send_contact_request_notification(
-                    owner_email=owner_user.email,
-                    owner_full_name=owner_user.full_name,
-                    requester_username=current_user.username,
-                    alias_id=alias_id,
-                    message=body.message,
-                )
-
-        return {"success": True, "requests_created": requests_created}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Errore nella richiesta di contatto: {e}")
-
-
-@router.get("/archive/contact-requests")
-async def list_received_contact_requests(current_user: User = Depends(get_current_active_user)):
-    """Richieste di contatto ricevute come proprietario (richiedente visibile: non è l'informazione protetta)."""
-    try:
-        requests = await database_service.list_contact_requests_for_owner(current_user.username)
-        return {"success": True, "requests": requests}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Errore nel recupero delle richieste: {e}")
-
-
-@router.get("/archive/contact-requests/sent")
-async def list_sent_contact_requests(current_user: User = Depends(get_current_active_user)):
-    """Richieste di contatto inviate come richiedente. owner_username non è mai incluso (punto 6)."""
-    try:
-        requests = await database_service.list_contact_requests_for_requester(current_user.username)
-        return {"success": True, "requests": requests}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Errore nel recupero delle richieste: {e}")
-
-
-@router.post("/archive/contact-requests/{request_id}/respond")
-async def respond_to_contact_request(
-    request_id: int,
-    body: ContactRequestRespond,
-    current_user: User = Depends(get_current_active_user),
-):
-    """
-    Risposta del proprietario a una richiesta di contatto: due decisioni
-    indipendenti, condividere il dato (shared) e/o rivelare la propria
-    identita' (identity_revealed) -- si puo' fare l'una senza l'altra.
-    """
-    try:
-        result = await database_service.respond_to_contact_request(
-            request_id=request_id,
-            owner_username=current_user.username,
-            shared=body.shared,
-            identity_revealed=body.identity_revealed,
-        )
-        if result is None:
+        status = await database_service.get_my_sharing_status(alias_id, current_user.username)
+        if status is None:
             raise HTTPException(
-                status_code=404,
-                detail="Richiesta non trovata o non di tua competenza",
+                status_code=403,
+                detail="Non possiedi dati su questo anello, oppure errore nel recupero dello stato.",
             )
-        return {"success": True, **result}
+        return {"success": True, **status}
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Errore nella risposta alla richiesta: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel recupero dello stato di condivisione: {e}")
+
+
+@router.put("/archive/alias/{alias_id}/public")
+async def set_alias_public(
+    alias_id: int,
+    body: AliasPublicUpdate,
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Imposta se il PROPRIO dato su questo alias e' pubblico -- unilaterale,
+    non richiede reciprocita', non coinvolge gli altri proprietari dello
+    stesso alias.
+    """
+    try:
+        ok = await database_service.set_alias_public(alias_id, current_user.username, body.is_public)
+        if not ok:
+            raise HTTPException(
+                status_code=403,
+                detail="Non possiedi dati su questo anello, oppure errore nel salvataggio.",
+            )
+        return {"success": True, "is_public": body.is_public}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore nell'impostare la visibilita' pubblica: {e}")
+
+
+@router.put("/archive/alias/{alias_id}/sharing")
+async def set_alias_sharing(
+    alias_id: int,
+    body: AliasSharingUpdate,
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Imposta la propria scelta di condividere ('offered') o rifiutare
+    ('declined') il PROPRIO dato su questo alias con to_username -- efficace
+    solo se anche to_username fa la stessa scelta verso current_user
+    (reciprocita'). Aggiornabile in qualunque momento, nessun lock: si puo'
+    sempre cambiare idea richiamando questo stesso endpoint.
+    """
+    if body.state not in ("offered", "declined"):
+        raise HTTPException(status_code=400, detail="state deve essere 'offered' o 'declined'")
+    try:
+        ok = await database_service.set_alias_sharing_intent(
+            alias_id=alias_id,
+            from_username=current_user.username,
+            to_username=body.to_username,
+            state=body.state,
+            message=body.message,
+        )
+        if not ok:
+            raise HTTPException(
+                status_code=403,
+                detail="Tu o l'altro utente non possedete dati su questo anello, oppure errore nel salvataggio.",
+            )
+        return {"success": True, "state": body.state}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore nell'impostare la condivisione: {e}")
 
 
 @router.post("/parse/batch", response_model=EuringBatchParseResponse)

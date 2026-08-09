@@ -377,7 +377,7 @@ class DatabaseService:
         field_count: int,
         field_positions: Dict[str, int],
         owner_username: Optional[str] = None,
-    ) -> Optional[Tuple[int, bool]]:
+    ) -> Optional[Tuple[int, bool, List[str], Optional[int]]]:
         """
         Persiste una stringa EURING 2020 gia' parsata "pulita" (64/64 campi)
         nell'archivio canonico a faccette.
@@ -393,12 +393,23 @@ class DatabaseService:
           - alias_id: upsert su ring_alias per (ringing scheme, identification
             number) estratti da parsed_fields -- calcolato indipendentemente
             dalla visibilita' (punto 10).
-          - owner_username / visibility (default 'private').
-          - auto-condivisione (punto 7): se per lo stesso alias esistono gia'
-            record con un owner_username DIVERSO, sia i record esistenti che
-            quello nuovo passano a visibility='shared' e vengono collegati in
-            euring_2020_shared_with, in entrambe le direzioni. Un record gia'
-            'public' non viene MAI declassato a 'shared' da questa logica.
+          - owner_username (visibility resta sempre 'private' qui, colonna
+            ormai vestigiale -- vedi sotto).
+
+        **Redesign 07/08/2026 (HANDOFF.md, migrazione 005)**: rimossa la
+        condivisione automatica che flippava visibility='shared' e scriveva
+        euring_2020_shared_with nell'istante in cui un secondo proprietario
+        toccava lo stesso alias -- rendeva "richiedi contatto" irraggiungibile
+        in ogni scenario reale (trovato 03/08/2026) e non lasciava mai al
+        primo proprietario la scelta se condividere. Ora, se esistono altri
+        proprietari sullo stesso alias, NON si tocca alcuna visibilita' qui:
+        si restituisce solo l'elenco per permettere al chiamante (archive_
+        service.py) di inviare una notifica generica ("qualcuno ha toccato
+        uno dei tuoi anelli", mai il contenuto del dato) -- la scelta di
+        condividere resta sempre e solo del proprietario, tramite le nuove
+        tabelle alias_sharing_intent (condivisione mirata reciproca) e
+        alias_owner_visibility (pubblico, unilaterale), entrambe per
+        (alias, proprietario) e gestite altrove, non da questa funzione.
 
         Le occorrenze successive della stessa identica stringa NON toccano
         owner_username/visibility/alias_id (gia' fissati al primo inserimento).
@@ -413,12 +424,18 @@ class DatabaseService:
                 non viene backfillato)
 
         Returns:
-            Tupla (id, is_new) -- is_new=True solo se questa e' la prima volta
-            che questa esatta stringa viene archiviata (rilevante per non
-            incrementare due volte i contatori aggregati di Lizzy, vedi
-            archive_service.py). None se il logging su database e' disabilitato
-            o in caso di errore (mai un'eccezione: l'archiviazione non deve mai
-            far fallire la richiesta principale).
+            Tupla (id, is_new, other_owners, alias_id) -- is_new=True solo se
+            questa e' la prima volta che questa esatta stringa viene
+            archiviata (rilevante per non incrementare due volte i contatori
+            aggregati di Lizzy, vedi archive_service.py). other_owners:
+            elenco (senza duplicati) degli username di altri proprietari gia'
+            presenti su questo stesso alias al momento dell'inserimento --
+            vuoto se non e' un nuovo record, se non c'e' alias, o se e' il
+            primo proprietario. alias_id: None se la stringa non ha
+            ringing_scheme/identification_number validi. None (l'intera
+            tupla) se il logging su database e' disabilitato o in caso di
+            errore (mai un'eccezione: l'archiviazione non deve mai far
+            fallire la richiesta principale).
         """
         if not self.pool or not self.is_enabled:
             return None
@@ -442,12 +459,15 @@ class DatabaseService:
                             """,
                             existing_id,
                         )
-                        return existing_id, False
+                        # alias_id non serve al chiamante qui: la notifica di
+                        # "alias toccato" scatta solo per is_new=True (vedi
+                        # archive_service.py), quindi non vale la pena di una
+                        # query aggiuntiva per popolarlo su questo ramo.
+                        return existing_id, False, [], None
 
-                    # --- Nuovo record: risolvi alias + ownership/visibilita' ---
+                    # --- Nuovo record: risolvi alias + ownership ---
                     alias_id: Optional[int] = None
-                    visibility = "private"
-                    other_owner_rows: List[Any] = []
+                    other_owners: List[str] = []
 
                     ringing_scheme = parsed_fields.get("ringing scheme")
                     identification_number = parsed_fields.get("identification number")
@@ -468,7 +488,7 @@ class DatabaseService:
                         if owner_username:
                             other_owner_rows = await conn.fetch(
                                 """
-                                SELECT DISTINCT id, owner_username
+                                SELECT DISTINCT owner_username
                                 FROM euring_2020_canonical
                                 WHERE alias_id = $1
                                   AND owner_username IS NOT NULL
@@ -477,35 +497,14 @@ class DatabaseService:
                                 alias_id,
                                 owner_username,
                             )
-                            if other_owner_rows:
-                                visibility = "shared"
-                                for row in other_owner_rows:
-                                    # Non declassare mai un record gia' pubblico.
-                                    await conn.execute(
-                                        """
-                                        UPDATE euring_2020_canonical
-                                        SET visibility = 'shared'
-                                        WHERE id = $1 AND visibility != 'public'
-                                        """,
-                                        row["id"],
-                                    )
-                                    await conn.execute(
-                                        """
-                                        INSERT INTO euring_2020_shared_with
-                                            (canonical_id, shared_with_username)
-                                        VALUES ($1, $2)
-                                        ON CONFLICT DO NOTHING
-                                        """,
-                                        row["id"],
-                                        owner_username,
-                                    )
+                            other_owners = [row["owner_username"] for row in other_owner_rows]
 
                     canonical_id = await conn.fetchval(
                         """
                         INSERT INTO euring_2020_canonical
                             (canonical_string, string_hash, parsed_fields, field_count,
                              owner_username, visibility, alias_id)
-                        VALUES ($1, $2, $3, $4, $5, $6, $7)
+                        VALUES ($1, $2, $3, $4, $5, 'private', $6)
                         RETURNING id
                         """,
                         canonical_string,
@@ -513,23 +512,8 @@ class DatabaseService:
                         json.dumps(parsed_fields, ensure_ascii=False),
                         field_count,
                         owner_username,
-                        visibility,
                         alias_id,
                     )
-
-                    # Condividi il nuovo record con gli altri proprietari trovati
-                    # per lo stesso alias (direzione opposta rispetto a sopra).
-                    for row in other_owner_rows:
-                        await conn.execute(
-                            """
-                            INSERT INTO euring_2020_shared_with
-                                (canonical_id, shared_with_username)
-                            VALUES ($1, $2)
-                            ON CONFLICT DO NOTHING
-                            """,
-                            canonical_id,
-                            row["owner_username"],
-                        )
 
                     field_rows = [
                         (canonical_id, field_positions[name], name, value)
@@ -546,7 +530,7 @@ class DatabaseService:
                             field_rows,
                         )
 
-                    return canonical_id, True
+                    return canonical_id, True, other_owners, alias_id
 
         except Exception as e:
             logger.error(f"Failed to upsert euring_2020_canonical: {e}")
@@ -586,12 +570,17 @@ class DatabaseService:
         per OGNI filtro" senza self-join multipli.
 
         requesting_username: se fornito, i risultati sono limitati ai record
-        pubblici, propri, o condivisi con questo utente. Se None (utente
-        anonimo), SOLO i record pubblici. **Bug di privacy corretto
-        30/07/2026**: prima di questa modifica il metodo ignorava del tutto
-        owner_username/visibility e restituiva sempre l'intero archivio a
-        chiunque, indipendentemente da chi chiamava /archive/search
-        (HANDOFF.md, punti 6-11).
+        propri, di alias resi pubblici dal proprietario, o condivisi in modo
+        mirato e reciproco con questo utente. Se None (utente anonimo), SOLO i
+        record di alias resi pubblici. **Bug di privacy corretto 30/07/2026**:
+        prima di questa modifica il metodo ignorava del tutto owner_username/
+        visibility e restituiva sempre l'intero archivio a chiunque,
+        indipendentemente da chi chiamava /archive/search (HANDOFF.md, punti
+        6-11). **Redesign 07/08/2026 (migrazione 005)**: la colonna
+        `visibility` non e' piu' letta qui -- la visibilita' effettiva si
+        calcola da alias_owner_visibility (pubblico, per alias+proprietario) e
+        alias_sharing_intent (condivisione mirata, reciproca per costruzione)
+        invece che dalla vecchia condivisione automatica.
         """
         if not self.pool:
             return {"total": 0, "results": []}
@@ -608,17 +597,53 @@ class DatabaseService:
                 if requesting_username:
                     vis_idx = len(field_params) + 1
                     visibility_clause = f"""(
-                        c.visibility = 'public'
-                        OR c.owner_username = ${vis_idx}
+                        c.owner_username = ${vis_idx}
                         OR EXISTS (
-                            SELECT 1 FROM euring_2020_shared_with sw
-                            WHERE sw.canonical_id = c.id AND sw.shared_with_username = ${vis_idx}
+                            SELECT 1 FROM alias_owner_visibility av
+                            WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
+                              AND av.is_public = true
+                        )
+                        OR (
+                            c.owner_username IS NOT NULL AND EXISTS (
+                                SELECT 1 FROM alias_sharing_intent si1
+                                WHERE si1.alias_id = c.alias_id AND si1.from_username = c.owner_username
+                                  AND si1.to_username = ${vis_idx} AND si1.state = 'offered'
+                            ) AND EXISTS (
+                                SELECT 1 FROM alias_sharing_intent si2
+                                WHERE si2.alias_id = c.alias_id AND si2.from_username = ${vis_idx}
+                                  AND si2.to_username = c.owner_username AND si2.state = 'offered'
+                            )
                         )
                     )"""
                     visibility_params = [requesting_username]
+                    # Etichetta da mostrare in tabella (pubblico/condiviso/privato),
+                    # calcolata dalle stesse due tabelle -- non piu' c.visibility
+                    # (ormai vestigiale, redesign 07/08/2026, migrazione 005).
+                    visibility_select = f"""CASE
+                        WHEN EXISTS (
+                            SELECT 1 FROM alias_owner_visibility av
+                            WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
+                              AND av.is_public = true
+                        ) THEN 'public'
+                        WHEN c.owner_username IS NOT NULL AND c.owner_username != ${vis_idx} AND EXISTS (
+                            SELECT 1 FROM alias_sharing_intent si1
+                            WHERE si1.alias_id = c.alias_id AND si1.from_username = c.owner_username
+                              AND si1.to_username = ${vis_idx} AND si1.state = 'offered'
+                        ) AND EXISTS (
+                            SELECT 1 FROM alias_sharing_intent si2
+                            WHERE si2.alias_id = c.alias_id AND si2.from_username = ${vis_idx}
+                              AND si2.to_username = c.owner_username AND si2.state = 'offered'
+                        ) THEN 'shared'
+                        ELSE 'private'
+                    END"""
                 else:
-                    visibility_clause = "c.visibility = 'public'"
+                    visibility_clause = """EXISTS (
+                        SELECT 1 FROM alias_owner_visibility av
+                        WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
+                          AND av.is_public = true
+                    )"""
                     visibility_params = []
+                    visibility_select = "'public'"
 
                 if pairs:
                     placeholders = ", ".join(
@@ -644,7 +669,7 @@ class DatabaseService:
                     f"""
                     SELECT c.id, c.canonical_string, c.field_count,
                            c.first_seen, c.last_seen, c.occurrence_count,
-                           c.visibility, c.alias_id
+                           {visibility_select} AS visibility, c.alias_id
                     FROM euring_2020_canonical c
                     WHERE {where_clause}
                     ORDER BY c.first_seen DESC
@@ -676,23 +701,41 @@ class DatabaseService:
         quando conta le sue faccette).
 
         requesting_username: stessa semantica di search_canonical_2020 --
-        None = solo record pubblici (bug di privacy corretto 30/07/2026,
-        prima i conteggi includevano anche i record privati/condivisi altrui).
+        None = solo record di alias resi pubblici (bug di privacy corretto
+        30/07/2026, prima i conteggi includevano anche i record privati/
+        condivisi altrui). **Redesign 07/08/2026 (migrazione 005)**: stessa
+        logica a due tabelle (alias_owner_visibility/alias_sharing_intent) di
+        search_canonical_2020, non piu' la colonna `visibility`.
         """
         if not self.pool:
             return {}
 
         if requesting_username:
             visibility_clause = """(
-                c.visibility = 'public'
-                OR c.owner_username = $2
+                c.owner_username = $2
                 OR EXISTS (
-                    SELECT 1 FROM euring_2020_shared_with sw
-                    WHERE sw.canonical_id = c.id AND sw.shared_with_username = $2
+                    SELECT 1 FROM alias_owner_visibility av
+                    WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
+                      AND av.is_public = true
+                )
+                OR (
+                    c.owner_username IS NOT NULL AND EXISTS (
+                        SELECT 1 FROM alias_sharing_intent si1
+                        WHERE si1.alias_id = c.alias_id AND si1.from_username = c.owner_username
+                          AND si1.to_username = $2 AND si1.state = 'offered'
+                    ) AND EXISTS (
+                        SELECT 1 FROM alias_sharing_intent si2
+                        WHERE si2.alias_id = c.alias_id AND si2.from_username = $2
+                          AND si2.to_username = c.owner_username AND si2.state = 'offered'
+                    )
                 )
             )"""
         else:
-            visibility_clause = "c.visibility = 'public'"
+            visibility_clause = """EXISTS (
+                SELECT 1 FROM alias_owner_visibility av
+                WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
+                  AND av.is_public = true
+            )"""
 
         try:
             async with self.pool.acquire() as conn:
@@ -811,6 +854,10 @@ class DatabaseService:
         Non restituisce mai owner_username grezzo (potrebbe essere di un
         altro utente per i record pubblici/condivisi) -- solo un flag
         `is_own` calcolato, coerente con l'invariante del punto 6.
+
+        **Redesign 07/08/2026 (migrazione 005)**: stessa logica a due tabelle
+        (alias_owner_visibility/alias_sharing_intent) di search_canonical_2020
+        e get_alias_life_history, non piu' la colonna `visibility`.
         """
         if not self.pool:
             return []
@@ -822,16 +869,43 @@ class DatabaseService:
                         """
                         SELECT c.id, c.canonical_string, c.field_count,
                                (c.owner_username = $2) AS is_own,
-                               c.visibility, c.first_seen, c.last_seen, c.occurrence_count
+                               CASE
+                                 WHEN EXISTS (
+                                     SELECT 1 FROM alias_owner_visibility av
+                                     WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
+                                       AND av.is_public = true
+                                 ) THEN 'public'
+                                 WHEN c.owner_username IS NOT NULL AND c.owner_username != $2 AND EXISTS (
+                                     SELECT 1 FROM alias_sharing_intent si1
+                                     WHERE si1.alias_id = c.alias_id AND si1.from_username = c.owner_username
+                                       AND si1.to_username = $2 AND si1.state = 'offered'
+                                 ) AND EXISTS (
+                                     SELECT 1 FROM alias_sharing_intent si2
+                                     WHERE si2.alias_id = c.alias_id AND si2.from_username = $2
+                                       AND si2.to_username = c.owner_username AND si2.state = 'offered'
+                                 ) THEN 'shared'
+                                 ELSE 'private'
+                               END AS visibility,
+                               c.first_seen, c.last_seen, c.occurrence_count
                         FROM euring_2020_canonical c
                         WHERE c.alias_id = $1
                           AND (
-                            c.visibility = 'public'
-                            OR c.owner_username = $2
+                            c.owner_username = $2
                             OR EXISTS (
-                                SELECT 1 FROM euring_2020_shared_with sw
-                                WHERE sw.canonical_id = c.id
-                                  AND sw.shared_with_username = $2
+                                SELECT 1 FROM alias_owner_visibility av
+                                WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
+                                  AND av.is_public = true
+                            )
+                            OR (
+                                c.owner_username IS NOT NULL AND EXISTS (
+                                    SELECT 1 FROM alias_sharing_intent si1
+                                    WHERE si1.alias_id = c.alias_id AND si1.from_username = c.owner_username
+                                      AND si1.to_username = $2 AND si1.state = 'offered'
+                                ) AND EXISTS (
+                                    SELECT 1 FROM alias_sharing_intent si2
+                                    WHERE si2.alias_id = c.alias_id AND si2.from_username = $2
+                                      AND si2.to_username = c.owner_username AND si2.state = 'offered'
+                                )
                             )
                           )
                         ORDER BY c.first_seen
@@ -844,9 +918,14 @@ class DatabaseService:
                         """
                         SELECT c.id, c.canonical_string, c.field_count,
                                false AS is_own,
-                               c.visibility, c.first_seen, c.last_seen, c.occurrence_count
+                               'public' AS visibility,
+                               c.first_seen, c.last_seen, c.occurrence_count
                         FROM euring_2020_canonical c
-                        WHERE c.alias_id = $1 AND c.visibility = 'public'
+                        WHERE c.alias_id = $1 AND EXISTS (
+                            SELECT 1 FROM alias_owner_visibility av
+                            WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
+                              AND av.is_public = true
+                        )
                         ORDER BY c.first_seen
                         """,
                         alias_id,
@@ -900,6 +979,11 @@ class DatabaseService:
         intercettare errori di trascrizione (specie diversa tra eventi
         dello stesso alias fisico e' un segnale di anello letto/trascritto
         male da qualche parte).
+
+        **Redesign 07/08/2026 (migrazione 005)**: `visibility` non e' piu'
+        letta dalla colonna omonima (ormai vestigiale) ma calcolata a runtime
+        da alias_owner_visibility (pubblico)/alias_sharing_intent (condiviso
+        mirato reciproco) -- stessa logica di search_canonical_2020.
         """
         if not self.pool:
             return []
@@ -911,14 +995,41 @@ class DatabaseService:
                         """
                         SELECT c.id, c.canonical_string, c.field_count,
                                (c.owner_username = $2) AS is_own,
-                               c.visibility, c.first_seen, c.last_seen, c.occurrence_count,
+                               CASE
+                                 WHEN EXISTS (
+                                     SELECT 1 FROM alias_owner_visibility av
+                                     WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
+                                       AND av.is_public = true
+                                 ) THEN 'public'
+                                 WHEN c.owner_username IS NOT NULL AND c.owner_username != $2 AND EXISTS (
+                                     SELECT 1 FROM alias_sharing_intent si1
+                                     WHERE si1.alias_id = c.alias_id AND si1.from_username = c.owner_username
+                                       AND si1.to_username = $2 AND si1.state = 'offered'
+                                 ) AND EXISTS (
+                                     SELECT 1 FROM alias_sharing_intent si2
+                                     WHERE si2.alias_id = c.alias_id AND si2.from_username = $2
+                                       AND si2.to_username = c.owner_username AND si2.state = 'offered'
+                                 ) THEN 'shared'
+                                 ELSE 'private'
+                               END AS visibility,
+                               c.first_seen, c.last_seen, c.occurrence_count,
                                (
-                                 c.visibility = 'public'
-                                 OR c.owner_username = $2
+                                 c.owner_username = $2
                                  OR EXISTS (
-                                     SELECT 1 FROM euring_2020_shared_with sw
-                                     WHERE sw.canonical_id = c.id
-                                       AND sw.shared_with_username = $2
+                                     SELECT 1 FROM alias_owner_visibility av
+                                     WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
+                                       AND av.is_public = true
+                                 )
+                                 OR (
+                                     c.owner_username IS NOT NULL AND EXISTS (
+                                         SELECT 1 FROM alias_sharing_intent si1
+                                         WHERE si1.alias_id = c.alias_id AND si1.from_username = c.owner_username
+                                           AND si1.to_username = $2 AND si1.state = 'offered'
+                                     ) AND EXISTS (
+                                         SELECT 1 FROM alias_sharing_intent si2
+                                         WHERE si2.alias_id = c.alias_id AND si2.from_username = $2
+                                           AND si2.to_username = c.owner_username AND si2.state = 'offered'
+                                     )
                                  )
                                ) AS is_visible,
                                c.parsed_fields->>'date' AS event_date,
@@ -938,8 +1049,20 @@ class DatabaseService:
                         """
                         SELECT c.id, c.canonical_string, c.field_count,
                                false AS is_own,
-                               c.visibility, c.first_seen, c.last_seen, c.occurrence_count,
-                               (c.visibility = 'public') AS is_visible,
+                               CASE
+                                 WHEN EXISTS (
+                                     SELECT 1 FROM alias_owner_visibility av
+                                     WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
+                                       AND av.is_public = true
+                                 ) THEN 'public'
+                                 ELSE 'private'
+                               END AS visibility,
+                               c.first_seen, c.last_seen, c.occurrence_count,
+                               EXISTS (
+                                   SELECT 1 FROM alias_owner_visibility av
+                                   WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
+                                     AND av.is_public = true
+                               ) AS is_visible,
                                c.parsed_fields->>'date' AS event_date,
                                c.parsed_fields->>'place code' AS place_code,
                                COALESCE(
@@ -1002,199 +1125,159 @@ class DatabaseService:
             logger.error(f"Failed to get life history for alias {alias_id}: {e}")
             return []
 
-    async def get_hidden_owners_for_alias(
-        self, alias_id: int, requesting_username: str
-    ) -> List[str]:
+    async def _owns_alias(self, conn, alias_id: int, username: str) -> bool:
         """
-        Proprietari DISTINTI dei record per questo alias_id che NON sono
-        visibili a requesting_username -- serve solo per instradare
-        internamente le richieste di contatto (contact_requests), MAI da
-        restituire in una risposta API al richiedente (HANDOFF.md, punto 6:
-        l'identita' del proprietario non va mai esposta a chi non e' gia'
-        stato autorizzato dal proprietario stesso).
+        Vero se username possiede almeno un record su questo alias_id --
+        usato come controllo di accesso su tutti i nuovi endpoint di
+        condivisione (redesign 07/08/2026): solo chi ha gia' un proprio dato
+        su un anello puo' vedere gli altri proprietari o impostare scelte di
+        condivisione/pubblicazione per quell'anello. Impedisce a un utente
+        estraneo di scoprire chi possiede dati su un alias a caso.
         """
-        if not self.pool:
-            return []
+        row = await conn.fetchval(
+            "SELECT 1 FROM euring_2020_canonical WHERE alias_id = $1 AND owner_username = $2 LIMIT 1",
+            alias_id, username,
+        )
+        return row is not None
 
-        try:
-            async with self.pool.acquire() as conn:
-                rows = await conn.fetch(
-                    """
-                    SELECT DISTINCT owner_username
-                    FROM euring_2020_canonical c
-                    WHERE c.alias_id = $1
-                      AND c.owner_username IS NOT NULL
-                      AND c.owner_username != $2
-                      AND NOT (
-                        c.visibility = 'public'
-                        OR EXISTS (
-                            SELECT 1 FROM euring_2020_shared_with sw
-                            WHERE sw.canonical_id = c.id
-                              AND sw.shared_with_username = $2
-                        )
-                      )
-                    """,
-                    alias_id,
-                    requesting_username,
-                )
-                return [r["owner_username"] for r in rows]
-        except Exception as e:
-            logger.error(f"Failed to get hidden owners for alias {alias_id}: {e}")
-            return []
-
-    async def create_contact_request(
-        self, alias_id: int, requester_username: str, owner_username: str,
-        message: Optional[str] = None
-    ) -> Optional[int]:
-        """
-        Crea una richiesta di contatto verso owner_username per alias_id, se
-        non ne esiste gia' una in stato 'pending' identica (evita spam da
-        richieste ripetute). Ritorna l'id della richiesta creata, o None se
-        gia' esisteva una pendente identica / errore / servizio disabilitato.
-        """
-        if not self.pool or not self.is_enabled:
-            return None
-
-        try:
-            async with self.pool.acquire() as conn:
-                existing = await conn.fetchval(
-                    """
-                    SELECT id FROM contact_requests
-                    WHERE alias_id = $1 AND requester_username = $2
-                      AND owner_username = $3 AND status = 'pending'
-                    """,
-                    alias_id, requester_username, owner_username,
-                )
-                if existing is not None:
-                    return None
-
-                return await conn.fetchval(
-                    """
-                    INSERT INTO contact_requests
-                        (alias_id, requester_username, owner_username, message)
-                    VALUES ($1, $2, $3, $4)
-                    RETURNING id
-                    """,
-                    alias_id, requester_username, owner_username, message,
-                )
-        except Exception as e:
-            logger.error(f"Failed to create contact request: {e}")
-            return None
-
-    async def list_contact_requests_for_owner(self, owner_username: str) -> List[Dict[str, Any]]:
-        """Richieste ricevute da owner_username, piu' recenti prima. Include requester_username (visibile all'owner, non e' l'informazione protetta)."""
-        if not self.pool:
-            return []
-        try:
-            async with self.pool.acquire() as conn:
-                rows = await conn.fetch(
-                    """
-                    SELECT id, alias_id, requester_username, message, status,
-                           shared, identity_revealed, created_at, responded_at
-                    FROM contact_requests
-                    WHERE owner_username = $1
-                    ORDER BY created_at DESC
-                    """,
-                    owner_username,
-                )
-                return [dict(r) for r in rows]
-        except Exception as e:
-            logger.error(f"Failed to list contact requests for owner {owner_username}: {e}")
-            return []
-
-    async def list_contact_requests_for_requester(self, requester_username: str) -> List[Dict[str, Any]]:
-        """
-        Richieste inviate da requester_username. owner_username NON viene mai
-        incluso qui (punto 6) -- solo esito (shared/identity_revealed) e stato.
-        """
-        if not self.pool:
-            return []
-        try:
-            async with self.pool.acquire() as conn:
-                rows = await conn.fetch(
-                    """
-                    SELECT id, alias_id, message, status, shared,
-                           identity_revealed, created_at, responded_at
-                    FROM contact_requests
-                    WHERE requester_username = $1
-                    ORDER BY created_at DESC
-                    """,
-                    requester_username,
-                )
-                return [dict(r) for r in rows]
-        except Exception as e:
-            logger.error(f"Failed to list contact requests for requester {requester_username}: {e}")
-            return []
-
-    async def respond_to_contact_request(
-        self, request_id: int, owner_username: str, shared: bool, identity_revealed: bool
+    async def get_my_sharing_status(
+        self, alias_id: int, username: str
     ) -> Optional[Dict[str, Any]]:
         """
-        Applica la risposta del proprietario a una richiesta di contatto.
-        Se shared=true, il richiedente viene aggiunto a euring_2020_shared_with
-        per TUTTI i record di questo alias_id di proprieta' di owner_username,
-        e la loro visibilita' passa a 'shared' se era 'private' (mai declassata
-        se gia' 'public'). Verifica che request_id appartenga davvero a
-        owner_username prima di applicare qualunque modifica.
+        Stato delle scelte di condivisione di username per questo alias
+        (redesign condivisione, migrazione 005, 07/08/2026): il proprio flag
+        "pubblico" (per alias+proprietario) e, per ciascun altro proprietario
+        dello stesso alias, lo stato reciproco (la mia scelta verso di lui, la
+        sua verso di me -- entrambe visibili: username e' gia' un proprietario
+        di questo stesso alias, non un estraneo, quindi conoscere l'altro
+        proprietario e il suo stato non viola il punto 6 di HANDOFF.md, che
+        protegge SOLO gli estranei senza dati propri sull'alias). None se
+        username non possiede nulla su questo alias (accesso negato) o in
+        caso di errore.
         """
         if not self.pool:
             return None
 
         try:
             async with self.pool.acquire() as conn:
-                async with conn.transaction():
-                    row = await conn.fetchrow(
-                        """
-                        SELECT id, alias_id, requester_username, owner_username, status
-                        FROM contact_requests
-                        WHERE id = $1 AND owner_username = $2
-                        """,
-                        request_id, owner_username,
+                if not await self._owns_alias(conn, alias_id, username):
+                    return None
+
+                is_public = await conn.fetchval(
+                    "SELECT is_public FROM alias_owner_visibility WHERE alias_id = $1 AND username = $2",
+                    alias_id, username,
+                )
+
+                other_owners = await conn.fetch(
+                    """
+                    SELECT DISTINCT owner_username
+                    FROM euring_2020_canonical
+                    WHERE alias_id = $1 AND owner_username IS NOT NULL AND owner_username != $2
+                    """,
+                    alias_id, username,
+                )
+
+                others = []
+                for row in other_owners:
+                    other_username = row["owner_username"]
+                    my_intent = await conn.fetchrow(
+                        "SELECT state, message FROM alias_sharing_intent WHERE alias_id = $1 AND from_username = $2 AND to_username = $3",
+                        alias_id, username, other_username,
                     )
-                    if row is None:
-                        return None
-
-                    await conn.execute(
-                        """
-                        UPDATE contact_requests
-                        SET status = 'responded', shared = $2,
-                            identity_revealed = $3, responded_at = NOW()
-                        WHERE id = $1
-                        """,
-                        request_id, shared, identity_revealed,
+                    their_intent = await conn.fetchrow(
+                        "SELECT state FROM alias_sharing_intent WHERE alias_id = $1 AND from_username = $2 AND to_username = $3",
+                        alias_id, other_username, username,
                     )
+                    others.append({
+                        "username": other_username,
+                        "my_state": my_intent["state"] if my_intent else None,
+                        "my_message": my_intent["message"] if my_intent else None,
+                        "their_state": their_intent["state"] if their_intent else None,
+                        "mutually_shared": bool(
+                            my_intent and my_intent["state"] == "offered"
+                            and their_intent and their_intent["state"] == "offered"
+                        ),
+                    })
 
-                    if shared:
-                        canonical_ids = await conn.fetch(
-                            """
-                            SELECT id FROM euring_2020_canonical
-                            WHERE alias_id = $1 AND owner_username = $2
-                            """,
-                            row["alias_id"], owner_username,
-                        )
-                        for c in canonical_ids:
-                            await conn.execute(
-                                """
-                                UPDATE euring_2020_canonical
-                                SET visibility = 'shared'
-                                WHERE id = $1 AND visibility != 'public'
-                                """,
-                                c["id"],
-                            )
-                            await conn.execute(
-                                """
-                                INSERT INTO euring_2020_shared_with
-                                    (canonical_id, shared_with_username)
-                                VALUES ($1, $2)
-                                ON CONFLICT DO NOTHING
-                                """,
-                                c["id"], row["requester_username"],
-                            )
-
-                    return {"id": request_id, "shared": shared, "identity_revealed": identity_revealed}
+                return {"is_public": bool(is_public), "others": others}
         except Exception as e:
-            logger.error(f"Failed to respond to contact request {request_id}: {e}")
+            logger.error(f"Failed to get sharing status for alias {alias_id}/{username}: {e}")
             return None
+
+    async def set_alias_public(self, alias_id: int, username: str, is_public: bool) -> bool:
+        """
+        Imposta la scelta di username di rendere pubblico (o meno) il PROPRIO
+        dato su questo alias -- unilaterale, non richiede reciprocita', non
+        coinvolge gli altri proprietari dello stesso alias (redesign
+        condivisione, migrazione 005, 07/08/2026). Verifica che username
+        possieda gia' un record su questo alias prima di applicare.
+        """
+        if not self.pool:
+            return False
+
+        try:
+            async with self.pool.acquire() as conn:
+                if not await self._owns_alias(conn, alias_id, username):
+                    return False
+
+                await conn.execute(
+                    """
+                    INSERT INTO alias_owner_visibility (alias_id, username, is_public, decided_at)
+                    VALUES ($1, $2, $3, NOW())
+                    ON CONFLICT (alias_id, username)
+                    DO UPDATE SET is_public = EXCLUDED.is_public, decided_at = NOW()
+                    """,
+                    alias_id, username, is_public,
+                )
+                return True
+        except Exception as e:
+            logger.error(f"Failed to set public visibility for alias {alias_id}/{username}: {e}")
+            return False
+
+    async def set_alias_sharing_intent(
+        self, alias_id: int, from_username: str, to_username: str,
+        state: str, message: Optional[str] = None
+    ) -> bool:
+        """
+        Imposta la scelta di from_username di condividere (state='offered')
+        o rifiutare (state='declined') il PROPRIO dato su questo alias con
+        to_username -- efficace solo se anche to_username fa la stessa scelta
+        verso from_username (reciprocita', verificata a lettura in
+        get_alias_life_history/search_canonical_2020/facet_counts_2020, non
+        qui). Aggiornabile in qualunque momento (UPSERT) -- si puo' sempre
+        cambiare idea, nessun lock. Verifica che ENTRAMBI gli utenti
+        possiedano gia' un record su questo alias prima di applicare (non si
+        puo' scegliere di condividere con/rifiutare qualcuno che non e'
+        realmente un proprietario di questo anello).
+        """
+        if not self.pool:
+            return False
+        if state not in ("offered", "declined"):
+            return False
+
+        try:
+            async with self.pool.acquire() as conn:
+                if not await self._owns_alias(conn, alias_id, from_username):
+                    return False
+                if not await self._owns_alias(conn, alias_id, to_username):
+                    return False
+
+                await conn.execute(
+                    """
+                    INSERT INTO alias_sharing_intent
+                        (alias_id, from_username, to_username, state, message, decided_at)
+                    VALUES ($1, $2, $3, $4, $5, NOW())
+                    ON CONFLICT (alias_id, from_username, to_username)
+                    DO UPDATE SET state = EXCLUDED.state, message = EXCLUDED.message, decided_at = NOW()
+                    """,
+                    alias_id, from_username, to_username, state, message,
+                )
+                return True
+        except Exception as e:
+            logger.error(
+                f"Failed to set sharing intent for alias {alias_id} {from_username}->{to_username}: {e}"
+            )
+            return False
 
     async def _update_unique_strings(self, conn, query_data: Dict[str, Any]):
         """

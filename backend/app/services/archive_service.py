@@ -25,13 +25,14 @@ L'archiviazione non deve MAI far fallire la richiesta principale
 (recognize/convert/parse): ogni eccezione viene loggata e inghiottita.
 """
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from .conversion_service import EuringConversionService
 from .skos_manager import SKOSManagerImpl
 from .parsers.euring_2020_position_parser import Euring2020PositionParser
 from .database_service import database_service
 from .phenology_utils import parse_euring_date_to_pentad
+from .email_service import email_service
 from ..auth.auth_service import AuthService
 
 logger = logging.getLogger(__name__)
@@ -130,7 +131,7 @@ class ArchiveService:
             if upsert_result is None:
                 return None
 
-            canonical_id, is_new = upsert_result
+            canonical_id, is_new, other_owners, alias_id = upsert_result
 
             await database_service.link_unique_string_to_canonical(
                 euring_string, canonical_id
@@ -144,6 +145,17 @@ class ArchiveService:
             # o stringa -- solo specie+luogo+pentade+schema.
             if is_new and owner_username:
                 await self._maybe_increment_lizzy_stats(parsed["fields"], owner_username)
+
+            # Notifica generica agli altri proprietari dello stesso alias
+            # (redesign condivisione, migrazione 005, 07/08/2026) -- sostituisce
+            # la vecchia condivisione automatica. Mai il contenuto del dato,
+            # solo l'avviso che qualcun altro ha toccato lo stesso anello.
+            if is_new and owner_username and other_owners and alias_id:
+                await self._maybe_notify_alias_touch(
+                    toucher_username=owner_username,
+                    other_owners=other_owners,
+                    alias_id=alias_id,
+                )
 
             return canonical_id
 
@@ -198,6 +210,36 @@ class ArchiveService:
             )
         except Exception as e:
             logger.error(f"Errore durante l'incremento dei contatori Lizzy: {e}")
+
+    async def _maybe_notify_alias_touch(
+        self, toucher_username: str, other_owners: List[str], alias_id: int
+    ) -> None:
+        """
+        Notifica generica (redesign condivisione, migrazione 005, 07/08/2026)
+        a ciascun altro proprietario gia' presente sullo stesso alias: mai il
+        contenuto del dato, solo l'avviso che qualcun altro l'ha toccato --
+        sostituisce la vecchia condivisione automatica. La scelta di
+        condividere resta sempre e solo del proprietario notificato (tramite
+        alias_sharing_intent/alias_owner_visibility, non da questa funzione).
+        Nessuna eccezione propagata: un errore qui non deve mai far fallire
+        l'archiviazione principale (stesso principio di
+        _maybe_increment_lizzy_stats).
+        """
+        for owner_username in other_owners:
+            try:
+                owner = self._auth_service.get_user(owner_username)
+                if not owner:
+                    continue
+                email_service.send_alias_touched_notification(
+                    owner_email=owner.email,
+                    owner_full_name=owner.full_name,
+                    toucher_username=toucher_username,
+                    alias_id=alias_id,
+                )
+            except Exception as e:
+                logger.error(
+                    f"Errore durante la notifica di alias toccato a {owner_username}: {e}"
+                )
 
 
 # Istanza globale del servizio

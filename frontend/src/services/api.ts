@@ -128,53 +128,50 @@ export class EuringAPI {
   }
 
   /**
-   * Richiede il contatto con il/i proprietari di eventi nascosti per un
-   * dato alias_id. L'identita' dei proprietari non viene mai restituita qui.
+   * Stato delle proprie scelte di condivisione per un alias (redesign
+   * condivisione, 07/08/2026): il proprio flag pubblico + stato reciproco
+   * verso ciascun altro proprietario dello stesso anello. Richiede di
+   * possedere gia' un proprio dato su quell'alias (verificato server-side).
    */
-  static async createContactRequest(aliasId: number, message?: string): Promise<any> {
+  static async getAliasSharingStatus(aliasId: number): Promise<any> {
     try {
-      const response = await api.post(
-        `/api/euring/archive/alias/${aliasId}/contact-request`,
-        { message: message || null }
+      const response = await api.get(`/api/euring/archive/alias/${aliasId}/sharing-status`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.message || 'Recupero stato condivisione fallito');
+    }
+  }
+
+  /** Imposta se il proprio dato su questo alias e' pubblico -- unilaterale */
+  static async setAliasPublic(aliasId: number, isPublic: boolean): Promise<any> {
+    try {
+      const response = await api.put(
+        `/api/euring/archive/alias/${aliasId}/public`,
+        { is_public: isPublic }
       );
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.detail || error.message || 'Richiesta di contatto fallita');
+      throw new Error(error.response?.data?.detail || error.message || 'Impostazione visibilita\' pubblica fallita');
     }
   }
 
-  /** Richieste di contatto ricevute (come proprietario) */
-  static async listReceivedContactRequests(): Promise<any> {
-    try {
-      const response = await api.get('/api/euring/archive/contact-requests');
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.detail || error.message || 'Recupero richieste fallito');
-    }
-  }
-
-  /** Richieste di contatto inviate (come richiedente) -- mai include l'identita' del proprietario */
-  static async listSentContactRequests(): Promise<any> {
-    try {
-      const response = await api.get('/api/euring/archive/contact-requests/sent');
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.detail || error.message || 'Recupero richieste fallito');
-    }
-  }
-
-  /** Risposta del proprietario: due decisioni indipendenti (shared, identity_revealed) */
-  static async respondToContactRequest(
-    requestId: number, shared: boolean, identityRevealed: boolean
+  /**
+   * Imposta la propria scelta di condividere ('offered') o rifiutare
+   * ('declined') il proprio dato su un alias con un altro proprietario
+   * specifico -- efficace solo se reciproco. Aggiornabile in qualunque
+   * momento.
+   */
+  static async setAliasSharing(
+    aliasId: number, toUsername: string, state: 'offered' | 'declined', message?: string
   ): Promise<any> {
     try {
-      const response = await api.post(
-        `/api/euring/archive/contact-requests/${requestId}/respond`,
-        { shared, identity_revealed: identityRevealed }
+      const response = await api.put(
+        `/api/euring/archive/alias/${aliasId}/sharing`,
+        { to_username: toUsername, state, message: message || null }
       );
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.detail || error.message || 'Risposta alla richiesta fallita');
+      throw new Error(error.response?.data?.detail || error.message || 'Impostazione condivisione fallita');
     }
   }
 

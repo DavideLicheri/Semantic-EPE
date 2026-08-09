@@ -61,6 +61,20 @@ interface AliasSummary {
   life_history: LifeHistoryEvent[];
 }
 
+interface SharingOther {
+  username: string;
+  my_state: 'offered' | 'declined' | null;
+  my_message: string | null;
+  their_state: 'offered' | 'declined' | null;
+  mutually_shared: boolean;
+}
+
+interface SharingStatus {
+  success: boolean;
+  is_public: boolean;
+  others: SharingOther[];
+}
+
 const VISIBILITY_LABELS: Record<Visibility, string> = {
   public: 'Pubblico',
   private: 'Privato',
@@ -88,10 +102,10 @@ const ArchivePanel = () => {
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
   const [aliasSummaries, setAliasSummaries] = useState<Record<number, AliasSummary>>({});
   const [summaryLoading, setSummaryLoading] = useState<Record<number, boolean>>({});
-  const [contactFormOpenFor, setContactFormOpenFor] = useState<number | null>(null);
-  const [contactMessage, setContactMessage] = useState('');
-  const [contactSending, setContactSending] = useState(false);
-  const [contactResult, setContactResult] = useState<Record<number, string>>({});
+  const [sharingStatuses, setSharingStatuses] = useState<Record<number, SharingStatus>>({});
+  const [sharingMessages, setSharingMessages] = useState<Record<string, string>>({});
+  const [sharingBusy, setSharingBusy] = useState<Record<string, boolean>>({});
+  const [sharingError, setSharingError] = useState<Record<number, string>>({});
 
   const isAuthenticated = authService.isAuthenticated();
 
@@ -136,8 +150,6 @@ const ArchivePanel = () => {
       return;
     }
     setExpandedRowId(row.id);
-    setContactFormOpenFor(null);
-    setContactMessage('');
 
     if (row.alias_id != null && !aliasSummaries[row.id] && !summaryLoading[row.id]) {
       setSummaryLoading((prev) => ({ ...prev, [row.id]: true }));
@@ -150,28 +162,59 @@ const ArchivePanel = () => {
         setSummaryLoading((prev) => ({ ...prev, [row.id]: false }));
       }
     }
+
+    // Stato di condivisione: richiede di possedere gia' un proprio dato su
+    // questo alias (verificato server-side, 403 altrimenti) -- per questo
+    // il fallimento e' silenzioso, non tutti gli utenti che aprono i
+    // dettagli sono proprietari di quell'anello.
+    if (isAuthenticated && row.alias_id != null && !sharingStatuses[row.id]) {
+      try {
+        const status = await EuringAPI.getAliasSharingStatus(row.alias_id);
+        setSharingStatuses((prev) => ({ ...prev, [row.id]: status }));
+      } catch {
+        // non proprietario di questo alias, o errore -- nessuna sezione di gestione mostrata
+      }
+    }
   };
 
-  const sendContactRequest = async (row: CanonicalRow) => {
+  const refreshSharingStatus = async (row: CanonicalRow) => {
     if (row.alias_id == null) return;
-    setContactSending(true);
     try {
-      const response = await EuringAPI.createContactRequest(row.alias_id, contactMessage || undefined);
-      setContactResult((prev) => ({
-        ...prev,
-        [row.id]: response?.success !== false
-          ? 'Richiesta di contatto inviata.'
-          : (response?.message || 'Invio della richiesta non riuscito.'),
-      }));
-      setContactFormOpenFor(null);
-      setContactMessage('');
+      const status = await EuringAPI.getAliasSharingStatus(row.alias_id);
+      setSharingStatuses((prev) => ({ ...prev, [row.id]: status }));
     } catch (err: any) {
-      setContactResult((prev) => ({
-        ...prev,
-        [row.id]: err.message || 'Invio della richiesta non riuscito.',
-      }));
+      setSharingError((prev) => ({ ...prev, [row.id]: err.message || 'Aggiornamento stato fallito' }));
+    }
+  };
+
+  const togglePublic = async (row: CanonicalRow, isPublic: boolean) => {
+    if (row.alias_id == null) return;
+    const key = `${row.id}-public`;
+    setSharingBusy((prev) => ({ ...prev, [key]: true }));
+    setSharingError((prev) => ({ ...prev, [row.id]: '' }));
+    try {
+      await EuringAPI.setAliasPublic(row.alias_id, isPublic);
+      await refreshSharingStatus(row);
+    } catch (err: any) {
+      setSharingError((prev) => ({ ...prev, [row.id]: err.message || 'Aggiornamento fallito' }));
     } finally {
-      setContactSending(false);
+      setSharingBusy((prev) => ({ ...prev, [key]: false }));
+    }
+  };
+
+  const setSharingWith = async (row: CanonicalRow, toUsername: string, state: 'offered' | 'declined') => {
+    if (row.alias_id == null) return;
+    const msgKey = `${row.id}-${toUsername}`;
+    const key = `${row.id}-${toUsername}-${state}`;
+    setSharingBusy((prev) => ({ ...prev, [key]: true }));
+    setSharingError((prev) => ({ ...prev, [row.id]: '' }));
+    try {
+      await EuringAPI.setAliasSharing(row.alias_id, toUsername, state, sharingMessages[msgKey] || undefined);
+      await refreshSharingStatus(row);
+    } catch (err: any) {
+      setSharingError((prev) => ({ ...prev, [row.id]: err.message || 'Aggiornamento fallito' }));
+    } finally {
+      setSharingBusy((prev) => ({ ...prev, [key]: false }));
     }
   };
 
@@ -314,48 +357,80 @@ const ArchivePanel = () => {
                                         )}
                                       </div>
                                     )}
-                                    {summary.hidden_count > 0 && (
+                                    {summary.hidden_count > 0 && !sharingStatuses[row.id] && (
                                       <div className="archive-hidden-note">
                                         {summary.hidden_count} evento/i non condivisi con te.
-                                        {isAuthenticated ? (
-                                          contactFormOpenFor === row.id ? (
-                                            <div className="contact-request-form">
-                                              <textarea
-                                                value={contactMessage}
-                                                onChange={(e) => setContactMessage(e.target.value)}
-                                                placeholder="Messaggio facoltativo per il/i proprietario/i..."
-                                                rows={2}
-                                              />
-                                              <div className="contact-request-actions">
-                                                <button
-                                                  onClick={() => sendContactRequest(row)}
-                                                  disabled={contactSending}
-                                                >
-                                                  {contactSending ? 'Invio...' : 'Invia richiesta'}
-                                                </button>
-                                                <button
-                                                  onClick={() => setContactFormOpenFor(null)}
-                                                  disabled={contactSending}
-                                                >
-                                                  Annulla
-                                                </button>
-                                              </div>
-                                            </div>
-                                          ) : (
-                                            <button
-                                              className="archive-detail-btn"
-                                              onClick={() => setContactFormOpenFor(row.id)}
-                                            >
-                                              Richiedi contatto
-                                            </button>
-                                          )
-                                        ) : (
-                                          <span> Accedi per richiedere il contatto con il proprietario.</span>
+                                        {!isAuthenticated && (
+                                          <span> Accedi per gestire la condivisione dei tuoi dati su questo anello.</span>
                                         )}
                                       </div>
                                     )}
-                                    {contactResult[row.id] && (
-                                      <div className="archive-contact-result">{contactResult[row.id]}</div>
+                                    {sharingStatuses[row.id] && (
+                                      <div className="sharing-manager">
+                                        <div className="sharing-manager-title">
+                                          Le tue scelte di condivisione per questo anello
+                                        </div>
+                                        <label className="sharing-public-toggle">
+                                          <input
+                                            type="checkbox"
+                                            checked={sharingStatuses[row.id].is_public}
+                                            disabled={sharingBusy[`${row.id}-public`]}
+                                            onChange={(e) => togglePublic(row, e.target.checked)}
+                                          />
+                                          Rendi pubblico il tuo dato su questo anello
+                                        </label>
+
+                                        {sharingStatuses[row.id].others.map((other) => {
+                                          const msgKey = `${row.id}-${other.username}`;
+                                          const offeredKey = `${row.id}-${other.username}-offered`;
+                                          const declinedKey = `${row.id}-${other.username}-declined`;
+                                          return (
+                                            <div className="sharing-row" key={other.username}>
+                                              <div className="sharing-row-header">
+                                                <span className="sharing-username">{other.username}</span>
+                                                <span className="sharing-their-state">
+                                                  {other.their_state === 'offered'
+                                                    ? 'ha scelto di condividere con te'
+                                                    : other.their_state === 'declined'
+                                                    ? 'ha rifiutato di condividere con te'
+                                                    : 'non ha ancora deciso'}
+                                                </span>
+                                                {other.mutually_shared && (
+                                                  <span className="sharing-mutual-badge">Condivisione reciproca attiva</span>
+                                                )}
+                                              </div>
+                                              <textarea
+                                                className="sharing-message"
+                                                placeholder="Messaggio facoltativo..."
+                                                rows={1}
+                                                value={sharingMessages[msgKey] || ''}
+                                                onChange={(e) =>
+                                                  setSharingMessages((prev) => ({ ...prev, [msgKey]: e.target.value }))
+                                                }
+                                              />
+                                              <div className="sharing-actions">
+                                                <button
+                                                  className={other.my_state === 'offered' ? 'sharing-active' : ''}
+                                                  disabled={sharingBusy[offeredKey]}
+                                                  onClick={() => setSharingWith(row, other.username, 'offered')}
+                                                >
+                                                  {other.my_state === 'offered' ? 'Condiviso ✓' : 'Condividi'}
+                                                </button>
+                                                <button
+                                                  className={other.my_state === 'declined' ? 'sharing-active' : ''}
+                                                  disabled={sharingBusy[declinedKey]}
+                                                  onClick={() => setSharingWith(row, other.username, 'declined')}
+                                                >
+                                                  {other.my_state === 'declined' ? 'Rifiutato' : 'Rifiuta'}
+                                                </button>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                    {sharingError[row.id] && (
+                                      <div className="archive-contact-result sharing-error">{sharingError[row.id]}</div>
                                     )}
                                   </div>
                                 )}
