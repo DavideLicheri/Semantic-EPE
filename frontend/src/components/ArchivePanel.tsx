@@ -188,6 +188,24 @@ const ArchivePanel = () => {
     }
   };
 
+  // Bug trovato con Davide il 09/08/2026: togglePublic/setSharingWith
+  // aggiornavano solo sharingStatuses (la sezione "condivisione"), ma la
+  // "Storia di vita dell'anello" viene da una chiamata separata
+  // (getAliasSummary, fatta una volta sola all'apertura dei dettagli) e
+  // restava quindi non aggiornata dopo un cambio di visibilita' -- la
+  // checkbox "pubblico" risultava spuntata ma la riga in storia di vita
+  // continuava a mostrare "Privato" finche' non si chiudeva e riapriva il
+  // dettaglio. Ora rinfreschiamo anche aliasSummaries dopo ogni azione.
+  const refreshAliasSummary = async (row: CanonicalRow) => {
+    if (row.alias_id == null) return;
+    try {
+      const summary = await EuringAPI.getAliasSummary(row.alias_id);
+      setAliasSummaries((prev) => ({ ...prev, [row.id]: summary }));
+    } catch {
+      // silenzioso: non deve bloccare l'aggiornamento dello stato di condivisione
+    }
+  };
+
   const togglePublic = async (row: CanonicalRow, isPublic: boolean) => {
     if (row.alias_id == null) return;
     const key = `${row.id}-public`;
@@ -195,7 +213,7 @@ const ArchivePanel = () => {
     setSharingError((prev) => ({ ...prev, [row.id]: '' }));
     try {
       await EuringAPI.setAliasPublic(row.alias_id, isPublic);
-      await refreshSharingStatus(row);
+      await Promise.all([refreshSharingStatus(row), refreshAliasSummary(row)]);
     } catch (err: any) {
       setSharingError((prev) => ({ ...prev, [row.id]: err.message || 'Aggiornamento fallito' }));
     } finally {
@@ -211,7 +229,7 @@ const ArchivePanel = () => {
     setSharingError((prev) => ({ ...prev, [row.id]: '' }));
     try {
       await EuringAPI.setAliasSharing(row.alias_id, toUsername, state, sharingMessages[msgKey] || undefined);
-      await refreshSharingStatus(row);
+      await Promise.all([refreshSharingStatus(row), refreshAliasSummary(row)]);
     } catch (err: any) {
       setSharingError((prev) => ({ ...prev, [row.id]: err.message || 'Aggiornamento fallito' }));
     } finally {
