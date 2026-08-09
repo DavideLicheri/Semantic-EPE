@@ -1185,7 +1185,7 @@ class DatabaseService:
                         alias_id, username, other_username,
                     )
                     their_intent = await conn.fetchrow(
-                        "SELECT state FROM alias_sharing_intent WHERE alias_id = $1 AND from_username = $2 AND to_username = $3",
+                        "SELECT state, message FROM alias_sharing_intent WHERE alias_id = $1 AND from_username = $2 AND to_username = $3",
                         alias_id, other_username, username,
                     )
                     others.append({
@@ -1193,6 +1193,11 @@ class DatabaseService:
                         "my_state": my_intent["state"] if my_intent else None,
                         "my_message": my_intent["message"] if my_intent else None,
                         "their_state": their_intent["state"] if their_intent else None,
+                        # Messaggio che l'ALTRO ha scritto verso di me -- bug
+                        # trovato in test 09/08/2026: prima si leggeva solo
+                        # their_state, il messaggio (motivo stesso del campo,
+                        # vedi migrazione 005) non arrivava mai al destinatario.
+                        "their_message": their_intent["message"] if their_intent else None,
                         "mutually_shared": bool(
                             my_intent and my_intent["state"] == "offered"
                             and their_intent and their_intent["state"] == "offered"

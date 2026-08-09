@@ -66,6 +66,7 @@ interface SharingOther {
   my_state: 'offered' | 'declined' | null;
   my_message: string | null;
   their_state: 'offered' | 'declined' | null;
+  their_message: string | null;
   mutually_shared: boolean;
 }
 
@@ -399,6 +400,11 @@ const ArchivePanel = () => {
                                                   <span className="sharing-mutual-badge">Condivisione reciproca attiva</span>
                                                 )}
                                               </div>
+                                              {other.their_message && (
+                                                <div className="sharing-received-message">
+                                                  Messaggio da {other.username}: "{other.their_message}"
+                                                </div>
+                                              )}
                                               <textarea
                                                 className="sharing-message"
                                                 placeholder="Messaggio facoltativo..."

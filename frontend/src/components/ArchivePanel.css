@@ -393,6 +393,16 @@
   border-radius: 10px;
 }
 
+.sharing-received-message {
+  font-size: 12px;
+  font-style: italic;
+  color: #663333;
+  background: #fff3cd;
+  border-radius: 4px;
+  padding: 5px 8px;
+  margin-bottom: 6px;
+}
+
 .sharing-message {
   width: 100%;
   font-family: inherit;
