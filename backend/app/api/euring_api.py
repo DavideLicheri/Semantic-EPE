@@ -39,6 +39,31 @@ semantic_field_grouper = SemanticFieldGrouper()
 domain_compatibility_assessor = DomainCompatibilityAssessor()
 lookup_table_service = LookupTableService()
 
+# Bug trovato con Davide il 09-10/08/2026: le chiamate a asyncio.create_task()
+# per l'archiviazione/logging in background non salvavano mai il riferimento
+# al task. Il loop asyncio tiene solo un riferimento debole -- senza un
+# riferimento forte altrove, il garbage collector puo' distruggere il task
+# PRIMA che finisca, in qualunque momento (comportamento noto e documentato
+# di asyncio). Sospettato essere la causa per cui la notifica generica di
+# "alias toccato" (_maybe_notify_alias_touch, verso la fine di
+# archive_string()) non produceva mai un log durante il test end-to-end del
+# redesign condivisione, pur avendo scritto correttamente su database (i
+# passaggi piu' veloci, all'inizio della funzione, completavano comunque).
+# Fix standard raccomandato dalla documentazione Python: tenere i task in un
+# insieme a livello di modulo, rimosso via callback al termine.
+_background_tasks: set = set()
+
+
+def _spawn_background(coro):
+    """Avvia una coroutine in background tenendo un riferimento forte al
+    task finche' non e' completa, per evitare che il garbage collector la
+    interrompa a meta' (vedi nota sopra)."""
+    task = asyncio.create_task(coro)
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
+    return task
+
+
 # Create router
 router = APIRouter(prefix="/api/euring", tags=["EURING"])
 
@@ -322,7 +347,7 @@ async def recognize_euring(
                     "processing_time_ms": processing_time
                 }
                 # Log asynchronously to avoid blocking the response
-                asyncio.create_task(usage_logger.log_query(
+                _spawn_background(usage_logger.log_query(
                     user=current_user,
                     query_type="recognition",
                     input_string=request.euring_string.strip(),
@@ -333,7 +358,7 @@ async def recognize_euring(
                 # (non blocca la risposta; se non si archivia non e' un errore,
                 # vedi archive_service.py)
                 if response.version:
-                    asyncio.create_task(archive_service.archive_string(
+                    _spawn_background(archive_service.archive_string(
                         request.euring_string.strip(),
                         response.version,
                         owner_username=current_user.username
@@ -355,7 +380,7 @@ async def recognize_euring(
                     "error": str(e),
                     "processing_time_ms": processing_time
                 }
-                asyncio.create_task(usage_logger.log_query(
+                _spawn_background(usage_logger.log_query(
                     user=current_user,
                     query_type="recognition",
                     input_string=request.euring_string if request.euring_string else "",
@@ -439,7 +464,7 @@ async def convert_euring(
                     "detected_version": request.source_version,
                     "processing_time_ms": processing_time
                 }
-                asyncio.create_task(usage_logger.log_query(
+                _spawn_background(usage_logger.log_query(
                     user=current_user,
                     query_type="conversion",
                     input_string=request.euring_string.strip(),
@@ -450,13 +475,13 @@ async def convert_euring(
                     # Si archiviano sia la stringa sorgente sia quella convertita
                     # (sono due stringhe EURING distinte, ciascuna deduplicata/
                     # archiviata a se' se si normalizza correttamente a 2020)
-                    asyncio.create_task(archive_service.archive_string(
+                    _spawn_background(archive_service.archive_string(
                         request.euring_string.strip(),
                         f"euring_{request.source_version}",
                         owner_username=current_user.username
                     ))
                     if response.converted_string:
-                        asyncio.create_task(archive_service.archive_string(
+                        _spawn_background(archive_service.archive_string(
                             response.converted_string,
                             f"euring_{request.target_version}",
                             owner_username=current_user.username
@@ -1992,14 +2017,14 @@ async def parse_euring_string(
                     "confidence": confidence,
                     "processing_time_ms": processing_time
                 }
-                asyncio.create_task(usage_logger.log_query(
+                _spawn_background(usage_logger.log_query(
                     user=current_user,
                     query_type="validation",
                     input_string=euring_string,
                     result=log_data,
                     processing_time=int(processing_time)
                 ))
-                asyncio.create_task(archive_service.archive_string(
+                _spawn_background(archive_service.archive_string(
                     euring_string, detected_version,
                     owner_username=current_user.username
                 ))
