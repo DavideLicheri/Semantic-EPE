@@ -2,11 +2,26 @@
 EURING Code Recognition System - Main FastAPI Application
 """
 import os
+import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 from contextlib import asynccontextmanager
+
+# Bug trovato con Davide il 10/08/2026: uvicorn(log_level=...) configura SOLO
+# i propri logger (uvicorn/uvicorn.access/uvicorn.error), non il root logger.
+# Senza logging.basicConfig() qui, ogni logger.info(...) usato nei servizi
+# applicativi (es. email_service.send_alias_touched_notification, "Would
+# notify: ...") viene scartato in silenzio -- il root logger di default e'
+# a livello WARNING e senza handler. Scoperto indagando perche' la notifica
+# generica di "alias toccato" (redesign condivisione, migrazione 005) non
+# produceva mai un log nonostante il dato venisse scritto correttamente.
+# Va chiamato prima che qualunque modulo emetta log (va bene qui, in cima).
+logging.basicConfig(
+    level=os.getenv("ECES_LOG_LEVEL", "info").upper(),
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 
 from app.api.euring_api import router as euring_router
 from app.api.auth_api import router as auth_router
