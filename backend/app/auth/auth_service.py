@@ -4,18 +4,18 @@ Authentication service for ECES
 import os
 import json
 import hashlib
+import bcrypt
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 from pathlib import Path
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from fastapi import HTTPException, status
 
 from .models import User, UserRole, Token, TokenData
 
 class AuthService:
     """Authentication service for ECES"""
-    
+
     def __init__(self):
         self.secret_key = os.getenv("ECES_SECRET_KEY", "eces-ispra-secret-key-2024")
         self.algorithm = "HS256"
@@ -25,10 +25,15 @@ class AuthService:
         # firma dei JWT (operazione di sicurezza normale) invalidava TUTTI
         # gli hash password esistenti, bloccando il login di ogni utente
         # incluso admin. Due concetti che non devono mai dipendere l'uno
-        # dall'altro. Ripristinato l'uso di bcrypt (gia' importato, mai
-        # attivato -- vedi verify_password/get_password_hash per la
-        # migrazione trasparente degli utenti esistenti).
-        self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
+        # dall'altro. Ripristinato l'uso di bcrypt per il nuovo schema.
+        # Usato bcrypt DIRETTAMENTE (non passlib.CryptContext): passlib
+        # 1.7.4 (requirements.txt) non e' compatibile con bcrypt>=4.x (bug
+        # noto, passlib non aggiornato dal 2020 -- rilevato in produzione
+        # il 13/08/2026 con bcrypt 5.0.0 installato: passlib segnalava
+        # erroneamente "password too long" anche per password di 5
+        # caratteri come "admin"). bcrypt.hashpw/checkpw e' l'API stabile
+        # di basso livello, nessuna dipendenza da passlib.
+        self.bcrypt_rounds = 12
 
         # Users database file
         self.users_file = Path("data/auth/users.json")
@@ -85,12 +90,16 @@ class AuthService:
         if self._is_legacy_password_hash(hashed_password):
             legacy_hash = hashlib.sha256((plain_password + self.secret_key).encode()).hexdigest()
             return legacy_hash == hashed_password
-        return self.pwd_context.verify(plain_password, hashed_password)
+        # bcrypt tronca a 72 byte per limite dell'algoritmo stesso (non un
+        # bug): troncamento esplicito e coerente tra hash e verify.
+        password_bytes = plain_password.encode("utf-8")[:72]
+        return bcrypt.checkpw(password_bytes, hashed_password.encode("utf-8"))
 
     def get_password_hash(self, password: str) -> str:
         """Hash password con bcrypt -- indipendente da ECES_SECRET_KEY,
         cosi' ruotare la chiave di firma dei JWT non blocca piu' i login."""
-        return self.pwd_context.hash(password)
+        password_bytes = password.encode("utf-8")[:72]
+        return bcrypt.hashpw(password_bytes, bcrypt.gensalt(rounds=self.bcrypt_rounds)).decode("utf-8")
 
     def authenticate_user(self, username: str, password: str) -> Optional[User]:
         """Authenticate user credentials"""
