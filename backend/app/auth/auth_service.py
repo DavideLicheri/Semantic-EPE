@@ -20,9 +20,16 @@ class AuthService:
         self.secret_key = os.getenv("ECES_SECRET_KEY", "eces-ispra-secret-key-2024")
         self.algorithm = "HS256"
         self.access_token_expire_minutes = 480  # 8 hours for ISPRA workday
-        # Use simple SHA256 hashing instead of bcrypt to avoid 72-byte limit
-        # self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
-        
+        # Bug trovato il 13/08/2026: lo schema precedente hashava le password
+        # con SHA256(password + ECES_SECRET_KEY) -- ruotare la chiave di
+        # firma dei JWT (operazione di sicurezza normale) invalidava TUTTI
+        # gli hash password esistenti, bloccando il login di ogni utente
+        # incluso admin. Due concetti che non devono mai dipendere l'uno
+        # dall'altro. Ripristinato l'uso di bcrypt (gia' importato, mai
+        # attivato -- vedi verify_password/get_password_hash per la
+        # migrazione trasparente degli utenti esistenti).
+        self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
+
         # Users database file
         self.users_file = Path("data/auth/users.json")
         self.users_file.parent.mkdir(parents=True, exist_ok=True)
@@ -65,15 +72,26 @@ class AuthService:
         with open(self.users_file, 'w') as f:
             json.dump(users, f, indent=2)
     
+    def _is_legacy_password_hash(self, hashed_password: str) -> bool:
+        """Gli hash bcrypt iniziano sempre con $2 (es. $2b$) -- qualunque
+        altra cosa e' il vecchio schema SHA256+secret_key, da migrare."""
+        return not hashed_password.startswith("$2")
+
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        """Verify password against hash using SHA256"""
-        password_hash = hashlib.sha256((plain_password + self.secret_key).encode()).hexdigest()
-        return password_hash == hashed_password
-    
+        """Verifica la password. Supporta sia bcrypt (nuovo schema,
+        indipendente da ECES_SECRET_KEY) sia il vecchio schema
+        SHA256(password+secret_key) per gli utenti non ancora migrati --
+        vedi authenticate_user per la migrazione automatica al login."""
+        if self._is_legacy_password_hash(hashed_password):
+            legacy_hash = hashlib.sha256((plain_password + self.secret_key).encode()).hexdigest()
+            return legacy_hash == hashed_password
+        return self.pwd_context.verify(plain_password, hashed_password)
+
     def get_password_hash(self, password: str) -> str:
-        """Hash password using SHA256"""
-        return hashlib.sha256((password + self.secret_key).encode()).hexdigest()
-    
+        """Hash password con bcrypt -- indipendente da ECES_SECRET_KEY,
+        cosi' ruotare la chiave di firma dei JWT non blocca piu' i login."""
+        return self.pwd_context.hash(password)
+
     def authenticate_user(self, username: str, password: str) -> Optional[User]:
         """Authenticate user credentials"""
         users = self._load_users()
@@ -89,7 +107,15 @@ class AuthService:
         
         if not self.verify_password(password, user_data["password_hash"]):
             return None
-        
+
+        # Migrazione trasparente al nuovo schema bcrypt (13/08/2026): se
+        # l'hash salvato e' ancora nel vecchio formato legato a
+        # ECES_SECRET_KEY, lo sostituiamo ora che sappiamo che la password
+        # in chiaro era corretta -- nessuna azione richiesta all'utente,
+        # avviene automaticamente al primo login riuscito dopo il deploy.
+        if self._is_legacy_password_hash(user_data["password_hash"]):
+            user_data["password_hash"] = self.get_password_hash(password)
+
         # Update last login
         user_data["last_login"] = datetime.now().isoformat()
         users[username] = user_data
