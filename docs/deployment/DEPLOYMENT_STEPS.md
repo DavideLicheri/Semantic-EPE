@@ -14,7 +14,7 @@ I seguenti file sono già stati caricati:
 ```bash
 ssh <VM_USER>@<VM_IP>
 ```
-Password: `***REMOVED***`
+Password: vedi gestore password (rimossa da qui il 14/08/2026 dopo un audit di sicurezza — era esposta in chiaro su un repository pubblico)
 
 ---
 
@@ -22,7 +22,7 @@ Password: `***REMOVED***`
 ```bash
 sudo su -
 ```
-Password: `***REMOVED***`
+Password: vedi gestore password
 
 ---
 

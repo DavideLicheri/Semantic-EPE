@@ -121,7 +121,7 @@ All use the `ECES_` prefix:
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `ECES_SECRET_KEY` | `eces-ispra-secret-key-2024` | JWT signing key |
+| `ECES_SECRET_KEY` | (nessun default sicuro — va sempre impostato con un valore casuale forte, es. `python3 -c "import secrets; print(secrets.token_urlsafe(64))"`; rimosso da qui il 14/08/2026 dopo audit di sicurezza, il valore precedente era pubblicato in chiaro) | JWT signing key |
 | `ECES_ENVIRONMENT` | `development` | Enables uvicorn reload when `development` |
 | `ECES_CORS_ORIGINS` | `http://localhost:3000,...` | Comma-separated allowed origins |
 | `ECES_HOST` / `ECES_PORT` | `0.0.0.0` / `8000` | Bind address |

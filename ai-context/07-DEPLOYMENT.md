@@ -6,7 +6,7 @@
 - **OS**: Ubuntu Server 22.04 LTS
 - **Accesso**: Solo rete interna ISPRA (richiede VPN FortiClient)
 - **User**: <VM_USER>
-- **Password**: ***REMOVED***
+- **Password**: vedi gestore password (rimossa da qui il 14/08/2026 dopo audit di sicurezza)
 - **Sudo**: Richiede password
 
 ## Architettura Deployment
@@ -186,13 +186,13 @@ npm run build
 tar -czf frontend-build.tar.gz -C dist .
 
 # Upload a server
-sshpass -p '***REMOVED***' scp frontend-build.tar.gz <VM_USER>@<VM_IP>:/tmp/
+sshpass -p "$VM_PASSWORD" scp frontend-build.tar.gz <VM_USER>@<VM_IP>:/tmp/
 
 # Estrai su server (via SSH)
-sshpass -p '***REMOVED***' ssh <VM_USER>@<VM_IP> << 'EOF'
-  echo '***REMOVED***' | sudo -S rm -rf /opt/eces/frontend/*
-  echo '***REMOVED***' | sudo -S tar -xzf /tmp/frontend-build.tar.gz -C /opt/eces/frontend/
-  echo '***REMOVED***' | sudo -S systemctl reload nginx
+sshpass -p "$VM_PASSWORD" ssh <VM_USER>@<VM_IP> << 'EOF'
+  echo "$VM_PASSWORD" | sudo -S rm -rf /opt/eces/frontend/*
+  echo "$VM_PASSWORD" | sudo -S tar -xzf /tmp/frontend-build.tar.gz -C /opt/eces/frontend/
+  echo "$VM_PASSWORD" | sudo -S systemctl reload nginx
   echo "Frontend deployed successfully"
 EOF
 ```
@@ -210,15 +210,15 @@ tar -czf backend-code.tar.gz \
   app/ data/ main.py requirements.txt
 
 # Upload
-sshpass -p '***REMOVED***' scp backend-code.tar.gz <VM_USER>@<VM_IP>:/tmp/
+sshpass -p "$VM_PASSWORD" scp backend-code.tar.gz <VM_USER>@<VM_IP>:/tmp/
 
 # Deploy su server
-sshpass -p '***REMOVED***' ssh <VM_USER>@<VM_IP> << 'EOF'
+sshpass -p "$VM_PASSWORD" ssh <VM_USER>@<VM_IP> << 'EOF'
   cd /opt/eces/backend
   tar -xzf /tmp/backend-code.tar.gz
   source venv/bin/activate
   pip install -r requirements.txt
-  echo '***REMOVED***' | sudo -S systemctl restart eces-backend
+  echo "$VM_PASSWORD" | sudo -S systemctl restart eces-backend
   echo "Backend deployed successfully"
 EOF
 ```
@@ -249,7 +249,7 @@ set -e
 
 SERVER="<VM_IP>"
 USER="<VM_USER>"
-PASSWORD="***REMOVED***"
+PASSWORD="${VM_PASSWORD:?Imposta VM_PASSWORD nell'ambiente, mai in chiaro qui}"
 
 echo "🚀 Starting ECES deployment to ISPRA server..."
 
@@ -322,9 +322,9 @@ ssh <VM_USER>@<VM_IP> "sudo tar -czf /opt/eces/frontend-backup-$(date +%Y%m%d-%H
 
 # Rollback
 ssh <VM_USER>@<VM_IP> << EOF
-  echo '***REMOVED***' | sudo -S rm -rf /opt/eces/frontend/*
-  echo '***REMOVED***' | sudo -S tar -xzf /opt/eces/frontend-backup-YYYYMMDD-HHMMSS.tar.gz -C /opt/eces/frontend/
-  echo '***REMOVED***' | sudo -S systemctl reload nginx
+  echo "$VM_PASSWORD" | sudo -S rm -rf /opt/eces/frontend/*
+  echo "$VM_PASSWORD" | sudo -S tar -xzf /opt/eces/frontend-backup-YYYYMMDD-HHMMSS.tar.gz -C /opt/eces/frontend/
+  echo "$VM_PASSWORD" | sudo -S systemctl reload nginx
 EOF
 ```
 
@@ -339,7 +339,7 @@ ssh <VM_USER>@<VM_IP> << EOF
   cd /opt/eces/backend
   rm -rf app/ data/ main.py
   tar -xzf /opt/eces/backend-backup-YYYYMMDD-HHMMSS.tar.gz
-  echo '***REMOVED***' | sudo -S systemctl restart eces-backend
+  echo "$VM_PASSWORD" | sudo -S systemctl restart eces-backend
 EOF
 ```
 
