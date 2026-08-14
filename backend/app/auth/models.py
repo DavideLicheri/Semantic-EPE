@@ -2,14 +2,22 @@
 Authentication models for ECES
 """
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
 class UserRole(str, Enum):
     """User roles in ECES system"""
     SUPER_ADMIN = "super_admin"      # Full access including matrix editing
-    ADMIN = "admin"                  # Administrative access, no matrix editing
+    # RINGS_ADMIN sostituisce il precedente ADMIN generico (14/08/2026,
+    # design piramide ruoli/livelli, docs/PROPOSTA_RUOLI_LIVELLI_CONDIVISIONE.md).
+    # Coordinatore di un centro di inanellamento: stessa capacita' di ADMIN
+    # (elenco utenti) + Livello 3 senza maschera sui dati del proprio
+    # ringing_scheme e/o territorio (vedi campi sotto). Eventuali utenti
+    # esistenti con valore "admin" salvato in users.json vanno migrati a
+    # "rings_admin" -- se il caricamento fallisce con un errore di validazione
+    # sul campo role, e' quello il sintomo.
+    RINGS_ADMIN = "rings_admin"
     USER = "user"                    # Standard user access
     VIEWER = "viewer"                # Read-only access
 
@@ -31,6 +39,24 @@ class User(BaseModel):
     # qui sotto li rende non-consenzienti automaticamente, senza bisogno di
     # nessuna migrazione dati sul file JSON.
     consents_to_aggregate_analysis: bool = False
+    # Campi per rings_admin (14/08/2026, design piramide ruoli/livelli).
+    # Irrilevanti per gli altri ruoli, sempre opzionali/vuoti per loro --
+    # stesso pattern non-migratorio del campo sopra: chi non ce li ha in
+    # users.json li ottiene di default da Pydantic al caricamento.
+    # ringing_scheme: il codice schema (tabella EURING ringing_scheme, 161
+    # voci) di cui questo rings_admin e' responsabile -- assegnato a mano dal
+    # super_admin, nessuna deduzione automatica.
+    ringing_scheme: Optional[str] = None
+    # territory_place_codes: place_code (tabella EURING, 2052 voci) su cui
+    # questo rings_admin ha visibilita' di Livello 3 anche per anelli non del
+    # proprio scheme. Deciso il 14/08/2026: per ora si assegna a livello di
+    # intera nazione (un solo place_code "tutto il paese"), non sub-regionale
+    # -- si puo' restringere in seguito, il campo stesso supporta gia' piu'
+    # voci per quel caso futuro. Il criterio "territorio" NON e' ancora
+    # confermato come convenzione reale dai centri EURING (Davide deve
+    # verificare) -- il campo dati esiste ma va usato con cautela finche' non
+    # confermato (docs/PROPOSTA_RUOLI_LIVELLI_CONDIVISIONE.md, punto aperto 1).
+    territory_place_codes: List[str] = []
 
 class UserLogin(BaseModel):
     """Login request model"""

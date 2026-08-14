@@ -10,7 +10,7 @@ from ..auth.models import (
     UserRegistration, UserRoleUpdate, UserListResponse, RegistrationResponse,
     PasswordChange, PasswordChangeResponse, ConsentUpdate, ConsentUpdateResponse
 )
-from ..auth.dependencies import get_current_active_user, require_super_admin, require_admin
+from ..auth.dependencies import get_current_active_user, require_super_admin, require_rings_admin
 from ..services.email_service import email_service
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
@@ -73,12 +73,12 @@ async def get_user_permissions(current_user: User = Depends(get_current_active_u
         "role": current_user.role,
         "permissions": {
             "can_view": True,
-            "can_use_recognition": current_user.role in [UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN],
-            "can_use_conversion": current_user.role in [UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN],
-            "can_view_matrix": current_user.role in [UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN],
+            "can_use_recognition": current_user.role in [UserRole.USER, UserRole.RINGS_ADMIN, UserRole.SUPER_ADMIN],
+            "can_use_conversion": current_user.role in [UserRole.USER, UserRole.RINGS_ADMIN, UserRole.SUPER_ADMIN],
+            "can_view_matrix": current_user.role in [UserRole.USER, UserRole.RINGS_ADMIN, UserRole.SUPER_ADMIN],
             "can_edit_matrix": current_user.role == UserRole.SUPER_ADMIN,
             "can_manage_users": current_user.role == UserRole.SUPER_ADMIN,
-            "can_access_admin": current_user.role in [UserRole.ADMIN, UserRole.SUPER_ADMIN]
+            "can_access_admin": current_user.role in [UserRole.RINGS_ADMIN, UserRole.SUPER_ADMIN]
         }
     }
 
@@ -291,7 +291,7 @@ async def delete_user_permanently(
 
 @router.get("/users")
 async def list_users(
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_rings_admin)
 ):
     """
     List all users (Admin and Super Admin only)
@@ -301,7 +301,7 @@ async def list_users(
 @router.get("/users/{username}")
 async def get_user(
     username: str,
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_rings_admin)
 ):
     """
     Get user information (Admin and Super Admin only)

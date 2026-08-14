@@ -88,11 +88,12 @@ async def get_current_user_optional(credentials: Optional[HTTPAuthorizationCrede
         return auth_service.get_user(token_data.username)
     except HTTPException:
         return None
-def require_admin(current_user: User = Depends(get_current_active_user)) -> User:
-    """Require Admin or Super Admin role"""
-    if current_user.role not in [UserRole.ADMIN, UserRole.SUPER_ADMIN]:
+def require_rings_admin(current_user: User = Depends(get_current_active_user)) -> User:
+    """Require Rings Admin or Super Admin role (rings_admin sostituisce il
+    precedente admin generico, 14/08/2026 -- vedi app/auth/models.py)"""
+    if current_user.role not in [UserRole.RINGS_ADMIN, UserRole.SUPER_ADMIN]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required"
+            detail="Rings Admin access required"
         )
     return current_user

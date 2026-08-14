@@ -226,7 +226,7 @@ class AuthService:
         role_hierarchy = {
             UserRole.VIEWER: 1,
             UserRole.USER: 2,
-            UserRole.ADMIN: 3,
+            UserRole.RINGS_ADMIN: 3,
             UserRole.SUPER_ADMIN: 4
         }
         
@@ -486,7 +486,7 @@ class AuthService:
         Args:
             admin_user: Admin user requesting the list (must be admin or super_admin)
         """
-        if admin_user.role not in [UserRole.ADMIN, UserRole.SUPER_ADMIN]:
+        if admin_user.role not in [UserRole.RINGS_ADMIN, UserRole.SUPER_ADMIN]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Accesso negato: privilegi amministrativi richiesti"
