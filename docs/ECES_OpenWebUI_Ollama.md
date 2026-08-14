@@ -250,7 +250,7 @@ Conversioni possibili: **12 combinazioni** (4 versioni × 3 target). Le conversi
 - **Servizio ECES:** gira come utente `eces` → modifiche a `/opt/eces/` richiedono `sudo`
 - **Repository GitHub:** `https://github.com/DavideLicheri/Semantic-EPE` *(privato)*
 - **Credenziali ECES API:** `admin` / `admin` — ⚠️ **da cambiare prima del go-live**
-- **PostgreSQL:** user `eces_user`, password `***REMOVED***`, DB `eces_analytics`
+- **PostgreSQL:** user `eces_user`, password: vedi gestore password (ruotata il 14/08/2026 dopo audit di sicurezza — era esposta in chiaro su repository pubblico), DB `eces_analytics`
 - **Lingua del bot:** italiano per default (configurato in system prompt)
 
 ---
