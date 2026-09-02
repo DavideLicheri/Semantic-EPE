@@ -36,6 +36,10 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
+.env.development
+.env.production
+.env.*.production
+.env.*.development
 
 # Testing
 coverage/
@@ -86,3 +90,4 @@ backend/data/usage/
 # credenziali di default, dettagli SSH -- decisione 30/07/2026)
 HANDOFF.md
 design_archivio_faccette.md
+frontend-build/
