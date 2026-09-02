@@ -47,7 +47,7 @@ interface EuringMatrixProps {
     username: string;
     email: string;
     full_name: string;
-    role: 'super_admin' | 'admin' | 'user' | 'viewer';
+    role: 'super_admin' | 'rings_admin' | 'user' | 'viewer';
     department?: string;
     is_active: boolean;
   } | null;
@@ -605,11 +605,11 @@ const EuringMatrix: React.FC<EuringMatrixProps> = ({ currentUser }) => {
               fontSize: '13px'
             }}>
               <span style={{ fontWeight: 'bold' }}>
-                👤 {currentUser.full_name} ({currentUser.role === 'super_admin' ? 'Super Admin' : currentUser.role === 'admin' ? 'Admin' : currentUser.role === 'user' ? 'User' : 'Viewer'})
+                👤 {currentUser.full_name} ({currentUser.role === 'super_admin' ? 'Super Admin' : currentUser.role === 'rings_admin' ? 'Operatore Centro di inanellamento' : currentUser.role === 'user' ? 'User' : 'Viewer'})
               </span>
               <span style={{ marginLeft: '10px', color: '#666' }}>
                 {currentUser.role === 'super_admin' && t('euring.user.edit_enabled')}
-                {currentUser.role === 'admin' && t('euring.user.read_only')}
+                {currentUser.role === 'rings_admin' && t('euring.user.read_only')}
                 {currentUser.role === 'user' && t('euring.user.read_only')}
                 {currentUser.role === 'viewer' && t('euring.user.read_only')}
               </span>

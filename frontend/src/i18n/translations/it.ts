@@ -377,7 +377,7 @@ export const itTranslations = {
   'profile.error.same_password': 'La nuova password deve essere diversa da quella attuale',
   'profile.error.change_failed': 'Errore durante il cambio password',
   'profile.role.super_admin': '👑 Super Admin',
-  'profile.role.admin': '🔧 Admin',
+  'profile.role.rings_admin': '🔧 Operatore Centro di inanellamento',
   'profile.role.user': '👤 User',
   'profile.role.viewer': '👁️ Viewer',
   'profile.consent.title': '🤖 Contributo alla conoscenza di Lizzy',

@@ -103,7 +103,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ currentUser, onClose }
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'super_admin': return t('profile.role.super_admin');
-      case 'admin': return t('profile.role.admin');
+      case 'rings_admin': return t('profile.role.rings_admin');
       case 'user': return t('profile.role.user');
       case 'viewer': return t('profile.role.viewer');
       default: return role;

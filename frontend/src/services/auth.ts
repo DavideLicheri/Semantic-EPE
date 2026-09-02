@@ -7,7 +7,7 @@ export interface User {
   username: string;
   email: string;
   full_name: string;
-  role: 'super_admin' | 'admin' | 'user' | 'viewer';
+  role: 'super_admin' | 'rings_admin' | 'user' | 'viewer';
   department?: string;
   is_active: boolean;
   created_at: string;

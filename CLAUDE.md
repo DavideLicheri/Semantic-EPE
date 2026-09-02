@@ -40,7 +40,7 @@ cd frontend
 npm install
 npm run dev      # Dev server on http://localhost:3000
 npm run build    # tsc + vite build → dist/
-npm run lint     # ESLint (0 warnings tolerance)
+npm run lint     # ESLint (config creata 02/09/2026, prima non esisteva; soglia --max-warnings 132 = baseline debito esistente di 'any', non 0)
 npm run preview  # Preview production build
 ```
 

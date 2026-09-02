@@ -24,6 +24,19 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
   const [filter, setFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
+  // Fix 02/09/2026: questo useEffect era dichiarato DOPO il return anticipato
+  // sotto (violazione delle Rules of Hooks -- un hook non puo' essere chiamato
+  // condizionatamente). Spostato prima del guard, con il controllo
+  // super_admin ora dentro il corpo dell'effetto: stesso comportamento
+  // (loadUsers parte solo per un super_admin), ordine degli hook stabile a
+  // ogni render.
+  useEffect(() => {
+    if (currentUser?.role === 'super_admin') {
+      loadUsers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
+
   // Check if current user is Super Admin
   if (!currentUser || currentUser.role !== 'super_admin') {
     return (
@@ -35,10 +48,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
       </div>
     );
   }
-
-  useEffect(() => {
-    loadUsers();
-  }, []);
 
   const loadUsers = async () => {
     try {
@@ -143,7 +152,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'super_admin': return '👑';
-      case 'admin': return '🔧';
+      case 'rings_admin': return '🔧';
       case 'user': return '👤';
       case 'viewer': return '👁️';
       default: return '❓';
@@ -153,10 +162,20 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'super_admin': return '#e74c3c';
-      case 'admin': return '#f39c12';
+      case 'rings_admin': return '#f39c12';
       case 'user': return '#3498db';
       case 'viewer': return '#95a5a6';
       default: return '#7f8c8d';
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'super_admin': return 'Super Admin';
+      case 'rings_admin': return 'Operatore Centro di inanellamento';
+      case 'user': return 'User';
+      case 'viewer': return 'Viewer';
+      default: return role;
     }
   };
 
@@ -217,10 +236,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
             Super Admin
           </button>
           <button
-            className={filter === 'admin' ? 'active' : ''}
-            onClick={() => setFilter('admin')}
+            className={filter === 'rings_admin' ? 'active' : ''}
+            onClick={() => setFilter('rings_admin')}
           >
-            Admin
+            Operatore Centro di inanellamento
           </button>
           <button
             className={filter === 'user' ? 'active' : ''}
@@ -263,7 +282,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
                   className="role-badge"
                   style={{ backgroundColor: getRoleColor(user.role) }}
                 >
-                  {getRoleIcon(user.role)} {user.role.replace('_', ' ').toUpperCase()}
+                  {getRoleIcon(user.role)} {getRoleLabel(user.role)}
                 </div>
 
                 <div className={`status-indicator ${user.is_active ? 'active' : 'inactive'}`}>
@@ -291,7 +310,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
                     >
                       <option value="viewer">👁️ Viewer</option>
                       <option value="user">👤 User</option>
-                      <option value="admin">🔧 Admin</option>
+                      <option value="rings_admin">🔧 Operatore Centro di inanellamento</option>
                       {user.role === 'super_admin' && (
                         <option value="super_admin">👑 Super Admin</option>
                       )}
