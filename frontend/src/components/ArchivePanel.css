@@ -190,6 +190,37 @@
   white-space: nowrap;
 }
 
+/* Priorita' #6 (02-04/09/2026): righe/eventi sotto Livello 3 non hanno piu'
+   canonical_string, solo masked_fields -- stile distinto dal monospace
+   usato per la stringa grezza, per non farli sembrare la stessa cosa. */
+.archive-string-masked {
+  white-space: normal;
+  font-family: inherit;
+}
+
+.level-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #f0e6e6;
+  color: #663333;
+  white-space: nowrap;
+  margin-right: 6px;
+}
+
+.archive-masked-fields {
+  font-size: 12px;
+  color: #555;
+}
+
+.life-history-masked {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .visibility-public {
   background: #e6f4ea;
   color: #1e7b34;

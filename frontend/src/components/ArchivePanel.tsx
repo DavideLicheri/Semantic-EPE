@@ -10,9 +10,15 @@ interface FacetValue {
 
 type Visibility = 'public' | 'private' | 'shared';
 
+// Priorita' #6 della scaletta (02-04/09/2026, piramide ruoli/livelli): le
+// righe non piu' a Livello 3 non portano canonical_string (mai la stringa
+// grezza sotto Livello 3, vincolo del documento di design) ma
+// masked_fields -- solo i campi dei domini permessi dal livello calcolato.
 interface CanonicalRow {
   id: number;
-  canonical_string: string;
+  canonical_string: string | null;
+  level: 1 | 2 | 3;
+  masked_fields: Record<string, string> | null;
   field_count: number;
   first_seen: string;
   last_seen: string;
@@ -43,14 +49,21 @@ interface LifeHistoryFullEvent {
   occurrence_count: number;
 }
 
-interface LifeHistoryHiddenEvent {
-  kind: 'hidden';
+// Sostituisce il precedente 'hidden' a 3 campi fissi con il mascheramento
+// a Livello 1/2 completo (priorita' #6, 02-04/09/2026) -- year/country/
+// species_code restano come carve-out anti-frode deciso con Davide il
+// 03/08/2026 (vedi database_service.get_alias_life_history), in aggiunta a
+// masked_fields, non al posto suo.
+interface LifeHistoryMaskedEvent {
+  kind: 'masked';
+  level: 1 | 2;
+  masked_fields: Record<string, string>;
   year: string | null;
   country: string | null;
   species_code: string | null;
 }
 
-type LifeHistoryEvent = LifeHistoryFullEvent | LifeHistoryHiddenEvent;
+type LifeHistoryEvent = LifeHistoryFullEvent | LifeHistoryMaskedEvent;
 
 interface AliasSummary {
   success: boolean;
@@ -80,6 +93,24 @@ const VISIBILITY_LABELS: Record<Visibility, string> = {
   public: 'Pubblico',
   private: 'Privato',
   shared: 'Condiviso',
+};
+
+// Priorita' #6 (02-04/09/2026): etichetta breve per il livello di dettaglio
+// mostrato al posto della stringa grezza sotto Livello 3.
+const LEVEL_LABELS: Record<1 | 2 | 3, string> = {
+  1: 'Livello 1 — specie e metodologia',
+  2: 'Livello 2 — + demografia, anello mascherato',
+  3: 'Livello 3 — completo',
+};
+
+// Rende leggibili i masked_fields (dizionario campo EURING -> valore) senza
+// dover conoscere in anticipo quali campi arriveranno -- lo stesso oggetto
+// puo' contenere domini diversi a seconda del livello.
+const formatMaskedFields = (fields: Record<string, string> | null | undefined): string => {
+  if (!fields) return '';
+  const entries = Object.entries(fields).filter(([key]) => key !== 'masked_alias_id');
+  if (entries.length === 0) return '';
+  return entries.map(([key, value]) => `${key}: ${value}`).join(' · ');
 };
 
 const FACET_LABELS: Record<string, string> = {
@@ -306,9 +337,20 @@ const ArchivePanel = () => {
                       return (
                         <Fragment key={row.id}>
                           <tr>
-                            <td className="archive-string-cell" title={row.canonical_string}>
-                              {row.canonical_string}
-                            </td>
+                            {row.level >= 3 ? (
+                              <td className="archive-string-cell" title={row.canonical_string || ''}>
+                                {row.canonical_string}
+                              </td>
+                            ) : (
+                              <td className="archive-string-cell archive-string-masked" title={formatMaskedFields(row.masked_fields)}>
+                                <span className="level-badge" title={LEVEL_LABELS[row.level]}>
+                                  {LEVEL_LABELS[row.level]}
+                                </span>
+                                <span className="archive-masked-fields">
+                                  {formatMaskedFields(row.masked_fields) || 'Nessun campo visibile a questo livello'}
+                                </span>
+                              </td>
+                            )}
                             <td>{row.field_count}</td>
                             <td>{new Date(row.first_seen).toLocaleDateString('it-IT')}</td>
                             <td>{row.occurrence_count}</td>
@@ -367,10 +409,18 @@ const ArchivePanel = () => {
                                               {ev.is_own && <span className="life-history-own">(tuo)</span>}
                                             </div>
                                           ) : (
-                                            <div className="life-history-item life-history-hidden" key={`hidden-${idx}`}>
-                                              <span className="life-history-placeholder">
-                                                {ev.year || '????'} · {ev.country || '??'} · specie {ev.species_code || '?'} — non condiviso
+                                            <div className="life-history-item life-history-masked" key={`masked-${idx}`}>
+                                              <span className="level-badge" title={LEVEL_LABELS[ev.level]}>
+                                                {LEVEL_LABELS[ev.level]}
                                               </span>
+                                              <span className="life-history-placeholder">
+                                                {ev.year || '????'} · {ev.country || '??'} · specie {ev.species_code || '?'}
+                                              </span>
+                                              {formatMaskedFields(ev.masked_fields) && (
+                                                <span className="archive-masked-fields">
+                                                  {formatMaskedFields(ev.masked_fields)}
+                                                </span>
+                                              )}
                                             </div>
                                           )
                                         )}

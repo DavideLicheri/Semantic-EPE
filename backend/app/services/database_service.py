@@ -12,18 +12,45 @@ from datetime import datetime, date, timedelta
 from pathlib import Path
 import os
 
-from ..auth.models import User
+from ..auth.models import User, UserRole
+from ..models.euring_models import SemanticDomain
+from .skos_manager import SKOSManagerImpl
 
 logger = logging.getLogger(__name__)
 
+# Priorita' #6 della scaletta (02-04/09/2026), piramide ruoli/livelli --
+# vedi docs/PROPOSTA_RUOLI_LIVELLI_CONDIVISIONE.md. I 3 livelli di dettaglio
+# sui 7 domini semantici EURING 2020:
+#   Livello 1: SOLO species + methodology. Nessun identificativo.
+#   Livello 2: Livello 1 + demographics + identification_marking MASCHERATO
+#              (mai scheme/numero anello reale -- alias_id al suo posto).
+#   Livello 3: tutti i 7 domini, identification_marking in chiaro.
+# Principio: se un livello include un dominio, lo include per intero (mai
+# singoli campi scelti dentro un dominio).
+_LEVEL_1_DOMAINS = {SemanticDomain.SPECIES.value, SemanticDomain.METHODOLOGY.value}
+_LEVEL_2_EXTRA_DOMAINS = {SemanticDomain.DEMOGRAPHICS.value, SemanticDomain.IDENTIFICATION_MARKING.value}
+
+# Nomi campo EAV (euring_2020_field_values.field_name) usati per
+# l'elevazione a Livello 3 di un rings_admin (vedi _resolve_visibility_level
+# e le query sotto) -- stessi nomi gia' in uso in ARCHIVE_FACET_FIELDS
+# (euring_api.py) e nei parsed_fields di get_alias_life_history.
+_RINGING_SCHEME_FIELD = "ringing scheme"
+_PLACE_CODE_FIELD = "place code"
+
 class DatabaseService:
     """Service per gestione database PostgreSQL analytics"""
-    
+
     def __init__(self):
         self.pool: Optional[asyncpg.Pool] = None
         self.db_url = self._get_database_url()
         self.is_enabled = os.getenv("ENABLE_DATABASE_LOGGING", "false").lower() == "true"
-        
+        # Cache dominio->field_names per euring_2020, usata dal mascheramento
+        # a livelli (priorita' #6). Istanza separata da quella di
+        # euring_api.py/auth_api.py, stesso pattern gia' in uso altrove: sola
+        # lettura, nessuno stato condiviso da sincronizzare.
+        self._skos_manager = SKOSManagerImpl()
+        self._domain_field_map_cache: Optional[Dict[str, List[str]]] = None
+
     def _get_database_url(self) -> str:
         """Costruisce URL database da variabili ambiente"""
         host = os.getenv("DB_HOST", "localhost")
@@ -556,9 +583,144 @@ class DatabaseService:
         except Exception as e:
             logger.error(f"Failed to link unique_strings to canonical: {e}")
 
+    async def _get_domain_field_map(self) -> Dict[str, List[str]]:
+        """
+        Cache dominio->field_names (nomi EAV, es. 'ringing scheme') per
+        euring_2020 -- usata dal mascheramento a livelli (priorita' #6,
+        02-04/09/2026). Caricata una volta sola per processo, come il
+        pattern gia' in uso per la validazione codici in auth_api.py.
+        """
+        if self._domain_field_map_cache is not None:
+            return self._domain_field_map_cache
+
+        await self._skos_manager.load_version_model()
+        versions = await self._skos_manager.get_all_versions()
+        candidates = [v for v in versions if v.year == 2020]
+        target = max(candidates, key=lambda v: len(v.field_definitions)) if candidates else None
+
+        mapping: Dict[str, List[str]] = {}
+        if target:
+            for f in target.field_definitions:
+                if f.semantic_domain:
+                    mapping.setdefault(f.semantic_domain.value, []).append(f.name)
+
+        self._domain_field_map_cache = mapping
+        return mapping
+
+    def _rings_admin_elevation_sql(self, alias_id_expr: str, scheme_param: str, territory_param: str) -> str:
+        """
+        Frammento SQL booleano per l'elevazione a Livello 3 di un rings_admin
+        (docs/PROPOSTA_RUOLI_LIVELLI_CONDIVISIONE.md): vero se ALMENO UN
+        evento della storia di vita dell'alias (alias_id_expr, es. "c.alias_id")
+        ha ringing_scheme o place_code coincidenti con quelli assegnati al
+        rings_admin richiedente (PUT /api/auth/users/rings-admin-assignment).
+        scheme_param/territory_param sono placeholder gia' pronti (es. "$3",
+        "$4") -- possono essere NULL (rings_admin senza assegnazione, o
+        richiedente di altro ruolo passato come NULL dal chiamante): in quel
+        caso il relativo OR e' semplicemente sempre falso, nessuna elevazione.
+        """
+        return f"""(
+            (
+                {scheme_param}::text IS NOT NULL AND EXISTS (
+                    SELECT 1 FROM euring_2020_field_values rsf
+                    JOIN euring_2020_canonical rsc ON rsc.id = rsf.canonical_id
+                    WHERE rsc.alias_id = {alias_id_expr}
+                      AND rsf.field_name = '{_RINGING_SCHEME_FIELD}' AND rsf.field_value = {scheme_param}
+                )
+            ) OR (
+                {territory_param}::text IS NOT NULL AND EXISTS (
+                    SELECT 1 FROM euring_2020_field_values rpf
+                    JOIN euring_2020_canonical rpc ON rpc.id = rpf.canonical_id
+                    WHERE rpc.alias_id = {alias_id_expr}
+                      AND rpf.field_name = '{_PLACE_CODE_FIELD}' AND rpf.field_value = {territory_param}
+                )
+            )
+        )"""
+
+    def _resolve_visibility_level(
+        self, is_own: bool, is_public: bool, is_shared: bool,
+        rings_admin_elevated: bool, role: Optional["UserRole"],
+    ) -> int:
+        """
+        Livello 1/2/3 finale per una riga (priorita' #6). Le 4 condizioni di
+        elevazione (proprietario, reso pubblico, condiviso mirato reciproco,
+        rings_admin con un evento dell'alias nel proprio scheme/territorio)
+        portano SEMPRE a Livello 3, indipendentemente dal ruolo. Altrimenti
+        il livello di default dipende dal ruolo (tabella del documento di
+        design): viewer=1, user=2, rings_admin=2 (elevazione gia' gestita
+        sopra), super_admin=3 su tutto.
+
+        Nota: questa funzione presuppone requesting_user non None -- per
+        l'anonimo il WHERE delle query sotto resta binario/solo-pubblico
+        (decisione di Davide 04/09/2026, invariata rispetto a prima), quindi
+        ogni riga che arriva fin qui per un anonimo e' gia' is_public=True.
+        """
+        if is_own or is_public or is_shared or rings_admin_elevated:
+            return 3
+        if role == UserRole.SUPER_ADMIN:
+            return 3
+        if role in (UserRole.RINGS_ADMIN, UserRole.USER):
+            return 2
+        return 1  # viewer, o ruolo non riconosciuto -- il piu' restrittivo
+
+    async def _build_masked_fields_batch(
+        self, conn, levels_by_canonical_id: Dict[int, int], alias_by_canonical_id: Dict[int, int],
+    ) -> Dict[int, Dict[str, Any]]:
+        """
+        Costruisce, per ogni canonical_id sotto Livello 3, un dizionario
+        field_name->field_value con SOLO i campi dei domini permessi dal
+        livello calcolato -- MAI a partire da canonical_string (vincolo del
+        documento di design: il mascheramento non redige la stringa grezza,
+        costruisce un oggetto nuovo dai soli campi ammessi, letto dalla
+        tabella EAV euring_2020_field_values che gia' esiste per questo).
+
+        Le righe a Livello 3 non compaiono nel risultato -- per quelle il
+        chiamante continua a restituire canonical_string per intero, come
+        prima di questa modifica.
+
+        A Livello 2, identification_marking non viene MAI incluso con il
+        valore reale (scheme/numero anello) -- sostituito da un
+        `masked_alias_id` stabile (l'alias_id interno, gia' esistente e
+        indipendente dallo scheme/numero reale).
+        """
+        ids_to_mask = [cid for cid, lvl in levels_by_canonical_id.items() if lvl < 3]
+        if not ids_to_mask:
+            return {}
+
+        domain_map = await self._get_domain_field_map()
+        level1_fields = set(domain_map.get(SemanticDomain.SPECIES.value, [])) | \
+            set(domain_map.get(SemanticDomain.METHODOLOGY.value, []))
+        level2_fields = set(domain_map.get(SemanticDomain.DEMOGRAPHICS.value, []))
+        all_needed = level1_fields | level2_fields
+
+        result: Dict[int, Dict[str, Any]] = {cid: {} for cid in ids_to_mask}
+
+        if all_needed:
+            rows = await conn.fetch(
+                """
+                SELECT canonical_id, field_name, field_value
+                FROM euring_2020_field_values
+                WHERE canonical_id = ANY($1) AND field_name = ANY($2)
+                """,
+                ids_to_mask,
+                list(all_needed),
+            )
+            for r in rows:
+                cid = r["canonical_id"]
+                level = levels_by_canonical_id[cid]
+                fname = r["field_name"]
+                if fname in level1_fields or (level >= 2 and fname in level2_fields):
+                    result[cid][fname] = r["field_value"]
+
+        for cid in ids_to_mask:
+            if levels_by_canonical_id[cid] >= 2:
+                result[cid]["masked_alias_id"] = alias_by_canonical_id.get(cid)
+
+        return result
+
     async def search_canonical_2020(
         self, filters: Dict[str, str], page: int, page_size: int,
-        requesting_username: Optional[str] = None,
+        requesting_user: Optional[User] = None,
     ) -> Dict[str, Any]:
         """
         Ricerca a faccette sull'archivio canonico EURING 2020.
@@ -569,23 +731,31 @@ class DatabaseService:
         per esprimere "un canonical_id deve avere una riga EAV corrispondente
         per OGNI filtro" senza self-join multipli.
 
-        requesting_username: se fornito, i risultati sono limitati ai record
-        propri, di alias resi pubblici dal proprietario, o condivisi in modo
-        mirato e reciproco con questo utente. Se None (utente anonimo), SOLO i
-        record di alias resi pubblici. **Bug di privacy corretto 30/07/2026**:
-        prima di questa modifica il metodo ignorava del tutto owner_username/
-        visibility e restituiva sempre l'intero archivio a chiunque,
-        indipendentemente da chi chiamava /archive/search (HANDOFF.md, punti
-        6-11). **Redesign 07/08/2026 (migrazione 005)**: la colonna
-        `visibility` non e' piu' letta qui -- la visibilita' effettiva si
-        calcola da alias_owner_visibility (pubblico, per alias+proprietario) e
-        alias_sharing_intent (condivisione mirata, reciproca per costruzione)
-        invece che dalla vecchia condivisione automatica.
+        requesting_user: se fornito (utente loggato), la query NON esclude
+        piu' nessuna riga per visibilita' -- **decisione di Davide,
+        04/09/2026**: qualunque utente loggato vede almeno il Livello 1
+        (mascherato) di TUTTO l'archivio, coerente con la tabella ruoli del
+        documento di design (viewer=Livello 1 di default). Il risultato per
+        riga porta invece un campo `level` (1/2/3) e, sotto Livello 3,
+        `masked_fields` al posto di `canonical_string` (mai la stringa grezza
+        sotto Livello 3, vincolo esplicito del documento di design).
+        Se None (utente anonimo), il comportamento resta quello di prima
+        (**invariato per decisione di Davide**): SOLO i record di alias resi
+        pubblici, per intero. **Bug di privacy corretto 30/07/2026**: prima
+        di quella correzione il metodo ignorava del tutto owner_username/
+        visibility e restituiva sempre l'intero archivio a chiunque
+        (HANDOFF.md, punti 6-11). **Redesign 07/08/2026 (migrazione 005)**:
+        la colonna `visibility` non e' letta -- calcolata da
+        alias_owner_visibility/alias_sharing_intent. **Redesign 02-04/09/2026
+        (priorita' #6)**: aggiunto il calcolo del livello di dettaglio e il
+        mascheramento per dominio, vedi _resolve_visibility_level/
+        _build_masked_fields_batch sopra e docs/PROPOSTA_RUOLI_LIVELLI_CONDIVISIONE.md.
         """
         if not self.pool:
             return {"total": 0, "results": []}
 
         offset = max(0, (page - 1) * page_size)
+        requesting_username = requesting_user.username if requesting_user else None
 
         try:
             async with self.pool.acquire() as conn:
@@ -596,36 +766,17 @@ class DatabaseService:
 
                 if requesting_username:
                     vis_idx = len(field_params) + 1
-                    visibility_clause = f"""(
-                        c.owner_username = ${vis_idx}
-                        OR EXISTS (
-                            SELECT 1 FROM alias_owner_visibility av
-                            WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
-                              AND av.is_public = true
-                        )
-                        OR (
-                            c.owner_username IS NOT NULL AND EXISTS (
-                                SELECT 1 FROM alias_sharing_intent si1
-                                WHERE si1.alias_id = c.alias_id AND si1.from_username = c.owner_username
-                                  AND si1.to_username = ${vis_idx} AND si1.state = 'offered'
-                            ) AND EXISTS (
-                                SELECT 1 FROM alias_sharing_intent si2
-                                WHERE si2.alias_id = c.alias_id AND si2.from_username = ${vis_idx}
-                                  AND si2.to_username = c.owner_username AND si2.state = 'offered'
-                            )
-                        )
+                    scheme_idx = vis_idx + 1
+                    territory_idx = vis_idx + 2
+
+                    is_own_expr = f"(c.owner_username = ${vis_idx})"
+                    is_public_expr = """EXISTS (
+                        SELECT 1 FROM alias_owner_visibility av
+                        WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
+                          AND av.is_public = true
                     )"""
-                    visibility_params = [requesting_username]
-                    # Etichetta da mostrare in tabella (pubblico/condiviso/privato),
-                    # calcolata dalle stesse due tabelle -- non piu' c.visibility
-                    # (ormai vestigiale, redesign 07/08/2026, migrazione 005).
-                    visibility_select = f"""CASE
-                        WHEN EXISTS (
-                            SELECT 1 FROM alias_owner_visibility av
-                            WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
-                              AND av.is_public = true
-                        ) THEN 'public'
-                        WHEN c.owner_username IS NOT NULL AND c.owner_username != ${vis_idx} AND EXISTS (
+                    is_shared_expr = f"""(
+                        c.owner_username IS NOT NULL AND EXISTS (
                             SELECT 1 FROM alias_sharing_intent si1
                             WHERE si1.alias_id = c.alias_id AND si1.from_username = c.owner_username
                               AND si1.to_username = ${vis_idx} AND si1.state = 'offered'
@@ -633,17 +784,51 @@ class DatabaseService:
                             SELECT 1 FROM alias_sharing_intent si2
                             WHERE si2.alias_id = c.alias_id AND si2.from_username = ${vis_idx}
                               AND si2.to_username = c.owner_username AND si2.state = 'offered'
-                        ) THEN 'shared'
+                        )
+                    )"""
+                    rings_admin_elevated_expr = self._rings_admin_elevation_sql(
+                        "c.alias_id", f"${scheme_idx}", f"${territory_idx}"
+                    )
+                    # Etichetta da mostrare in tabella (pubblico/condiviso/privato),
+                    # calcolata dalle stesse due tabelle -- non piu' c.visibility
+                    # (ormai vestigiale, redesign 07/08/2026, migrazione 005).
+                    # Nota: NON riflette il livello di dettaglio (vedi `level`
+                    # sotto) -- resta un'etichetta indipendente sulla relazione
+                    # proprietario/richiedente, come prima di questa modifica.
+                    visibility_select = f"""CASE
+                        WHEN {is_public_expr} THEN 'public'
+                        WHEN c.owner_username IS NOT NULL AND c.owner_username != ${vis_idx} AND {is_shared_expr} THEN 'shared'
                         ELSE 'private'
                     END"""
+                    visibility_params = [
+                        requesting_username,
+                        requesting_user.ringing_scheme,
+                        requesting_user.territory_place_codes[0] if requesting_user.territory_place_codes else None,
+                    ]
+                    select_extra = f"""
+                           {is_own_expr} AS is_own,
+                           {is_public_expr} AS is_public,
+                           {is_shared_expr} AS is_shared,
+                           {rings_admin_elevated_expr} AS rings_admin_elevated
+                    """
+                    # Nessuna esclusione per visibilita': qualunque utente
+                    # loggato vede almeno il Livello 1 mascherato di ogni
+                    # riga (decisione di Davide 04/09/2026) -- il WHERE filtra
+                    # solo per i filtri di ricerca, non per visibilita'.
+                    visibility_where = None
                 else:
-                    visibility_clause = """EXISTS (
+                    visibility_where = """EXISTS (
                         SELECT 1 FROM alias_owner_visibility av
                         WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
                           AND av.is_public = true
                     )"""
                     visibility_params = []
                     visibility_select = "'public'"
+                    # WHERE (visibility_where sopra) restringe gia' l'anonimo
+                    # ai soli record pubblici -- is_public=true e' quindi
+                    # sempre corretto qui, is_own/is_shared/elevated non si
+                    # applicano a un richiedente senza identita'.
+                    select_extra = "false AS is_own, true AS is_public, false AS is_shared, false AS rings_admin_elevated"
 
                 if pairs:
                     placeholders = ", ".join(
@@ -655,21 +840,30 @@ class DatabaseService:
                         GROUP BY canonical_id
                         HAVING COUNT(DISTINCT field_name) = {len(pairs)}
                     """
-                    where_clause = f"c.id IN ({id_subquery}) AND {visibility_clause}"
+                    where_clause = f"c.id IN ({id_subquery})"
                 else:
-                    where_clause = visibility_clause
+                    where_clause = "TRUE"
+                if visibility_where:
+                    where_clause = f"{where_clause} AND {visibility_where}"
 
                 all_params = field_params + visibility_params
 
+                # Il WHERE del conteggio usa solo field_params (id_subquery
+                # sui filtri) -- mai i placeholder di visibilita'/scheme/
+                # territorio, che compaiono solo nella SELECT della query
+                # sotto, non nel WHERE. Passare *all_params qui darebbe un
+                # mismatch di parametri in asyncpg (piu' argomenti passati
+                # di quanti placeholder referenziati nel testo della query).
                 total = await conn.fetchval(
                     f"SELECT COUNT(*) FROM euring_2020_canonical c WHERE {where_clause}",
-                    *all_params,
+                    *field_params,
                 )
                 rows = await conn.fetch(
                     f"""
                     SELECT c.id, c.canonical_string, c.field_count,
                            c.first_seen, c.last_seen, c.occurrence_count,
-                           {visibility_select} AS visibility, c.alias_id
+                           {visibility_select} AS visibility, c.alias_id,
+                           {select_extra}
                     FROM euring_2020_canonical c
                     WHERE {where_clause}
                     ORDER BY c.first_seen DESC
@@ -680,9 +874,36 @@ class DatabaseService:
                     offset,
                 )
 
+                role = requesting_user.role if requesting_user else None
+                levels_by_id: Dict[int, int] = {}
+                alias_by_id: Dict[int, int] = {}
+                for r in rows:
+                    level = self._resolve_visibility_level(
+                        r["is_own"], r["is_public"], r["is_shared"], r["rings_admin_elevated"], role
+                    )
+                    levels_by_id[r["id"]] = level
+                    alias_by_id[r["id"]] = r["alias_id"]
+
+                masked_by_id = await self._build_masked_fields_batch(conn, levels_by_id, alias_by_id)
+
+                results = []
+                for r in rows:
+                    row = dict(r)
+                    level = levels_by_id[row["id"]]
+                    row["level"] = level
+                    # Campi di lavoro non da esporre nella risposta API.
+                    for internal_key in ("is_own", "is_public", "is_shared", "rings_admin_elevated"):
+                        row.pop(internal_key, None)
+                    if level < 3:
+                        row["canonical_string"] = None
+                        row["masked_fields"] = masked_by_id.get(row["id"], {})
+                    else:
+                        row["masked_fields"] = None
+                    results.append(row)
+
                 return {
                     "total": total or 0,
-                    "results": [dict(r) for r in rows],
+                    "results": results,
                 }
         except Exception as e:
             logger.error(f"Failed to search euring_2020_canonical: {e}")
@@ -690,60 +911,111 @@ class DatabaseService:
 
     async def facet_counts_2020(
         self, field_names: List[str], filters: Dict[str, str],
-        requesting_username: Optional[str] = None,
+        requesting_user: Optional[User] = None,
     ) -> Dict[str, List[Dict[str, Any]]]:
         """
         Conteggi per faccetta su un elenco curato di campi (vedi
         ARCHIVE_FACET_FIELDS in euring_api.py). Prima versione: calcolati
-        sull'intero archivio VISIBILE a requesting_username (non ricalcolati
-        in base ai filtri gia' attivi -- semplificazione nota, una vera
+        sull'intero archivio VISIBILE a requesting_user (non ricalcolati in
+        base ai filtri gia' attivi -- semplificazione nota, una vera
         implementazione "drill down" escluderebbe il filtro sul campo stesso
         quando conta le sue faccette).
 
-        requesting_username: stessa semantica di search_canonical_2020 --
-        None = solo record di alias resi pubblici (bug di privacy corretto
-        30/07/2026, prima i conteggi includevano anche i record privati/
-        condivisi altrui). **Redesign 07/08/2026 (migrazione 005)**: stessa
-        logica a due tabelle (alias_owner_visibility/alias_sharing_intent) di
-        search_canonical_2020, non piu' la colonna `visibility`.
+        requesting_user: None = solo record di alias resi pubblici,
+        **invariato per decisione di Davide 04/09/2026** (bug di privacy
+        corretto 30/07/2026, i conteggi non includono mai record privati/
+        condivisi altrui per un anonimo). **Redesign 02-04/09/2026 (priorita'
+        #6)**: per un utente loggato, ogni campo viene contato SOLO dalle
+        righe il cui livello di dettaglio (Livello 1/2/3, stessa logica di
+        search_canonical_2020) copre il dominio semantico di quel campo --
+        es. 'ringing scheme' (dominio identification_marking) non viene mai
+        contato da righe sotto Livello 3, altrimenti la distribuzione
+        aggregata rivelerebbe scheme reali anche quando la riga singola e'
+        mascherata. Il livello di default del ruolo (senza elevazione) e'
+        costante per l'intera richiesta -- se copre gia' il dominio del
+        campo, nessuna restrizione e' necessaria; altrimenti contano solo le
+        righe elevate a Livello 3 (proprie/pubbliche/condivise/rings_admin
+        con match di scheme/territorio).
         """
         if not self.pool:
             return {}
 
-        if requesting_username:
-            visibility_clause = """(
-                c.owner_username = $2
-                OR EXISTS (
-                    SELECT 1 FROM alias_owner_visibility av
-                    WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
-                      AND av.is_public = true
-                )
-                OR (
-                    c.owner_username IS NOT NULL AND EXISTS (
-                        SELECT 1 FROM alias_sharing_intent si1
-                        WHERE si1.alias_id = c.alias_id AND si1.from_username = c.owner_username
-                          AND si1.to_username = $2 AND si1.state = 'offered'
-                    ) AND EXISTS (
-                        SELECT 1 FROM alias_sharing_intent si2
-                        WHERE si2.alias_id = c.alias_id AND si2.from_username = $2
-                          AND si2.to_username = c.owner_username AND si2.state = 'offered'
-                    )
-                )
-            )"""
+        requesting_username = requesting_user.username if requesting_user else None
+
+        if requesting_user and requesting_user.role == UserRole.SUPER_ADMIN:
+            default_level = 3
+        elif requesting_user and requesting_user.role in (UserRole.RINGS_ADMIN, UserRole.USER):
+            default_level = 2
+        elif requesting_user:
+            default_level = 1  # viewer
         else:
-            visibility_clause = """EXISTS (
+            default_level = 0  # anonimo, gestito a parte sotto
+
+        domain_map = await self._get_domain_field_map()
+        field_to_domain: Dict[str, str] = {}
+        for domain, fields in domain_map.items():
+            for f in fields:
+                field_to_domain[f] = domain
+
+        def required_level_for(field_name: str) -> int:
+            domain = field_to_domain.get(field_name)
+            if domain in (SemanticDomain.SPECIES.value, SemanticDomain.METHODOLOGY.value):
+                return 1
+            if domain == SemanticDomain.DEMOGRAPHICS.value:
+                return 2
+            # identification_marking, temporal, spatial, biometrics, o
+            # dominio sconosciuto: mai in un conteggio aggregato sotto
+            # Livello 3 -- il piu' restrittivo, coerente col vincolo "mai
+            # valori reali di un dominio mascherato, nemmeno aggregati".
+            return 3
+
+        if requesting_username:
+            # $1 e' sempre field_name (vedi sotto) -- $2/$3/$4 fissi qui
+            # perche' a differenza di search_canonical_2020 non c'e' un
+            # numero variabile di filtri prima di questi placeholder.
+            is_own_expr = "(c.owner_username = $2)"
+            is_public_expr = """EXISTS (
                 SELECT 1 FROM alias_owner_visibility av
                 WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
                   AND av.is_public = true
             )"""
+            is_shared_expr = """(
+                c.owner_username IS NOT NULL AND EXISTS (
+                    SELECT 1 FROM alias_sharing_intent si1
+                    WHERE si1.alias_id = c.alias_id AND si1.from_username = c.owner_username
+                      AND si1.to_username = $2 AND si1.state = 'offered'
+                ) AND EXISTS (
+                    SELECT 1 FROM alias_sharing_intent si2
+                    WHERE si2.alias_id = c.alias_id AND si2.from_username = $2
+                      AND si2.to_username = c.owner_username AND si2.state = 'offered'
+                )
+            )"""
+            rings_admin_elevated_expr = self._rings_admin_elevation_sql("c.alias_id", "$3", "$4")
+            elevation_clause = f"({is_own_expr} OR {is_public_expr} OR {is_shared_expr} OR {rings_admin_elevated_expr})"
+            elevation_params = [
+                requesting_username,
+                requesting_user.ringing_scheme,
+                requesting_user.territory_place_codes[0] if requesting_user.territory_place_codes else None,
+            ]
+        else:
+            elevation_clause = """EXISTS (
+                SELECT 1 FROM alias_owner_visibility av
+                WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
+                  AND av.is_public = true
+            )"""
+            elevation_params = []
 
         try:
             async with self.pool.acquire() as conn:
                 result: Dict[str, List[Dict[str, Any]]] = {}
                 for field_name in field_names:
-                    params: List[Any] = [field_name]
-                    if requesting_username:
-                        params.append(requesting_username)
+                    needed = required_level_for(field_name)
+                    if requesting_user and default_level >= needed:
+                        visibility_sql = ""
+                        params: List[Any] = [field_name]
+                    else:
+                        visibility_sql = f"AND {elevation_clause}"
+                        params = [field_name] + elevation_params
                     rows = await conn.fetch(
                         f"""
                         SELECT fv.field_value, COUNT(*) as cnt
@@ -751,7 +1023,7 @@ class DatabaseService:
                         JOIN euring_2020_canonical c ON c.id = fv.canonical_id
                         WHERE fv.field_name = $1
                           AND fv.field_value IS NOT NULL AND fv.field_value != ''
-                          AND {visibility_clause}
+                          {visibility_sql}
                         GROUP BY fv.field_value
                         ORDER BY cnt DESC
                         LIMIT 20
@@ -840,16 +1112,21 @@ class DatabaseService:
             return {"total_occurrences": 0, "distinct_schemes": 0, "schemes": []}
 
     async def get_visible_events_for_alias(
-        self, alias_id: int, requesting_username: Optional[str]
+        self, alias_id: int, requesting_user: Optional[User]
     ) -> List[Dict[str, Any]]:
         """
-        Eventi per un dato alias_id (anello) visibili PER INTERO a
-        requesting_username: pubblici, propri, o condivisi con lui.
-        requesting_username=None (utente anonimo) -> solo pubblici.
+        Eventi per un dato alias_id (anello) visibili PER INTERO (Livello 3)
+        a requesting_user: pubblici, propri, condivisi con lui, oppure -- se
+        e' un rings_admin -- se ALMENO UN evento della storia di vita
+        dell'alias combacia col suo scheme/territorio assegnato (stessa
+        regola di elevazione di search_canonical_2020). requesting_user=None
+        (anonimo) -> solo pubblici, invariato.
 
-        Coppia con count_all_events_for_alias: la differenza tra i due e' il
-        numero da mostrare nel placeholder "N eventi non condivisi con te"
-        (HANDOFF.md, punti 9-10).
+        Resta binario (fully-visible si'/no): la gradazione Livello 1/2 per
+        gli eventi NON pienamente visibili e' compito di
+        get_alias_life_history, non di questa funzione -- pensata solo per
+        il conteggio "N eventi non condivisi con te" (HANDOFF.md, punti
+        9-10), in coppia con count_all_events_for_alias.
 
         Non restituisce mai owner_username grezzo (potrebbe essere di un
         altro utente per i record pubblici/condivisi) -- solo un flag
@@ -858,18 +1135,15 @@ class DatabaseService:
         **Redesign 07/08/2026 (migrazione 005)**: stessa logica a due tabelle
         (alias_owner_visibility/alias_sharing_intent) di search_canonical_2020
         e get_alias_life_history, non piu' la colonna `visibility`.
+        **Redesign 02-04/09/2026 (priorita' #6)**: aggiunta l'elevazione
+        rings_admin e il bypass super_admin (vede sempre tutto per intero).
         """
         if not self.pool:
             return []
 
-        try:
-            async with self.pool.acquire() as conn:
-                if requesting_username:
-                    rows = await conn.fetch(
-                        """
-                        SELECT c.id, c.canonical_string, c.field_count,
-                               (c.owner_username = $2) AS is_own,
-                               CASE
+        requesting_username = requesting_user.username if requesting_user else None
+
+        visibility_case = """CASE
                                  WHEN EXISTS (
                                      SELECT 1 FROM alias_owner_visibility av
                                      WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
@@ -885,7 +1159,34 @@ class DatabaseService:
                                        AND si2.to_username = c.owner_username AND si2.state = 'offered'
                                  ) THEN 'shared'
                                  ELSE 'private'
-                               END AS visibility,
+                               END AS visibility"""
+
+        try:
+            async with self.pool.acquire() as conn:
+                if requesting_username and requesting_user.role == UserRole.SUPER_ADMIN:
+                    # Il super_admin vede sempre tutto per intero -- nessuna
+                    # restrizione nel WHERE, ma le etichette is_own/visibility
+                    # restano calcolate per coerenza con l'endpoint.
+                    rows = await conn.fetch(
+                        f"""
+                        SELECT c.id, c.canonical_string, c.field_count,
+                               (c.owner_username = $2) AS is_own,
+                               {visibility_case},
+                               c.first_seen, c.last_seen, c.occurrence_count
+                        FROM euring_2020_canonical c
+                        WHERE c.alias_id = $1
+                        ORDER BY c.first_seen
+                        """,
+                        alias_id,
+                        requesting_username,
+                    )
+                elif requesting_username:
+                    rings_admin_elevated_expr = self._rings_admin_elevation_sql("c.alias_id", "$3", "$4")
+                    rows = await conn.fetch(
+                        f"""
+                        SELECT c.id, c.canonical_string, c.field_count,
+                               (c.owner_username = $2) AS is_own,
+                               {visibility_case},
                                c.first_seen, c.last_seen, c.occurrence_count
                         FROM euring_2020_canonical c
                         WHERE c.alias_id = $1
@@ -907,11 +1208,14 @@ class DatabaseService:
                                       AND si2.to_username = c.owner_username AND si2.state = 'offered'
                                 )
                             )
+                            OR {rings_admin_elevated_expr}
                           )
                         ORDER BY c.first_seen
                         """,
                         alias_id,
                         requesting_username,
+                        requesting_user.ringing_scheme,
+                        requesting_user.territory_place_codes[0] if requesting_user.territory_place_codes else None,
                     )
                 else:
                     rows = await conn.fetch(
@@ -957,42 +1261,44 @@ class DatabaseService:
             return 0
 
     async def get_alias_life_history(
-        self, alias_id: int, requesting_username: Optional[str]
+        self, alias_id: int, requesting_user: Optional[User]
     ) -> List[Dict[str, Any]]:
         """
-        Storia di vita di un anello (alias_id) per la UI dell'archivio:
-        eventi visibili per intero a requesting_username, alternati -- in
-        ordine cronologico per data evento -- a segnaposto anonimizzati
-        (anno, nazione, specie) per gli eventi non visibili. Deciso con
-        Davide 03/08/2026, indipendente dal redesign del meccanismo di
-        condivisione (si applica a "qualunque evento che non vedo per
-        intero", a prescindere dal motivo).
-
-        Per gli eventi nascosti si restituiscono SOLO tre informazioni,
-        estratte da `parsed_fields` (gia' presente su ogni riga, nessun
-        bisogno di toccare la tabella EAV): anno (prime 4 cifre del campo
-        'date', formato DDMMYYYY), nazione (primi 2 caratteri del campo
+        Storia di vita di un anello (alias_id) per la UI dell'archivio, in
+        ordine cronologico per data evento. Eventi a Livello 3 (`kind:
+        'full'`, canonical_string per intero); eventi sotto Livello 3
+        (`kind: 'masked'`) portano `level` + `masked_fields` (stessi campi
+        per dominio di search_canonical_2020) **piu'** il segnaposto
+        anno/nazione/specie deciso con Davide il 03/08/2026 -- carve-out
+        esplicito e volutamente conservato sopra il mascheramento per
+        dominio: anno (4 cifre di 'date') e nazione (primi 2 caratteri di
         'place code', che per definizione EURING identificano sempre il
-        paese), specie ('species concluded' o 'species mentioned' come
-        fallback). Mai numero di anello, mai proprietario, mai altri campi.
-        La specie e' inclusa anche nei segnaposto apposta: serve a
-        intercettare errori di trascrizione (specie diversa tra eventi
-        dello stesso alias fisico e' un segnale di anello letto/trascritto
-        male da qualche parte).
+        paese) sono normalmente campi dei domini temporal/spatial, bloccati
+        fino a Livello 3 -- ma qui restano un'eccezione mirata e coarse
+        (mai la data/luogo completi), pensata per intercettare errori di
+        trascrizione (specie diversa tra eventi dello stesso alias fisico e'
+        un segnale di anello letto/trascritto male da qualche parte). Mai
+        numero di anello, mai proprietario.
 
-        **Redesign 07/08/2026 (migrazione 005)**: `visibility` non e' piu'
-        letta dalla colonna omonima (ormai vestigiale) ma calcolata a runtime
-        da alias_owner_visibility (pubblico)/alias_sharing_intent (condiviso
-        mirato reciproco) -- stessa logica di search_canonical_2020.
+        **Redesign 07/08/2026 (migrazione 005)**: `visibility` calcolata a
+        runtime da alias_owner_visibility/alias_sharing_intent, non piu' la
+        colonna omonima. **Redesign 02-04/09/2026 (priorita' #6)**: il
+        precedente segnaposto fisso a 3 campi diventa mascheramento a
+        Livello 1/2 completo (stessa logica di search_canonical_2020),
+        mantenendo year/country/species_code in aggiunta per compatibilita'
+        con la UI esistente e per non perdere il carve-out anti-frode.
         """
         if not self.pool:
             return []
 
+        requesting_username = requesting_user.username if requesting_user else None
+
         try:
             async with self.pool.acquire() as conn:
                 if requesting_username:
+                    rings_admin_elevated_expr = self._rings_admin_elevation_sql("c.alias_id", "$3", "$4")
                     rows = await conn.fetch(
-                        """
+                        f"""
                         SELECT c.id, c.canonical_string, c.field_count,
                                (c.owner_username = $2) AS is_own,
                                CASE
@@ -1013,25 +1319,23 @@ class DatabaseService:
                                  ELSE 'private'
                                END AS visibility,
                                c.first_seen, c.last_seen, c.occurrence_count,
+                               EXISTS (
+                                   SELECT 1 FROM alias_owner_visibility av
+                                   WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
+                                     AND av.is_public = true
+                               ) AS is_public,
                                (
-                                 c.owner_username = $2
-                                 OR EXISTS (
-                                     SELECT 1 FROM alias_owner_visibility av
-                                     WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
-                                       AND av.is_public = true
+                                 c.owner_username IS NOT NULL AND EXISTS (
+                                     SELECT 1 FROM alias_sharing_intent si1
+                                     WHERE si1.alias_id = c.alias_id AND si1.from_username = c.owner_username
+                                       AND si1.to_username = $2 AND si1.state = 'offered'
+                                 ) AND EXISTS (
+                                     SELECT 1 FROM alias_sharing_intent si2
+                                     WHERE si2.alias_id = c.alias_id AND si2.from_username = $2
+                                       AND si2.to_username = c.owner_username AND si2.state = 'offered'
                                  )
-                                 OR (
-                                     c.owner_username IS NOT NULL AND EXISTS (
-                                         SELECT 1 FROM alias_sharing_intent si1
-                                         WHERE si1.alias_id = c.alias_id AND si1.from_username = c.owner_username
-                                           AND si1.to_username = $2 AND si1.state = 'offered'
-                                     ) AND EXISTS (
-                                         SELECT 1 FROM alias_sharing_intent si2
-                                         WHERE si2.alias_id = c.alias_id AND si2.from_username = $2
-                                           AND si2.to_username = c.owner_username AND si2.state = 'offered'
-                                     )
-                                 )
-                               ) AS is_visible,
+                               ) AS is_shared,
+                               {rings_admin_elevated_expr} AS rings_admin_elevated,
                                c.parsed_fields->>'date' AS event_date,
                                c.parsed_fields->>'place code' AS place_code,
                                COALESCE(
@@ -1043,6 +1347,8 @@ class DatabaseService:
                         """,
                         alias_id,
                         requesting_username,
+                        requesting_user.ringing_scheme,
+                        requesting_user.territory_place_codes[0] if requesting_user.territory_place_codes else None,
                     )
                 else:
                     rows = await conn.fetch(
@@ -1062,7 +1368,9 @@ class DatabaseService:
                                    SELECT 1 FROM alias_owner_visibility av
                                    WHERE av.alias_id = c.alias_id AND av.username = c.owner_username
                                      AND av.is_public = true
-                               ) AS is_visible,
+                               ) AS is_public,
+                               false AS is_shared,
+                               false AS rings_admin_elevated,
                                c.parsed_fields->>'date' AS event_date,
                                c.parsed_fields->>'place code' AS place_code,
                                COALESCE(
@@ -1074,6 +1382,22 @@ class DatabaseService:
                         """,
                         alias_id,
                     )
+
+                role = requesting_user.role if requesting_user else None
+                levels_by_id: Dict[int, int] = {}
+                for r in rows:
+                    is_own = r["is_own"] if requesting_username else False
+                    levels_by_id[r["id"]] = self._resolve_visibility_level(
+                        is_own, r["is_public"], r["is_shared"], r["rings_admin_elevated"], role
+                    )
+                # Livello 3 forzato per l'anonimo sulle righe restituite (il
+                # WHERE le ha gia' filtrate a solo pubbliche sopra) -- stessa
+                # cautela difensiva di search_canonical_2020.
+                if not requesting_username:
+                    levels_by_id = {cid: 3 for cid in levels_by_id}
+
+                alias_by_id = {r["id"]: alias_id for r in rows}
+                masked_by_id = await self._build_masked_fields_batch(conn, levels_by_id, alias_by_id)
 
                 events = []
                 for r in rows:
@@ -1093,14 +1417,15 @@ class DatabaseService:
                         # nello stesso giorno di test).
                         event_date_display = f"{event_date[0:2]}/{event_date[2:4]}/{event_date[4:8]}"
 
-                    if r["is_visible"]:
+                    level = levels_by_id[r["id"]]
+                    if level >= 3:
                         events.append({
                             "kind": "full",
                             "id": r["id"],
                             "canonical_string": r["canonical_string"],
                             "field_count": r["field_count"],
                             "visibility": r["visibility"],
-                            "is_own": r["is_own"],
+                            "is_own": r["is_own"] if requesting_username else False,
                             "event_date": event_date_display,
                             "first_seen": r["first_seen"].isoformat() if r["first_seen"] else None,
                             "last_seen": r["last_seen"].isoformat() if r["last_seen"] else None,
@@ -1110,7 +1435,10 @@ class DatabaseService:
                     else:
                         place_code = (r["place_code"] or "").strip()
                         events.append({
-                            "kind": "hidden",
+                            "kind": "masked",
+                            "level": level,
+                            "masked_fields": masked_by_id.get(r["id"], {}),
+                            # Carve-out anti-frode 03/08/2026, vedi docstring.
                             "year": event_date[4:8] if sort_key else None,
                             "country": place_code[:2] if len(place_code) >= 2 else None,
                             "species_code": r["species_code"],

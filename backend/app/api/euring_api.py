@@ -2105,14 +2105,13 @@ async def search_archive(
     }
     page = max(1, page)
     page_size = min(max(1, page_size), 100)
-    requesting_username = current_user.username if current_user else None
 
     try:
         result = await database_service.search_canonical_2020(
-            filters, page, page_size, requesting_username=requesting_username
+            filters, page, page_size, requesting_user=current_user
         )
         facets = await database_service.facet_counts_2020(
-            ARCHIVE_FACET_FIELDS, filters, requesting_username=requesting_username
+            ARCHIVE_FACET_FIELDS, filters, requesting_user=current_user
         )
         return {
             "success": True,
@@ -2149,15 +2148,13 @@ async def get_alias_summary(
     Utente anonimo: requesting_username=None, quindi "visibili" = solo
     pubblici (stessa semantica di /archive/search).
     """
-    requesting_username = current_user.username if current_user else None
-
     try:
         visible = await database_service.get_visible_events_for_alias(
-            alias_id, requesting_username
+            alias_id, current_user
         )
         total = await database_service.count_all_events_for_alias(alias_id)
         life_history = await database_service.get_alias_life_history(
-            alias_id, requesting_username
+            alias_id, current_user
         )
         return {
             "success": True,
