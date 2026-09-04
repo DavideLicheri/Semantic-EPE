@@ -8,13 +8,48 @@ from ..auth.auth_service import AuthService
 from ..auth.models import (
     UserLogin, Token, User, UserCreate, UserRole,
     UserRegistration, UserRoleUpdate, UserListResponse, RegistrationResponse,
-    PasswordChange, PasswordChangeResponse, ConsentUpdate, ConsentUpdateResponse
+    PasswordChange, PasswordChangeResponse, ConsentUpdate, ConsentUpdateResponse,
+    RingsAdminAssignmentUpdate
 )
 from ..auth.dependencies import get_current_active_user, require_super_admin, require_rings_admin
 from ..services.email_service import email_service
+from ..services.skos_manager import SKOSManagerImpl
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 auth_service = AuthService()
+# Istanza separata da quella di euring_api.py (stesso pattern gia' in uso
+# altrove nel progetto, es. lookup_table_service): solo lettura, nessuno
+# stato condiviso da sincronizzare tra le due cache.
+_skos_manager = SKOSManagerImpl()
+
+async def _get_valid_euring_codes(field_name: str, year: int = 2020) -> set:
+    """
+    Ritorna l'insieme dei codici validi (valid_values_descriptions, o
+    valid_values come fallback) per un campo EURING di una data versione.
+    Usato per validare ringing_scheme/place_code prima di assegnarli a un
+    rings_admin -- vedi RingsAdminAssignmentUpdate.
+    """
+    await _skos_manager.load_version_model()
+    versions = await _skos_manager.get_all_versions()
+
+    # Stesso criterio di deduplicazione usato in euring_api.py: tiene la
+    # versione con piu' campi definiti per quell'anno.
+    deduped: dict = {}
+    for v in versions:
+        if v.year not in deduped or len(v.field_definitions) > len(deduped[v.year].field_definitions):
+            deduped[v.year] = v
+
+    target = deduped.get(year)
+    if not target:
+        return set()
+
+    field_name_norm = field_name.strip().lower().replace("_", " ")
+    for f in target.field_definitions:
+        if f.name.lower() == field_name_norm or (f.canonical_name or "").lower() == field_name_norm:
+            if f.valid_values_descriptions:
+                return set(f.valid_values_descriptions.keys())
+            return set(f.valid_values or [])
+    return set()
 
 @router.post("/login", response_model=Token)
 async def login(user_credentials: UserLogin):
@@ -226,6 +261,56 @@ async def update_user_role(
     )
     
     return updated_user
+
+@router.put("/users/rings-admin-assignment", response_model=User)
+async def update_rings_admin_assignment(
+    assignment: RingsAdminAssignmentUpdate,
+    current_user: User = Depends(require_super_admin)
+):
+    """
+    Assegna ringing_scheme/territory_place_code a un utente rings_admin
+    (Super Admin only). Priorita' #6 della scaletta, 02/09/2026 -- vedi
+    docs/PROPOSTA_RUOLI_LIVELLI_CONDIVISIONE.md.
+
+    Valida i codici contro euring_2020.json prima di salvare (decisione di
+    Davide: meglio bloccare un refuso qui che scoprirlo a valle sulle query
+    di visibilita', non ancora scritte).
+    """
+    target_user = auth_service.get_user(assignment.username)
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utente non trovato"
+        )
+
+    if target_user.role != UserRole.RINGS_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"L'utente '{assignment.username}' ha ruolo '{target_user.role.value}', "
+                   f"non 'rings_admin'. Cambia prima il ruolo, poi assegna scheme/territorio."
+        )
+
+    if assignment.ringing_scheme:
+        valid_schemes = await _get_valid_euring_codes("ringing_scheme")
+        if valid_schemes and assignment.ringing_scheme not in valid_schemes:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"'{assignment.ringing_scheme}' non è un ringing_scheme valido (EURING 2020)."
+            )
+
+    if assignment.territory_place_code:
+        valid_places = await _get_valid_euring_codes("place_code")
+        if valid_places and assignment.territory_place_code not in valid_places:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"'{assignment.territory_place_code}' non è un place_code valido (EURING 2020)."
+            )
+
+    return auth_service.update_rings_admin_assignment(
+        username=assignment.username,
+        ringing_scheme=assignment.ringing_scheme,
+        territory_place_code=assignment.territory_place_code
+    )
 
 @router.put("/users/{username}/deactivate", response_model=User)
 async def deactivate_user(

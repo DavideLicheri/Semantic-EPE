@@ -13,6 +13,17 @@ export interface User {
   created_at: string;
   last_login?: string;
   consents_to_aggregate_analysis?: boolean;
+  // Campi per rings_admin (14/08/2026, piramide ruoli/livelli). Assegnati
+  // dal super_admin via PUT /api/auth/users/rings-admin-assignment
+  // (02/09/2026). Irrilevanti/assenti per gli altri ruoli.
+  ringing_scheme?: string;
+  territory_place_codes?: string[];
+}
+
+export interface RingsAdminAssignmentUpdate {
+  username: string;
+  ringing_scheme?: string | null;
+  territory_place_code?: string | null;
 }
 
 export interface ConsentUpdateRequest {

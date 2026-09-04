@@ -23,6 +23,16 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  // Stato per il pannello di assegnazione scheme/territorio dei rings_admin
+  // (priorita' #6 della scaletta, 02/09/2026). Dizionario codice->descrizione
+  // per la dropdown scheme (161 voci, caricato una volta sola all'avvio).
+  const [ringingSchemes, setRingingSchemes] = useState<Record<string, string>>({});
+  // Bozza locale (non ancora salvata) per riga utente, chiave = username.
+  const [assignmentDrafts, setAssignmentDrafts] = useState<Record<string, { ringingScheme: string; territoryCode: string }>>({});
+  // Testo digitato nel campo di ricerca territorio, per riga utente.
+  const [territoryQuery, setTerritoryQuery] = useState<Record<string, string>>({});
+  // Risultati della ricerca su /api/euring/field/place_code/search, per riga utente.
+  const [territoryResults, setTerritoryResults] = useState<Record<string, { code: string; description: string }[]>>({});
 
   // Fix 02/09/2026: questo useEffect era dichiarato DOPO il return anticipato
   // sotto (violazione delle Rules of Hooks -- un hook non puo' essere chiamato
@@ -33,6 +43,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
   useEffect(() => {
     if (currentUser?.role === 'super_admin') {
       loadUsers();
+      loadRingingSchemes();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
@@ -109,6 +120,96 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
       setError(t('mgmt.error.connection'));
       setUsers(prev => prev.map(user =>
         user.username === username ? { ...user, isUpdating: false } : user
+      ));
+    }
+  };
+
+  const loadRingingSchemes = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/euring/field/ringing_scheme?version=2020`);
+      if (response.ok) {
+        const data = await response.json();
+        setRingingSchemes(data.valid_values_descriptions || {});
+      }
+      // Non bloccante se fallisce: la dropdown scheme resta vuota, il resto
+      // della pagina utenti funziona comunque.
+    } catch (err) {
+      // idem
+    }
+  };
+
+  const getAssignmentDraft = (user: UserWithActions) => {
+    return assignmentDrafts[user.username] ?? {
+      ringingScheme: user.ringing_scheme || '',
+      territoryCode: user.territory_place_codes?.[0] || '',
+    };
+  };
+
+  const updateAssignmentDraft = (user: UserWithActions, patch: Partial<{ ringingScheme: string; territoryCode: string }>) => {
+    const current = getAssignmentDraft(user);
+    setAssignmentDrafts(prev => ({ ...prev, [user.username]: { ...current, ...patch } }));
+  };
+
+  const searchTerritoryPlaceCodes = async (username: string, query: string) => {
+    setTerritoryQuery(prev => ({ ...prev, [username]: query }));
+    if (query.trim().length < 2) {
+      setTerritoryResults(prev => ({ ...prev, [username]: [] }));
+      return;
+    }
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/euring/field/place_code/search?q=${encodeURIComponent(query)}&version=2020`);
+      if (response.ok) {
+        const data = await response.json();
+        setTerritoryResults(prev => ({ ...prev, [username]: data.matches || [] }));
+      }
+    } catch (err) {
+      // Non bloccante: la ricerca territorio resta vuota.
+    }
+  };
+
+  const saveRingsAdminAssignment = async (user: UserWithActions) => {
+    const draft = getAssignmentDraft(user);
+    try {
+      setUsers(prev => prev.map(u =>
+        u.username === user.username ? { ...u, isUpdating: true } : u
+      ));
+
+      const token = localStorage.getItem('eces_token');
+
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/auth/users/rings-admin-assignment`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          username: user.username,
+          ringing_scheme: draft.ringingScheme || null,
+          territory_place_code: draft.territoryCode || null,
+        }),
+      });
+
+      if (response.ok) {
+        const updatedUser = await response.json();
+        setUsers(prev => prev.map(u =>
+          u.username === user.username ? { ...updatedUser, isUpdating: false } : u
+        ));
+        setAssignmentDrafts(prev => {
+          const next = { ...prev };
+          delete next[user.username];
+          return next;
+        });
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || t('mgmt.error.assignment_update'));
+        setUsers(prev => prev.map(u =>
+          u.username === user.username ? { ...u, isUpdating: false } : u
+        ));
+      }
+    } catch (err) {
+      setError(t('mgmt.error.connection'));
+      setUsers(prev => prev.map(u =>
+        u.username === user.username ? { ...u, isUpdating: false } : u
       ));
     }
   };
@@ -316,6 +417,64 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
                       )}
                     </select>
                   </div>
+
+                  {user.role === 'rings_admin' && (() => {
+                    const draft = getAssignmentDraft(user);
+                    const query = territoryQuery[user.username] ?? '';
+                    const results = territoryResults[user.username] ?? [];
+                    return (
+                      <div className="rings-admin-assignment">
+                        <label>{t('mgmt.assignment_title')}</label>
+                        <select
+                          value={draft.ringingScheme}
+                          onChange={(e) => updateAssignmentDraft(user, { ringingScheme: e.target.value })}
+                          disabled={user.isUpdating}
+                        >
+                          <option value="">{t('mgmt.assignment_scheme_placeholder')}</option>
+                          {Object.entries(ringingSchemes).map(([code, desc]) => (
+                            <option key={code} value={code}>{code} — {desc}</option>
+                          ))}
+                        </select>
+
+                        <input
+                          type="text"
+                          list={`territory-options-${user.username}`}
+                          placeholder={t('mgmt.assignment_territory_placeholder')}
+                          value={query || draft.territoryCode}
+                          onChange={(e) => {
+                            searchTerritoryPlaceCodes(user.username, e.target.value);
+                            // Se l'utente cancella il testo, azzera anche il codice scelto.
+                            if (!e.target.value) {
+                              updateAssignmentDraft(user, { territoryCode: '' });
+                            }
+                          }}
+                          onBlur={(e) => {
+                            // Se il testo digitato corrisponde esattamente a un
+                            // risultato trovato, lo adotta come codice scelto.
+                            const match = results.find(r => `${r.code} — ${r.description}` === e.target.value || r.code === e.target.value);
+                            if (match) {
+                              updateAssignmentDraft(user, { territoryCode: match.code });
+                              setTerritoryQuery(prev => ({ ...prev, [user.username]: `${match.code} — ${match.description}` }));
+                            }
+                          }}
+                          disabled={user.isUpdating}
+                        />
+                        <datalist id={`territory-options-${user.username}`}>
+                          {results.map(r => (
+                            <option key={r.code} value={`${r.code} — ${r.description}`} />
+                          ))}
+                        </datalist>
+
+                        <button
+                          onClick={() => saveRingsAdminAssignment(user)}
+                          disabled={user.isUpdating}
+                          className="assignment-save-button"
+                        >
+                          {user.isUpdating ? '⏳' : '💾'} {t('mgmt.assignment_save')}
+                        </button>
+                      </div>
+                    );
+                  })()}
 
                   <div className="status-actions">
                     {user.is_active ? (

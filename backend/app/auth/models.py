@@ -102,6 +102,22 @@ class UserRoleUpdate(BaseModel):
     username: str
     new_role: UserRole
 
+class RingsAdminAssignmentUpdate(BaseModel):
+    """
+    Assegnazione scheme/territorio per un rings_admin (priorita' #6 della
+    scaletta, 02/09/2026 -- vedi docs/PROPOSTA_RUOLI_LIVELLI_CONDIVISIONE.md).
+    Solo il super_admin puo' assegnare questi campi; l'endpoint verifica che
+    l'utente target abbia gia' ruolo rings_admin.
+    territory_place_code e' singolare (non una lista) per decisione esplicita
+    di Davide il 14/08/2026: "ogni centro guarda per ora l'intera nazione",
+    un solo place_code a testa -- il modello User.territory_place_codes resta
+    List[str] per un eventuale futuro sub-regionale, ma oggi si assegna un
+    solo valore (o nessuno, per rimuovere l'assegnazione).
+    """
+    username: str
+    ringing_scheme: Optional[str] = None
+    territory_place_code: Optional[str] = None
+
 class UserListResponse(BaseModel):
     """User list response model"""
     users: list[User]

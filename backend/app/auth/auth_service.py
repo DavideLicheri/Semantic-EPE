@@ -321,6 +321,41 @@ class AuthService:
         del user_dict["password_hash"]
         return User(**user_dict)
     
+    def update_rings_admin_assignment(self, username: str, ringing_scheme: Optional[str],
+                                       territory_place_code: Optional[str]) -> User:
+        """
+        Assegna ringing_scheme/territory_place_code a un rings_admin
+        (Super Admin only, priorita' #6 della scaletta, 02/09/2026).
+        La validazione dei codici contro euring_2020.json avviene a monte,
+        nell'endpoint (auth_api.py) -- qui solo persistenza, stesso pattern
+        di update_user_role.
+        """
+        users = self._load_users()
+
+        if username not in users:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Utente non trovato"
+            )
+
+        if users[username]["role"] != UserRole.RINGS_ADMIN.value:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"L'utente '{username}' non ha ruolo rings_admin"
+            )
+
+        users[username]["ringing_scheme"] = ringing_scheme
+        # Lista di al massimo 1 elemento per decisione del 14/08 ("un solo
+        # place_code, tutta la nazione, per ora") -- il modello User supporta
+        # gia' una lista per un eventuale futuro sub-regionale.
+        users[username]["territory_place_codes"] = [territory_place_code] if territory_place_code else []
+        users[username]["updated_at"] = datetime.now().isoformat()
+        self._save_users(users)
+
+        user_dict = users[username].copy()
+        del user_dict["password_hash"]
+        return User(**user_dict)
+
     def deactivate_user(self, username: str) -> User:
         """Deactivate user (Super Admin only)"""
         users = self._load_users()

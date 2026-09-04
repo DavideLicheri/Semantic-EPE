@@ -550,6 +550,13 @@ export const enTranslations = {
   'mgmt.error.connection': 'Connection error',
   'mgmt.error.role_update': 'Error updating role',
   'mgmt.error.status_update': 'Error updating status',
+  'mgmt.assignment_title': '🏢 Ringing centre',
+  'mgmt.assignment_scheme_label': 'Ringing scheme:',
+  'mgmt.assignment_scheme_placeholder': '— none —',
+  'mgmt.assignment_territory_label': 'Territory (place code):',
+  'mgmt.assignment_territory_placeholder': 'Search location (min. 2 chars)...',
+  'mgmt.assignment_save': 'Save',
+  'mgmt.error.assignment_update': 'Error updating scheme/territory assignment',
 
   // Analytics (detailed)
   'analytics.loading_text': 'Loading...',

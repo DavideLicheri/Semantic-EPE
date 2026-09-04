@@ -550,6 +550,13 @@ export const itTranslations = {
   'mgmt.error.connection': 'Errore di connessione',
   'mgmt.error.role_update': "Errore nell'aggiornamento del ruolo",
   'mgmt.error.status_update': "Errore nell'aggiornamento dello stato",
+  'mgmt.assignment_title': '🏢 Centro di inanellamento',
+  'mgmt.assignment_scheme_label': 'Ringing scheme:',
+  'mgmt.assignment_scheme_placeholder': '— nessuno —',
+  'mgmt.assignment_territory_label': 'Territorio (place code):',
+  'mgmt.assignment_territory_placeholder': 'Cerca luogo (min. 2 caratteri)...',
+  'mgmt.assignment_save': 'Salva',
+  'mgmt.error.assignment_update': "Errore nell'assegnazione scheme/territorio",
 
   // Analytics (detailed)
   'analytics.loading_text': 'Caricamento...',
