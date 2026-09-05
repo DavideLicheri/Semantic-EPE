@@ -19,10 +19,11 @@ from ..services.semantic_domain_mapper import semantic_domain_mapper
 from ..services.lookup_table_service import LookupTableService
 from ..models.euring_models import SemanticDomain
 from ..auth.dependencies import (
-    get_current_active_user, 
+    get_current_active_user,
     require_matrix_edit_permission,
     get_current_user_optional
 )
+from ..auth.rate_limit import enforce_lizzy_rate_limit
 from ..auth.models import User
 from ..services.usage_logger import usage_logger
 from ..services.field_translator import field_translator
@@ -298,7 +299,9 @@ class LookupTableUpdateRequest(BaseModel):
 @router.post("/recognize", response_model=EuringRecognitionResponse)
 async def recognize_euring(
     request: EuringRecognitionRequest,
-    current_user: Optional[User] = Depends(get_current_user_optional)
+    # Uno dei 4 endpoint chiamati da Lizzy -- rate limit dedicato
+    # sull'account 'lizzy' (priorita' #5, 05/09/2026), vedi rate_limit.py.
+    current_user: Optional[User] = Depends(enforce_lizzy_rate_limit)
 ):
     """
     Recognize EURING code version
@@ -402,7 +405,9 @@ async def recognize_euring(
 @router.post("/convert", response_model=EuringConversionResponse)
 async def convert_euring(
     request: EuringConversionRequest,
-    current_user: Optional[User] = Depends(get_current_user_optional)
+    # Uno dei 4 endpoint chiamati da Lizzy -- rate limit dedicato
+    # sull'account 'lizzy' (priorita' #5, 05/09/2026), vedi rate_limit.py.
+    current_user: Optional[User] = Depends(enforce_lizzy_rate_limit)
 ):
     """
     Convert EURING code between versions
@@ -1511,7 +1516,9 @@ async def get_supported_versions():
 async def get_field_info(
     field_name: str,
     version: str = "2020",
-    current_user=Depends(get_current_user_optional)
+    # Uno dei 4 endpoint chiamati da Lizzy -- rate limit dedicato
+    # sull'account 'lizzy' (priorita' #5, 05/09/2026), vedi rate_limit.py.
+    current_user=Depends(enforce_lizzy_rate_limit)
 ):
     """
     Get full semantic information for a single EURING field.
@@ -1576,7 +1583,9 @@ async def lookup_field_code(
     field_name: str,
     code: str,
     version: str = "2020",
-    current_user=Depends(get_current_user_optional),
+    # Uno dei 4 endpoint chiamati da Lizzy -- rate limit dedicato
+    # sull'account 'lizzy' (priorita' #5, 05/09/2026), vedi rate_limit.py.
+    current_user=Depends(enforce_lizzy_rate_limit),
 ):
     """
     Decode a single code for an EURING field.
